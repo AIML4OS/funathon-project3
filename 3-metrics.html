@@ -248,7 +248,7 @@ Cliquer pour voir la réponse
 <p>On a plusieurs nouveaux éléments. D’abord, la mise en page de l’application intègre 3 nouveaux composants <code>dcc.Store</code>. Ce composant permet de stocker de la donnée JSON dans le navigateur de l’utilisateur. On va s’en servir pour communiquer la position précédente des vols en activité à chaque callback.</p>
 <p>L’attribut <code>storage_type</code> du composant détermine le type de stockage utilisé: - <code>memory</code>: les données sont effacées lors d’un rafraichissement de la page; - <code>local</code>: les données sont conservées après la sortie du navigateur; - <code>session</code>: les données sont effacées après la sortie du navigateur.</p>
 <p>Le décorateur de callback a également changé:</p>
-<div id="027fb535" class="cell" data-execution_count="1">
+<div id="ba552431" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.callback</span>(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    [Output(<span class="st">'map'</span>, <span class="st">'children'</span>), Output(<span class="st">'memory'</span>, <span class="st">'data'</span>)],</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    [Input(<span class="st">'interval-component'</span>, <span class="st">'n_intervals'</span>)],</span>
@@ -275,7 +275,7 @@ Cliquer pour voir un indice
 </summary>
 Pour calculer un cap à partir de positions différentes à <span class="math inline">\(t\)</span> et <span class="math inline">\(t-1\)</span> en degrés, vous pouvez suivre la méthode décrite sur <a href="https://www.movable-type.co.uk/scripts/latlong.html">cette page</a>, paragraphe <em>Bearing</em>.
 </details>
-<div id="525a789a" class="cell" data-execution_count="2">
+<div id="e11d274c" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> bearing_from_positions(</span>
@@ -318,7 +318,7 @@ Pour calculer un cap à partir de positions différentes à <span class="math in
 <ol start="3" type="1">
 <li>La fonction <code>get_custom_icon</code> renvoie un icône d’avion orienté dans une certaine direction (voir le répertoire <code>img</code> du dépôt) en fonction de l’angle <code>round_angle</code> donné en entrée. Cette angle doit avoir une valeur multiple de 15 comprise entre 0 et 345. Implémenter la fonction <code>get_closest_round_angle</code> qui prend en entrée un angle en degrés (compris entre 0 et 360) et qui renvoie l’angle le plus proche parmi les valeurs autorisées pour <code>get_custom_icon</code>.</li>
 </ol>
-<div id="39a193bd" class="cell" data-execution_count="3">
+<div id="34d56010" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_closest_round_angle(angle: <span class="bu">float</span>) <span class="op">-&gt;</span> <span class="bu">int</span>:</span>

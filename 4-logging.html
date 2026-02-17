@@ -214,7 +214,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol type="1">
 <li>Dans le fichier <code>even_better_app/utils.py</code>, modifier la fonction <code>fetch_flight_data</code> pour inclure les information dans les dictionnaires de vols: code IATA des aéroports de départ et d’arrivée, vitesse au sol et type d’avion. <strong>Attention : il ne faut pas utiliser la fonction <code>get_flight_details()</code> car vous atteindriez immédiatement la limite de consultation de l’API Flightradar24.</strong></li>
 </ol>
-<div id="c706070c" class="cell" data-execution_count="1">
+<div id="476bb06e" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fetch_flight_data(</span>
@@ -262,7 +262,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol start="2" type="1">
 <li>Pour afficher plus d’informations dans l’application, il faut modifier le contenu de la fonction <code>update_graph_live</code> dans <code>even_better_app/main.py</code>, et plus spécifiquement l’argument <code>children</code> du constructeur <code>dl.Marker</code>. Ajouter les codes des aéroports de départ et d’arrivée et la vitesse au sol.</li>
 </ol>
-<div id="65c72c27" class="cell" data-execution_count="2">
+<div id="1c629c2f" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.callback</span>(</span>
@@ -322,7 +322,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol type="1">
 <li>Nous souhaitons d’abord modifier la mise en page de l’application. Modifier <code>final_app/main.py</code> de manière à intégrer dans <code>app.layout</code> une zone incluant un <a href="https://dash.plotly.com/dash-core-components/dropdown">menu déroulant</a>. Ce menu déroulant devra proposer plusieurs options de compagnie aériennes. Pour faciliter la suite, afficher le nom complet de la compagnie dans le menu déroulant mais faire en sorte que l’attribut <code>value</code> soit un code ICAO.</li>
 </ol>
-<div id="c01281a6" class="cell" data-execution_count="3">
+<div id="83b684e9" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>app.layout <span class="op">=</span> html.Div([</span>
@@ -374,7 +374,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol start="2" type="1">
 <li>Toujours dans <code>final_app/main.py</code>, modifier le décorateur callback de la fonction <code>update_graph_live</code> pour ajouter un <code>Input</code> correspondant à la compagnie sélectionnée dans le menu déroulant. Pour vous aider, vous pouvez relire <a href="https://dash.plotly.com/basic-callbacks">cette page</a>, notamment le point 1.c. Modifier également l’appel de la fonction <code>fetch_flight_data</code> pour que les données de la bonne compagnie soient récupérées.</li>
 </ol>
-<div id="d0195ce8" class="cell" data-execution_count="4">
+<div id="24f07719" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.callback</span>(</span>

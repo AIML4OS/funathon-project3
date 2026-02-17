@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Améliorations supplémentaires de l’interface utilisateur – AIML4OS Funathon - Project 1</title>
+<title>Améliorations supplémentaires de l’interface utilisateur – AIML4OS Funathon - Project 3</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -105,9 +105,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 }</script>
 
 
-<meta property="og:title" content="Améliorations supplémentaires de l’interface utilisateur – AIML4OS Funathon - Project 1">
-<meta property="og:description" content="Predicting housing prices">
-<meta property="og:site_name" content="AIML4OS Funathon - Project 1">
+<meta property="og:title" content="Améliorations supplémentaires de l’interface utilisateur – AIML4OS Funathon - Project 3">
+<meta property="og:description" content="Satellite images segmentation">
+<meta property="og:site_name" content="AIML4OS Funathon - Project 3">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -153,7 +153,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/AIML4OS/funathon-project1"> <i class="bi bi-github" role="img" aria-label="GitHub">
+    <a class="nav-link" href="https://github.com/AIML4OS/funathon-project3"> <i class="bi bi-github" role="img" aria-label="GitHub">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
@@ -214,7 +214,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol type="1">
 <li>Dans le fichier <code>even_better_app/utils.py</code>, modifier la fonction <code>fetch_flight_data</code> pour inclure les information dans les dictionnaires de vols: code IATA des aéroports de départ et d’arrivée, vitesse au sol et type d’avion. <strong>Attention : il ne faut pas utiliser la fonction <code>get_flight_details()</code> car vous atteindriez immédiatement la limite de consultation de l’API Flightradar24.</strong></li>
 </ol>
-<div id="476bb06e" class="cell" data-execution_count="1">
+<div id="953f8d68" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fetch_flight_data(</span>
@@ -262,7 +262,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol start="2" type="1">
 <li>Pour afficher plus d’informations dans l’application, il faut modifier le contenu de la fonction <code>update_graph_live</code> dans <code>even_better_app/main.py</code>, et plus spécifiquement l’argument <code>children</code> du constructeur <code>dl.Marker</code>. Ajouter les codes des aéroports de départ et d’arrivée et la vitesse au sol.</li>
 </ol>
-<div id="1c629c2f" class="cell" data-execution_count="2">
+<div id="6e3c5784" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.callback</span>(</span>
@@ -322,7 +322,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol type="1">
 <li>Nous souhaitons d’abord modifier la mise en page de l’application. Modifier <code>final_app/main.py</code> de manière à intégrer dans <code>app.layout</code> une zone incluant un <a href="https://dash.plotly.com/dash-core-components/dropdown">menu déroulant</a>. Ce menu déroulant devra proposer plusieurs options de compagnie aériennes. Pour faciliter la suite, afficher le nom complet de la compagnie dans le menu déroulant mais faire en sorte que l’attribut <code>value</code> soit un code ICAO.</li>
 </ol>
-<div id="83b684e9" class="cell" data-execution_count="3">
+<div id="20c77df1" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>app.layout <span class="op">=</span> html.Div([</span>
@@ -374,7 +374,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ol start="2" type="1">
 <li>Toujours dans <code>final_app/main.py</code>, modifier le décorateur callback de la fonction <code>update_graph_live</code> pour ajouter un <code>Input</code> correspondant à la compagnie sélectionnée dans le menu déroulant. Pour vous aider, vous pouvez relire <a href="https://dash.plotly.com/basic-callbacks">cette page</a>, notamment le point 1.c. Modifier également l’appel de la fonction <code>fetch_flight_data</code> pour que les données de la bonne compagnie soient récupérées.</li>
 </ol>
-<div id="24f07719" class="cell" data-execution_count="4">
+<div id="4ee524ae" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Cliquer pour voir la réponse</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.callback</span>(</span>
@@ -474,7 +474,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/AIML4OS\.github\.io\/funathon-project1\/");
+        var filterRegex = new RegExp("https:\/\/AIML4OS\.github\.io\/funathon-project3\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -809,7 +809,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project1/edit/main/4-logging.qmd" class="toc-action"><i class="bi bi-github"></i>Modifier cette page</a></li><li><a href="https://github.com/AIML4OS/funathon-project1/issues/new" class="toc-action"><i class="bi empty"></i>Faire part d'un problème</a></li></ul></div></div>
+    <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/4-logging.qmd" class="toc-action"><i class="bi bi-github"></i>Modifier cette page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Faire part d'un problème</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
     <li class="nav-item">

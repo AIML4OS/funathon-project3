@@ -1,0 +1,58 @@
+project:
+  type: website
+  render:
+    - "*.qmd"
+website:
+  title: "AIML4OS Funathon - Project 1"
+  page-navigation: true
+  description: "Predicting housing prices"
+  site-url: "https://AIML4OS.github.io/funathon-project1/"
+  repo-url: "https://github.com/AIML4OS/funathon-project1"
+  repo-actions: [edit, issue]
+
+  open-graph: true
+
+  page-footer:
+    right:
+    - text: "License"
+      href: LICENCE
+
+  navbar:
+    align: center
+    title: false
+    collapse-below: lg
+ 
+    right:
+      - icon: github
+        href: "https://github.com/AIML4OS/funathon-project1"
+        aria-label: GitHub
+
+    left:
+      - text: "Introduction"
+        href: index.qmd
+      - text: "Preprocessing"
+        href: 1-preprocessing.qmd
+      - text: "Modelling"
+        href: 2-model.qmd
+      - text: "Model evaluation"
+        href: 3-metrics.qmd
+      - text: "Model logging"
+        href: 4-logging.qmd
+      - text: "Deployment"
+        href: 5-deployment.qmd
+      - text: "Application démo"
+        href: "https://flightradar-ui-demo.lab.sspcloud.fr"
+
+format:
+  html:
+    theme:
+      light: [cosmo, custom.scss]
+    toc: true
+    reference-location: margin
+    code-copy: true
+    code-overflow: wrap
+
+execute: 
+  eval: true
+  cache: true
+  warning: false

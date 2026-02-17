@@ -1,0 +1,166 @@
+---
+lang: fr-FR
+title: Training models
+
+format:
+  html:
+    number-sections: true
+---
+
+Dans la première partie de ce sujet, nous avons vu comment utiliser une API Python pour récupérer des données de vols en temps réel. Dans cette deuxième partie, nous allons utiliser le framework Python [Dash](https://dash.plotly.com/) qui permet de construire des applications de visualisation de données rapidement et avec peu de code. Commençons par prendre en main le framework à partir de la [documentation](https://dash.plotly.com/minimal-app).
+
+::: {.callout-tip collapse="false" icon=false}
+## `<i class="bi bi-book"></i>`{=html} Exercice 2: Prise en main de Dash
+
+Le script ci-dessous permet de faire tourner une application Dash minimale à partir des données contenues dans [ce fichier `.csv`](https://raw.githubusercontent.com/plotly/datasets/master/gapminder_unfiltered.csv). Il est disponible au chemin `minimal_app/main.py` du dépôt du sujet.
+
+```{python}
+#| eval: false
+#| code-overflow: scroll
+from dash import Dash, html, dcc, callback, Output, Input
+import plotly.express as px
+import pandas as pd
+
+df = pd.read_csv(
+    'https://raw.githubusercontent.com/plotly/datasets/master/gapminder_unfiltered.csv'
+)
+
+app = Dash()
+app.layout = [
+    html.H1(children='Title of Dash App', style={'textAlign': 'center'}),
+    dcc.Dropdown(df.country.unique(), 'Canada', id='dropdown-selection'),
+    dcc.Graph(id='graph-content')
+]
+
+
+@callback(
+    Output('graph-content', 'figure'),
+    Input('dropdown-selection', 'value')
+)
+def update_graph(value):
+    dff = df[df.country == value]
+    return px.line(dff, x='year', y='pop')
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000, host='0.0.0.0')
+```
+
+Pour exécuter l'application, lancer depuis la racine du projet dans un Terminal la commande
+```
+python minimal_app/main.py
+``` 
+
+L'application est disponible à une URL indiquée sur l'interface utilisateur du SSP Cloud. Voici comment accéder au lien : depuis la page `Mes Services`, cliquer sur le bouton `Ouvrir` du service VSCode, puis sur le lien indiqué dans le texte (voir la capture d'écran ci-dessous). Pour rappel, il faut que vous ayez lancé le service VSCode en changeant la configuration (ouverture du port custom 5000 dans l'onglet `Networking`).
+
+![Emplacement du lien pour accéder à l'application Dash](img/custom_port.jpg)
+
+Regardez les différents composants de l'application et identifiez les éléments du code correspondants, en lisant attentivement cette [page de la documentation de `Dash`](https://dash.plotly.com/basic-callbacks). En particulier, essayez de comprendre comment la fonction `update_graph()` est appelée.
+
+<details>
+    <summary>Cliquer pour voir la réponse</summary>
+    L'application est initialisée avec l'instruction `app = Dash()`. L'attribut `layout` (mise en page) de l'objet `app` est ensuite modifié. On ajoute un titre centré, un menu déroulant qui permet de choisir une option parmi une liste de valeurs uniques, puis un emplacement pour un graphique. La fonction `update_graph` est ensuite définie, qui prend en argument une variable `value` et renvoie un graphique (*line chart*) construit à partir des données filtrées à l'aide de la variable `value`. L'abscisse du graphique correspond à la colonne `year` du tableau de données, et l'ordonnée à la colonne `pop`.
+
+    La fonction est décorée avec `@callback`, une [fonctionnalité majeure de Dash](https://dash.plotly.com/basic-callbacks). Une telle fonction est automatiquement appelée chaque fois que la propriété d'un composant d'entrée change, afin de mettre à jour une propriété dans un autre composant (la sortie). En l'occurrence le composant de sortie est l'emplacement pour graphique avec l'identifiant `'graph-content'` et le composant d'entrée est le menu déroulant avec l'identifiant `'dropdown-selection'`. Tout ceci permet d'afficher le graphique correspondant au choix fait par l'utilisateur dans le menu déroulant. 
+</details>
+
+:::
+
+Essayons maintenant d'implémenter une première version de l'application de visualisation des données FlightRadar24.
+
+::: {.callout-tip collapse="false" icon=false}
+## `<i class="bi bi-book"></i>`{=html} Exercice 3: Première application de visualisation
+
+On souhaite implémenter une première application de visualisation simple, affichant une carte sur laquelle se déplacent en temps réel des points correspondant aux vols Air France en Europe. Un squelette d'application se trouve dans le répertoire `intermediate_app`, avec des éléments à compléter.
+
+1. Le répertoire `intermediate_app` comporte deux fichiers: `main.py`, qui contient le code de l'application Dash et `utils.py` qui contient une fonction utilitaire non encore implémentée. Cette fonction utilitaire `fetch_flight_data` prend en entrée un client FlightRadar, un code ICAO de compagnie aérienne, un type d'aéronef et une zone géographique. Elle renvoie la liste des vols en cours correspondant aux arguments donnés en entrée, où un vol est représenté par un simple dictionnaire avec trois clés `'latitude'`, `'longitude'` et `'id'`. Implémenter cette fonction.
+
+```{python}
+#| code-fold: true
+#| code-summary: Cliquer pour voir la réponse
+#| code-overflow: scroll
+#| eval: false
+def fetch_flight_data(
+    client: FlightRadar24API,
+    airline_icao: Optional[str] = None,
+    aircraft_type: Optional[str] = None,
+    zone_str: Optional[str] = None
+) -> List[Dict]:
+    """
+    Fetch flight data from FlightRadar24 API for
+    a given airline, aircraft type and zone.
+
+    Args:
+        client (FlightRadar24API): FlightRadar24API client.
+        airline_icao (str): ICAO code of the airline.
+        aircraft_type (str): Type of aircraft.
+        zone_str (str): Zone string.
+
+    Returns:
+        List[Dict]: List of flights. A flight should be represented
+            as a dictionary with latitude, longitude and id keys.
+    """
+    zone = client.get_zones()[zone_str]
+    bounds = client.get_bounds(zone)
+
+    flights = client.get_flights(
+        aircraft_type=aircraft_type,
+        airline=airline_icao,
+        bounds=bounds
+    )
+    return [
+        {
+            "latitude": flight.latitude,
+            "longitude": flight.longitude,
+            "id": flight.id,
+        } for flight in flights
+    ]
+```
+
+2. On trouve dans le fichier `main.py` le code de l'application Dash. La mise en page de l'application est simple. Elle contient d'abord un composant [`dash_leaflet.MapContainer`](https://www.dash-leaflet.com/components/map_container) abrévié en `dash_leaflet.Map`, avec un argument `children` initialisé avec la liste `[dash_leaflet.TileLayer()]` qui intègre un fond de carte OpenStreetMap au `dash_leaflet.MapContainer`.
+
+    Le second composant est un [`dcc.Interval`](https://dash.plotly.com/dash-core-components/interval) qui va permettre d'initier un callback périodiquement. Ce composant contient un attribut `n_intervals` (initialisé à 0 ici) qui est incrémenté à intervalle de temps régulier, toutes les `interval` millisecondes.
+
+    De fait, il faut définir la fonction `update_graph_live` comme un callback. Ecrire un décorateur pour que la fonction soit exécutée à chaque fois que l'attribut `n_intervals` du composant `dcc.Interval` est incrémenté, et de sorte à ce que la sortie de la fonction modifie l'attribut `children` du composant `dash_leaflet.MapContainer`.
+
+```{python}
+#| code-fold: true
+#| code-summary: Cliquer pour voir la réponse
+#| code-overflow: scroll
+#| eval: false
+@app.callback(
+    Output('map', 'children'),
+    Input('interval-component', 'n_intervals'),
+)
+```
+
+3. On souhaite maintenant modifier la fonction `update_graph_live` pour que sa sortie modifie la carte affichée de manière adaptée. Pour le moment, à chaque fois que la fonction est appelée, elle renvoie une liste contenant un fond de carte et un marqueur par vol récupéré grâce à la fonction `fetch_flight_data`, placé aux latitude et longitude 0.
+
+    Modifier la liste renvoyée par la fonction `update_graph_live` pour que 1/ les marqueurs soient placés là où se situent les avions des vols, et pour que 2/ l'identifiant d'un vol s'affiche lorsqu'on clique sur le marqueur associé. Vous pourrez consulter [cette page](https://www.dash-leaflet.com/components/ui_layers/popup) de la documentation de Dash Leaflet.
+
+```{python}
+#| code-fold: true
+#| code-summary: Cliquer pour voir la réponse
+#| code-overflow: scroll
+#| eval: false
+children = default_map_children + [
+    dl.Marker(
+        id=flight['id'],
+        position=[flight['latitude'], flight['longitude']],
+        children=[dl.Popup(content=f"Id: {flight['id']}")]
+        ],
+    ) for flight in data
+]
+```
+
+4. Exécuter l'application en lançant depuis la racine du projet dans un Terminal la commande
+```
+python intermediate_app/main.py
+```
+
+Vous devriez observer le résultat suivant:
+
+![Première application Dash de visualisation des vols](img/intermediate_app.jpg)
+
+:::
+
+Dans l'étape suivante, on propose d'améliorer le rendu de l'application en changeant l'icône des marqueurs et en implémentant un calcul du cap de vol des avions en temps réel.

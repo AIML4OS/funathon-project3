@@ -1,0 +1,39 @@
+---
+lang: fr-FR
+title: Déploiement de l'application
+
+format:
+  html:
+    number-sections: true
+---
+
+Dans cette partie on propose de déployer l'application sur le SSP Cloud et de la rendre accessible depuis Internet. L'exercice constitue une introduction à la mise en production d'applications dans un environnement Cloud. Pour aller plus loin, n'hésitez pas à consulter [cet excellent cours](https://ensae-reproductibilite.github.io/website/).
+
+::: {.callout-tip collapse="false" icon=false}
+## `<i class="bi bi-book"></i>`{=html} Exercice 7: Déploiement de l'application Dash
+
+1. Pour déployer son application, la première étape consiste à la [conteneuriser](https://ensae-reproductibilite.github.io/website/chapters/portability.html#les-conteneurs), ce qui signifie la mettre dans une sorte de boîte virtuelle contenant tout ce dont l'application a besoin pour fonctionner. Le conteneur sépare l'application de son environnement extérieur, ce qui permet d'éviter les conflits avec d'autres applications ou dépendances sur le même système. Puisque le conteneur contient tout ce dont l'application a besoin (comme les bibliothèques et les dépendances), l'application peut être déplacée et exécutée sur n'importe quel système qui supporte les conteneurs, sans se soucier des différences entre ces systèmes.
+
+    Ainsi, conteneuriser une application permet de la rendre plus facile à déployer, plus fiable et plus portable (en utilisant efficacement les ressources du système). Docker est un outil populaire pour créer et gérer des conteneurs. Le fichier `Dockerfile` contient le code nécessaire pour construire l'image Docker de l'application finale située dans le répertoire `correction`. Vous pouvez consulter la [documentation Docker](https://docs.docker.com/build/building/packaging/) pour tenter de comprendre comment l'image est construite.
+
+    Nous ne vous demandons pas de construire l'image vous-même, l'image du répertoire `correction` est déjà publique sur [Dockerhub](https://hub.docker.com/r/inseefrlab/funathon2024-sujet3/) et peut-être utilisée pour déployer l'application.
+
+2. L'image peut à présent être récupérée et déployée. Dans notre cas, on va la déployer sur un cluster Kubernetes, l'infrastructure sous-jacente du SSP Cloud. Le fonctionnement de Kubernetes est technique et nous ne rentrerons pas dans les détails ici. Les fichiers nécessaires au déploiement se trouvent dans le répertoire `kubernetes`.
+
+    Afin de déployer l'application, suivre les instructions suivantes:
+
+    - Inspecter les fichiers `kubernetes/deployment.yml`, `kubernetes/service.yml` et `kubernetes/ingress.yml` et repérer les éléments suivants:
+        - L'emplacement où est spécifié l'image à déployer ;
+        - L'emplacement où est spécifié les ressources computationnelles allouées ;
+        - L'emplacement où est spécifié l'URL à laquelle sera exposée l'application sur Internet. La modifier (à 2 reprises) pour y indiquer une adresse personalisée pour le déploiement. Seule contrainte, elle doit être de la forme `*.lab.sspcloud.fr` ;
+    - Ouvrir un Terminal ;
+    - Se placer à la racine du projet ;
+    - Appliquer les contrats Kubernetes avec la commande `kubectl apply -f kubernetes/` ;
+    - Vérifier le lancement du conteneur avec la commande `watch kubectl get pods`. Le nom associé devrait être de la forme `flightradar-ui-*`. Vous pouvez sortir de cet écran avec `Ctrl + C` ;
+    - Attendre que le conteneur obtienne le statut `Running`.
+
+3. Entrer dans un navigateur l'URL spécifiée dans le fichier `kubernetes/ingress.yaml`, et vérifier que l'application fonctionne correctement !
+
+4. Dernier point important : il ne faut pas oublier de supprimer l'application pour ne pas occuper inutilement les ressources du SSP Cloud. Pour fermer l'application, exécuter `kubectl delete -f kubernetes/`.
+
+:::

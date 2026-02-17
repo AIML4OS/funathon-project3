@@ -1,0 +1,102 @@
+---
+title: "Project 1: predicting housing prices"
+lang: en-US
+author: 
+- name: Daffy Duck
+  email: daffy.duck@insee.fr
+  affiliations: 
+      - name: "[Insee](https://www.insee.fr/fr/accueil)"
+- name: Mickey Mouse
+  email: mickey.mouse@insee.fr
+  affiliations: 
+      - name: "[Insee](https://www.insee.fr/fr/accueil)"
+format:
+  html:
+    number-sections: true
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+```{=html}
+<table>
+  <thead>
+    <tr>
+      <th>Technical level</th>
+      <th>Tasks</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="level-button level-beginner">Beginner</span></td>
+      <td>Doing the exercises of steps 1 to 3, relying on clues and solutions if needed.</td>
+    </tr>
+    <tr>
+      <td><span class="level-button level-intermediate">Intermediate</span></td>
+      <td>Doing the exercises of steps 1 to 3, without relying on clues and solutions.</td>
+    </tr>
+    <tr>
+      <td><span class="level-button level-expert">Expert</span></td>
+      <td>Doing the exercises of steps 1 to 3, without relying on clues and solutions, and completing steps 4 (logging) and 5 (deployment).</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+# Introduction {.unnumbered}
+
+What is the project about? What data, what methods, what skills?
+
+# Structure of the project
+
+This project has five steps (listed in the banner at the top of the page):
+
+- data generation;
+- data preprocessing;
+- model fitting and evaluation;
+- model logging with MLflow;
+- deployment.
+
+# Initialization of the project
+
+## Clone the project with `Git` {{< fa brands git-alt >}}
+
+::: {.callout-note appearance="simple"}
+## Attention
+
+Pour se lancer dans le sujet, commencer par ouvrir un service [Vscode-python](https://datalab.sspcloud.fr/launcher/ide/vscode-python). Pour éviter les problèmes plus tard, il faut impérativement modifier deux éléments de configuration du service:
+
+-   Dans l'onglet *Networking* de la configuration, cocher la case "Enable a custom service port" ;
+-   Dans l'onglet *Kubernetes* de la configuration, changer le rôle en `admin`.
+:::
+
+Create a VScode service on SSP Cloud. In the service, open a terminal by clicking on {{< fa brands fa-bars >}}, then `Terminal > New Terminal`. Clone the project repository with:
+
+```         
+git clone https://github.com/AIML4OS/funathon-project1.git
+```
+
+Le projet a la structure suivante :
+
+-   The `.qmd` files and the `_quarto.yaml` file are necessary to build the website ;
+-   The file `pyproject.toml` describes the dependencies of the project ;
+-   Intermediate solutions to the exercices are available in the `intermediate_solutions` folder; 
+-   The final solution is available in the `final_solution` folder;
+-   TO BE COMPLETED DEPENDING ON THE PROJECT (`Dockerfile`, `kubernetes`...)/
+
+## Installation of dependencies
+
+Install the project dependencies by running the following command in the terminal:
+
+```         
+uv sync
+```
+
+::: {.callout-note appearance="simple"}
+
+## Attention
+
+Pour toutes les opérations menées depuis le terminal,  il est important que vous vous placiez à la racine du dépôt Git. Vous pouvez vérifier dans quel dossier vous êtes placés en regardant l'invite de commande du terminal: celle-ci doit se terminer par `funathon2024_sujet3`. Si ce n'est pas le cas, modifier votre emplacement avec `cd`.
+
+
+:::

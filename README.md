@@ -1,2 +1,2 @@
 # funathon-project3
-Repository of the 2nd funathon project (satellite data)
+Repository of the 3rd funathon project (satellite images)

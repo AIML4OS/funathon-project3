@@ -1,0 +1,40 @@
+name: Publish site
+
+on:
+  push:
+    branches:
+      - "main"
+  workflow_dispatch:
+
+jobs:
+  publish-site:
+      runs-on: ubuntu-latest
+
+      permissions:
+        contents: write
+      steps:
+
+        - name: Check out repository
+          uses: actions/checkout@v3
+
+        - name: Install the latest version of uv
+          uses: astral-sh/setup-uv@v6
+          with:
+            version: "latest"
+            python-version: 3.12
+
+        - name: Install Python Dependencies
+          run: |
+            uv sync
+
+        - name: Set up Quarto
+          uses: quarto-dev/quarto-actions/setup@v2
+
+        - name: Render
+          run: uv run quarto render
+
+        - name: Publish to GitHub Pages
+          uses: quarto-dev/quarto-actions/publish@v2
+          with:
+            target: gh-pages
+            render: false

@@ -3,11 +3,11 @@ project:
   render:
     - "*.qmd"
 website:
-  title: "AIML4OS Funathon - Project 1"
+  title: "AIML4OS Funathon - Project 3"
   page-navigation: true
-  description: "Predicting housing prices"
-  site-url: "https://AIML4OS.github.io/funathon-project1/"
-  repo-url: "https://github.com/AIML4OS/funathon-project1"
+  description: "Satellite images segmentation"
+  site-url: "https://AIML4OS.github.io/funathon-project3/"
+  repo-url: "https://github.com/AIML4OS/funathon-project3"
   repo-actions: [edit, issue]
 
   open-graph: true
@@ -24,7 +24,7 @@ website:
  
     right:
       - icon: github
-        href: "https://github.com/AIML4OS/funathon-project1"
+        href: "https://github.com/AIML4OS/funathon-project3"
         aria-label: GitHub
 
     left:

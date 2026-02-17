@@ -1,9 +1,8 @@
 ---
 lang: fr-FR
-title: Training models
+title: Inference and statistics
 
 format:
   html:
     number-sections: true
 ---
-

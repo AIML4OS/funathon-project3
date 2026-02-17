@@ -1,6 +1,6 @@
 ---
 lang: fr-FR
-title: Training models
+title: Data acquisition
 
 format:
   html:

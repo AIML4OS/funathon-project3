@@ -1,31 +1,14 @@
 ---
-title: "Funathon Project 1 – Introduction: Applying Machine Learning to Tabular Data"
+title: "Funathon Project 3 – Introduction: Satellite Image Segmentation with Deep Learning"
 ---
 
-The topic focuses on developing a fine-grained housing price prediction model. The main objective is to present the different components of the end-to-end process implemented to produce these predictions, including project structuring for production deployment. The project is organized into five parts:
+The topic focuses on ...
 
-- 1. **Vizualisation of the input data** with an interactive map
-    - *Tools* : [geopandas](https://geopandas.org/en/stable/docs/user_guide.html), [folium](https://python-visualization.github.io/folium/latest/user_guide.html)
-- 2. **Pre-processing**: cleaning inconsistent input data, including the treatment of outliers and dataset preparation
-    - *Tools* : [pandas](https://pandas.pydata.org/docs/user_guide/index.html) / [polars](https://docs.pola.rs/)
-- 3. **Training a ML model to predict housing prices** : 
+- 1. **Acquisition** *(optional)* **and Vizualisation of the satellite data**:
+    - *Tools* :
+- 2. **Training a Deep Learning Model for Satellite Image Segmentation** *(optional)*:
+    - *Tools* :
+- 3. **Inference and statistics** : 
     - *Tools*:
-        - [**Scikit-learn**](https://scikit-learn.org/stable/user_guide.html) Python framework for training 
-        - [Insee working document](https://inseefrlab.github.io/DT_methodes_ensemblistes/) on bagging and boosting methods 
-        - python package crospint
-    - *Goals* : 
-        - create both training and test sets and train standard gradient boosting ML models with [scikit-learn](https://scikit-learn.org/stable/modules/ensemble.html#) or `lightgbm`; _optional_: train ML model with **`crospint`**;
-        - Explore the various ways to account for location (OHE, native support);
-        - Hyperparameter optimization: cross-validation (grid search, random search, optional: Optuna);
-        - Advanced training techniques: early stopping, metric logging;
-        - evaluate and compare models.
-- 4. **From training to production** : 
-    - Monitoring the model with [**MLFlow**](https://mlflow.org/docs/latest/ml/) (save all *runs* ie. models and associated metrics)
-    - build an API with [**FastAPI**](https://fastapi.tiangolo.com/tutorial/) to get the model forecasts and other high level considerations to have a production ready environment. It would allow to do the inference directly to get the prediction price from the API (for example : you would send 80m2 at 88 avenue Verdier Montrouge, 2 bedrooms, etc and you would get the predicted flat price).
-    - Visualize the predicted price and the underlying synthetic data on a map.
+- 4. **Deploy an application for visualizing results** (*optional*):
     - *Tools*:
-        - **MLFlow**
-        - **FastAPI**
-        - **geopandas**
-        - **Argo WorkFlow** ?
-- 5. *optional* - generate the **synthetic data** that were used to train the model and consideration when creating synthetic data (how to be sure data represent real data but how to be sure that they are still synthetic, with QQPlot and others tools)

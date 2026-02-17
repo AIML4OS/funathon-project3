@@ -1,6 +1,6 @@
 # %%
 # ============================================
-# STEP 1 — Generate synthetic regression data
+# STEP 1 — Data Acquisition
 # ============================================
 
 # YOUR CODE HERE
@@ -8,7 +8,7 @@
 
 # %%
 # ============================================
-# STEP 2 — Preprocessing
+# STEP 2 — Model training
 # ============================================
 
 # YOUR CODE HERE
@@ -16,10 +16,14 @@
 
 # %%
 # ============================================
-# STEP 3 — Train / test split, model fitting,
-#          and performance evaluation
+# STEP 3 — Inference and Statistics
 # ============================================
 
 # YOUR CODE HERE
 
 # %%
+# ============================================
+# STEP 4 — Deployment
+# ============================================
+
+# YOUR CODE HERE

@@ -6,7 +6,7 @@ website:
   title: "AIML4OS Funathon - Project 3"
   page-navigation: true
   description: "Satellite images segmentation"
-  site-url: "https://AIML4OS.github.io/funathon-project3/"
+  site-url: "https://aiml4os.github.io/funathon-project3/"
   repo-url: "https://github.com/AIML4OS/funathon-project3"
   repo-actions: [edit, issue]
 
@@ -30,18 +30,16 @@ website:
     left:
       - text: "Introduction"
         href: index.qmd
-      - text: "Preprocessing"
-        href: 1-preprocessing.qmd
-      - text: "Modelling"
+      - text: "Acquisition"
+        href: 1-acquisition.qmd
+      - text: "Model Training"
         href: 2-model.qmd
-      - text: "Model evaluation"
-        href: 3-metrics.qmd
-      - text: "Model logging"
-        href: 4-logging.qmd
+      - text: "Inference and statistics"
+        href: 3-inference.qmd
       - text: "Deployment"
-        href: 5-deployment.qmd
-      - text: "Application démo"
-        href: "https://flightradar-ui-demo.lab.sspcloud.fr"
+        href: 4-deployment.qmd
+      - text: "Demonstration App"
+        href: "https://inseefrlab.github.io/satellite-images-webapp/"
 
 format:
   html:

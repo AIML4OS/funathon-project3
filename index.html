@@ -6,10 +6,11 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Daffy Duck">
-<meta name="author" content="Mickey Mouse">
+<meta name="author" content="Raya Berova">
+<meta name="author" content="Cédric Couralet">
+<meta name="author" content="Meilame Tayebjee">
 
-<title>Project 1: predicting housing prices – AIML4OS Funathon - Project 3</title>
+<title>Project 3 – Satellite Image Segmentation with Deep Learning – AIML4OS Funathon - Project 3</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -74,7 +75,7 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<meta property="og:title" content="Project 1: predicting housing prices – AIML4OS Funathon - Project 3">
+<meta property="og:title" content="Project 3 – Satellite Image Segmentation with Deep Learning – AIML4OS Funathon - Project 3">
 <meta property="og:description" content="Satellite images segmentation">
 <meta property="og:site_name" content="AIML4OS Funathon - Project 3">
 </head>
@@ -96,28 +97,24 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Introduction</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./1-preprocessing.html"> 
-<span class="menu-text">Preprocessing</span></a>
+    <a class="nav-link" href="./1-acquisition.html"> 
+<span class="menu-text">Acquisition</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="./2-model.html"> 
-<span class="menu-text">Modelling</span></a>
+<span class="menu-text">Model Training</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./3-metrics.html"> 
-<span class="menu-text">Model evaluation</span></a>
+    <a class="nav-link" href="./3-inference.html"> 
+<span class="menu-text">Inference and statistics</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./4-logging.html"> 
-<span class="menu-text">Model logging</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./5-deployment.html"> 
+    <a class="nav-link" href="./4-deployment.html"> 
 <span class="menu-text">Deployment</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="https://flightradar-ui-demo.lab.sspcloud.fr"> 
-<span class="menu-text">Application démo</span></a>
+    <a class="nav-link" href="https://inseefrlab.github.io/satellite-images-webapp/"> 
+<span class="menu-text">Demonstration App</span></a>
   </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
@@ -147,7 +144,6 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#initialization-of-the-project" id="toc-initialization-of-the-project" class="nav-link" data-scroll-target="#initialization-of-the-project"><span class="header-section-number">2</span> Initialization of the project</a>
   <ul class="collapse">
   <li><a href="#clone-the-project-with-git" id="toc-clone-the-project-with-git" class="nav-link" data-scroll-target="#clone-the-project-with-git"><span class="header-section-number">2.1</span> Clone the project with <code>Git</code> <i class="fa-brands fa-git-alt" aria-label="git-alt"></i></a></li>
-  <li><a href="#installation-of-dependencies" id="toc-installation-of-dependencies" class="nav-link" data-scroll-target="#installation-of-dependencies"><span class="header-section-number">2.2</span> Installation of dependencies</a></li>
   </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
@@ -157,7 +153,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Project 1: predicting housing prices</h1>
+<h1 class="title">Project 3 – Satellite Image Segmentation with Deep Learning</h1>
 </div>
 
 
@@ -166,7 +162,7 @@ ul.task-list li input[type="checkbox"] {
   <div class="quarto-title-meta-heading">Affiliation</div>
   
     <div class="quarto-title-meta-contents">
-    <p class="author">Daffy Duck <a href="mailto:daffy.duck@insee.fr" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+    <p class="author">Raya Berova <a href="mailto:raya.berova@insee.fr" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
   </div>
   <div class="quarto-title-meta-contents">
         <p class="affiliation">
@@ -174,7 +170,15 @@ ul.task-list li input[type="checkbox"] {
           </p>
       </div>
     <div class="quarto-title-meta-contents">
-    <p class="author">Mickey Mouse <a href="mailto:mickey.mouse@insee.fr" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+    <p class="author">Cédric Couralet <a href="mailto:cedric.couralet@insee.fr" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            <a href="https://www.insee.fr/fr/accueil">Insee</a>
+          </p>
+      </div>
+    <div class="quarto-title-meta-contents">
+    <p class="author">Meilame Tayebjee <a href="mailto:cedric.couralet@insee.fr" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> </p>
   </div>
   <div class="quarto-title-meta-contents">
         <p class="affiliation">
@@ -205,7 +209,7 @@ ul.task-list li input[type="checkbox"] {
 <tbody>
 <tr class="odd">
 <td><span class="level-button level-beginner">Beginner</span></td>
-<td>Doing the exercises of steps 1 to 3, relying on clues and solutions if needed.</td>
+<td>Doing the exercises of steps 1 and 3, relying on clues and solutions if needed.</td>
 </tr>
 <tr class="even">
 <td><span class="level-button level-intermediate">Intermediate</span></td>
@@ -213,7 +217,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td><span class="level-button level-expert">Expert</span></td>
-<td>Doing the exercises of steps 1 to 3, without relying on clues and solutions, and completing steps 4 (logging) and 5 (deployment).</td>
+<td>Doing the exercises of steps 1 to 3, without relying on clues and solutions, and completing steps 4 (deployment).</td>
 </tr>
 </tbody>
 </table>
@@ -225,10 +229,9 @@ ul.task-list li input[type="checkbox"] {
 <h1 data-number="1"><span class="header-section-number">1</span> Structure of the project</h1>
 <p>This project has five steps (listed in the banner at the top of the page):</p>
 <ul>
-<li>data generation;</li>
-<li>data preprocessing;</li>
-<li>model fitting and evaluation;</li>
-<li>model logging with MLflow;</li>
+<li>data acquisition;</li>
+<li>model training and evaluation;</li>
+<li>inference and statistics;</li>
 <li>deployment.</li>
 </ul>
 </section>
@@ -246,43 +249,25 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Pour se lancer dans le sujet, commencer par ouvrir un service <a href="https://datalab.sspcloud.fr/launcher/ide/vscode-python">Vscode-python</a>. Pour éviter les problèmes plus tard, il faut impérativement modifier deux éléments de configuration du service:</p>
-<ul>
-<li>Dans l’onglet <em>Networking</em> de la configuration, cocher la case “Enable a custom service port” ;</li>
-<li>Dans l’onglet <em>Kubernetes</em> de la configuration, changer le rôle en <code>admin</code>.</li>
-</ul>
-</div>
-</div>
+<p><a href="https://datalab.sspcloud.fr/launcher/ide/vscode-python">Vscode-python</a>.</p>
 <p>Create a VScode service on SSP Cloud. In the service, open a terminal by clicking on <i class="fa-brands fa-fa-bars" aria-label="fa-bars"></i>, then <code>Terminal &gt; New Terminal</code>. Clone the project repository with:</p>
-<pre><code>git clone https://github.com/AIML4OS/funathon-project1.git</code></pre>
-<p>Le projet a la structure suivante :</p>
+<pre><code>git clone https://github.com/AIML4OS/funathon-project3.git</code></pre>
+<p>Structure of the project:</p>
 <ul>
 <li>The <code>.qmd</code> files and the <code>_quarto.yaml</code> file are necessary to build the website ;</li>
 <li>The file <code>pyproject.toml</code> describes the dependencies of the project ;</li>
 <li>Intermediate solutions to the exercices are available in the <code>intermediate_solutions</code> folder;</li>
 <li>The final solution is available in the <code>final_solution</code> folder;</li>
-<li>TO BE COMPLETED DEPENDING ON THE PROJECT (<code>Dockerfile</code>, <code>kubernetes</code>…)/</li>
 </ul>
-</section>
 <section id="installation-of-dependencies" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="installation-of-dependencies"><span class="header-section-number">2.2</span> Installation of dependencies</h2>
 <p>Install the project dependencies by running the following command in the terminal:</p>
 <pre><code>uv sync</code></pre>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Attention
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Pour toutes les opérations menées depuis le terminal, il est important que vous vous placiez à la racine du dépôt Git. Vous pouvez vérifier dans quel dossier vous êtes placés en regardant l’invite de commande du terminal: celle-ci doit se terminer par <code>funathon2024_sujet3</code>. Si ce n’est pas le cas, modifier votre emplacement avec <code>cd</code>.</p>
-</div>
-</div>
 
 
+</section>
+</div>
+</div>
 </section>
 </section>
 
@@ -360,7 +345,7 @@ ul.task-list li input[type="checkbox"] {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/AIML4OS\.github\.io\/funathon-project3\/");
+        var filterRegex = new RegExp("https:\/\/aiml4os\.github\.io\/funathon-project3\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

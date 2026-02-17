@@ -1,1 +1,1 @@
-Sitemap: https://AIML4OS.github.io/funathon-project3/sitemap.xml
+Sitemap: https://aiml4os.github.io/funathon-project3/sitemap.xml

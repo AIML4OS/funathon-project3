@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Data preprocessing – AIML4OS Funathon - Project 3</title>
+<title>Inference and statistics – AIML4OS Funathon - Project 3</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,41 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -105,8 +70,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 }</script>
 
 
-<meta property="og:title" content="Data preprocessing – AIML4OS Funathon - Project 3">
-<meta property="og:description" content="Satellite images segmentation">
+<meta property="og:title" content="Inference and statistics – AIML4OS Funathon - Project 3">
 <meta property="og:site_name" content="AIML4OS Funathon - Project 3">
 </head>
 
@@ -127,28 +91,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Introduction</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="./1-preprocessing.html" aria-current="page"> 
-<span class="menu-text">Preprocessing</span></a>
+    <a class="nav-link" href="./1-acquisition.html"> 
+<span class="menu-text">Acquisition</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="./2-model.html"> 
-<span class="menu-text">Modelling</span></a>
+<span class="menu-text">Model Training</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./3-metrics.html"> 
-<span class="menu-text">Model evaluation</span></a>
+    <a class="nav-link active" href="./3-inference.html" aria-current="page"> 
+<span class="menu-text">Inference and statistics</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./4-logging.html"> 
-<span class="menu-text">Model logging</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./5-deployment.html"> 
+    <a class="nav-link" href="./4-deployment.html"> 
 <span class="menu-text">Deployment</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="https://flightradar-ui-demo.lab.sspcloud.fr"> 
-<span class="menu-text">Application démo</span></a>
+    <a class="nav-link" href="https://inseefrlab.github.io/satellite-images-webapp/"> 
+<span class="menu-text">Demonstration App</span></a>
   </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
@@ -176,7 +136,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Data preprocessing</h1>
+<h1 class="title">Inference and statistics</h1>
 </div>
 
 
@@ -193,169 +153,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Cette <a href="https://github.com/JeanExtreme002/FlightRadarAPI">librairie</a> Python propose une API permettant d’accéder aux données gratuites de FlightRadar24. Une documentation est accessible <a href="https://jeanextreme002.github.io/FlightRadarAPI/python/">ici</a>. Comme toute API, cette API s’utilise en deux temps :</p>
-<ul>
-<li>on commence par initialiser un client pour pouvoir interroger le serveur ;</li>
-<li>on fait ensuite appel à plusieurs méthodes pour récupérer différents types de données.</li>
-</ul>
-<p>Passons à l’exercice.</p>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Attention
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Pour explorer l’API plus facilement et de manière interactive, on pourra travailler depuis un <a href="https://jupyter.org/try-jupyter/notebooks/?path=notebooks/Intro.ipynb">notebook Jupyter</a> (extension <code>.ipynb</code>).</p>
-</div>
-</div>
-<div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="true" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Astuce</span><i class="bi bi-book"></i> Exercice 1: Utilisation de l’API FlightRadarAPI
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-2" class="callout-2-contents callout-collapse collapse show">
-<div class="callout-body-container callout-body">
-<ol type="1">
-<li>Initialiser un client <code>FlightRadar24API</code>.</li>
-</ol>
-<div id="d035e672" class="cell" data-execution_count="1">
-<details class="code-fold">
-<summary>Cliquer pour voir la réponse</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> FlightRadar24 <span class="im">import</span> FlightRadar24API</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>fr_api <span class="op">=</span> FlightRadar24API()</span></code></pre></div><button title="Copier vers le presse-papier" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-</div>
-<ol start="2" type="1">
-<li>En utilisant le client, compter le nombre de compagnies aériennes.</li>
-</ol>
-<div id="ae9cddb4" class="cell" data-execution_count="2">
-<details class="code-fold">
-<summary>Cliquer pour voir la réponse</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>airlines <span class="op">=</span> fr_api.get_airlines()</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Il y a </span><span class="sc">{</span><span class="bu">len</span>(airlines)<span class="sc">}</span><span class="ss"> compagnies aériennes différentes dont on peut récupérer les vols."</span>)</span></code></pre></div><button title="Copier vers le presse-papier" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>Il y a 1989 compagnies aériennes différentes dont on peut récupérer les vols.</code></pre>
-</div>
-</div>
-<ol start="3" type="1">
-<li>Compter le nombre de zones géographiques utilisables et en afficher une selection.</li>
-</ol>
-<details>
-<summary>
-Cliquer pour voir un indice
-</summary>
-La méthode <code>FlightRadar24API.get_zones</code> retourne un dictionnaire contenant une clé pour chaque zone.
-</details>
-<div id="0ae82505" class="cell" data-execution_count="3">
-<details class="code-fold">
-<summary>Cliquer pour voir la réponse</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>zones <span class="op">=</span> fr_api.get_zones().keys()</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>zones <span class="op">=</span> <span class="bu">list</span>(zones)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Il y a </span><span class="sc">{</span><span class="bu">len</span>(zones)<span class="sc">}</span><span class="ss"> zones différentes, dont les zones '</span><span class="sc">{</span>zones[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">', '</span><span class="sc">{</span>zones[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">', '</span><span class="sc">{</span>zones[<span class="dv">2</span>]<span class="sc">}</span><span class="ss">', etc."</span>)</span></code></pre></div><button title="Copier vers le presse-papier" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>Il y a 9 zones différentes, dont les zones 'europe', 'northamerica', 'southamerica', etc.</code></pre>
-</div>
-</div>
-<ol start="4" type="1">
-<li>On souhaite maintenant récupérer les vols de Boeing 77W en activité en Europe de la compagnie aérienne Air France. Utiliser la méthode <code>FlightRadar24API.get_flights</code> pour donner un compte de ces vols. La chaîne de caractères qui représente Air France est <code>"AFR"</code> et celle qui représente le type d’aéronef est <code>"B77W"</code>.</li>
-</ol>
-<details>
-<summary>
-Cliquer pour voir un indice
-</summary>
-La méthode à utiliser prend un argument <code>bounds</code>, que la méthode <code>FlightRadar24API.get_bounds</code> permet de récupérer à partir d’une zone géographique.
-</details>
-<div id="ab0d8808" class="cell" data-execution_count="4">
-<details class="code-fold">
-<summary>Cliquer pour voir la réponse</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>airline_icao <span class="op">=</span> <span class="st">"AFR"</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>aircraft_type <span class="op">=</span> <span class="st">"B77W"</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>zone <span class="op">=</span> fr_api.get_zones()[<span class="st">"europe"</span>]</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>bounds <span class="op">=</span> fr_api.get_bounds(zone)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>afr_flights <span class="op">=</span> fr_api.get_flights(</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    aircraft_type <span class="op">=</span> aircraft_type,</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    airline <span class="op">=</span> airline_icao,</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    bounds <span class="op">=</span> bounds</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(afr_flights)<span class="sc">}</span><span class="ss"> aéronefs B77W d'Air France sont actuellement en activité en Europe."</span>)</span></code></pre></div><button title="Copier vers le presse-papier" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>12 aéronefs B77W d'Air France sont actuellement en activité en Europe.</code></pre>
-</div>
-</div>
-<ol start="5" type="1">
-<li>Il est possible de changer la configuration du client avec les méthodes <code>FlightRadar24API.get_flight_tracker_config</code> et <code>FlightRadar24API.set_flight_tracker_config</code>. Changer la configuration pour récupérer 5 vols à l’aide de la méthode <code>FlightRadar24API.get_flights</code> sans fournir d’argument.</li>
-</ol>
-<div id="fd1995e0" class="cell" data-execution_count="5">
-<details class="code-fold">
-<summary>Cliquer pour voir la réponse</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>flight_tracker <span class="op">=</span> fr_api.get_flight_tracker_config()</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>flight_tracker.limit <span class="op">=</span> <span class="dv">5</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>fr_api.set_flight_tracker_config(flight_tracker)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>flights <span class="op">=</span> fr_api.get_flights()</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Informations récupérées sur </span><span class="sc">{</span><span class="bu">len</span>(flights)<span class="sc">}</span><span class="ss"> vols."</span>)</span></code></pre></div><button title="Copier vers le presse-papier" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>Informations récupérées sur 5 vols.</code></pre>
-</div>
-</div>
-<ol start="7" type="1">
-<li>Pour analyser les détails d’un vol, il faut utiliser les méthodes <code>FlightRadar24API.get_flight_details</code> pour collecter les détails d’un vol précis via l’API, puis <code>Flight.set_flight_details</code> pour les attribuer à ce vol (car seulement quelques informations sont collectées par défaut). Explorer les informations disponibles sur un vol (objet de la classe <code>Flight</code>), par exemple en listant les attribus avec la commande <code>dir(my_flight)</code>. On pourra notamment regarder les attributs suivants :</li>
-</ol>
-<ul>
-<li><code>latitude</code>: Latitude de l’aéronef ;</li>
-<li><code>longitude</code>: Longitude de l’aéronef ;</li>
-<li><code>id</code>: Identifiant du vol ;</li>
-<li><code>icao_24bit</code>: Identifiant de l’aéronef ;</li>
-<li><code>heading</code>: Cap de vol (en degrés) ;</li>
-<li><code>altitude</code>: Altitude (en pieds) ;</li>
-<li><code>ground_speed</code>: Vitesse au sol (en noeuds) ;</li>
-<li><code>aircraft_code</code>: Type d’aéronef ;</li>
-<li><code>origin_airport_name</code>: Aéroport d’origine ;</li>
-<li><code>destination_airport_name</code>: Aéroport de destination ;</li>
-<li><code>airline_iata</code>: Code IATA de compagnie aérienne ;</li>
-<li><code>vertical_speed</code>: Vitesse verticale (en pieds par minute) ;</li>
-<li><code>airline_icao</code>: Code ICAO de compagnie aérienne.</li>
-</ul>
-<p>Essayez d’identifier les différentes informations associées à un vol.</p>
-<div id="de9dac33" class="cell" data-execution_count="6">
-<details class="code-fold">
-<summary>Cliquer pour voir la réponse</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-overflow-scroll code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>flight <span class="op">=</span> flights[<span class="dv">2</span>]</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>flight_details <span class="op">=</span> fr_api.get_flight_details(flight)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>flight.set_flight_details(flight_details)</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="ss">f"Le vol </span><span class="sc">{</span>flight<span class="sc">.</span><span class="bu">id</span><span class="sc">}</span><span class="ss"> au départ de l'aéroport </span><span class="sc">{</span>flight<span class="sc">.</span>origin_airport_name<span class="sc">}</span><span class="ss"> "</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="ss">f"et à destination de </span><span class="sc">{</span>flight<span class="sc">.</span>destination_airport_name<span class="sc">}</span><span class="ss"> se déplace à une vitesse "</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="ss">f"de </span><span class="sc">{</span>flight<span class="sc">.</span>ground_speed<span class="sc">}</span><span class="ss"> noeuds."</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="ss">f"L'appareil est un aéronef </span><span class="sc">{</span>flight<span class="sc">.</span>aircraft_code<span class="sc">}</span><span class="ss"> de la compagnie </span><span class="sc">{</span>flight<span class="sc">.</span>airline_icao<span class="sc">}</span><span class="ss">."</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copier vers le presse-papier" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>Le vol 3e59e68e au départ de l'aéroport N/A et à destination de N/A se déplace à une vitesse de 1 noeuds.
-L'appareil est un aéronef TRIN de la compagnie .</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<p>Dans la partie suivante, nous allons développer une première application de visualisation de vols utilisant cette API Python !</p>
 
 
 
@@ -433,7 +230,7 @@ L'appareil est un aéronef TRIN de la compagnie .</code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/AIML4OS\.github\.io\/funathon-project3\/");
+        var filterRegex = new RegExp("https:\/\/aiml4os\.github\.io\/funathon-project3\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -768,7 +565,7 @@ L'appareil est un aéronef TRIN de la compagnie .</code></pre>
     </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/1-preprocessing.qmd" class="toc-action"><i class="bi bi-github"></i>Modifier cette page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Faire part d'un problème</a></li></ul></div></div>
+    <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/3-inference.qmd" class="toc-action"><i class="bi bi-github"></i>Modifier cette page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Faire part d'un problème</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
     <li class="nav-item">

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Déploiement de l’application – AIML4OS Funathon - Project 3</title>
+<title>Deployment – AIML4OS Funathon - Project 3</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -70,8 +70,7 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<meta property="og:title" content="Déploiement de l’application – AIML4OS Funathon - Project 3">
-<meta property="og:description" content="Satellite images segmentation">
+<meta property="og:title" content="Deployment – AIML4OS Funathon - Project 3">
 <meta property="og:site_name" content="AIML4OS Funathon - Project 3">
 </head>
 
@@ -92,28 +91,24 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Introduction</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./1-preprocessing.html"> 
-<span class="menu-text">Preprocessing</span></a>
+    <a class="nav-link" href="./1-acquisition.html"> 
+<span class="menu-text">Acquisition</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="./2-model.html"> 
-<span class="menu-text">Modelling</span></a>
+<span class="menu-text">Model Training</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./3-metrics.html"> 
-<span class="menu-text">Model evaluation</span></a>
+    <a class="nav-link" href="./3-inference.html"> 
+<span class="menu-text">Inference and statistics</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./4-logging.html"> 
-<span class="menu-text">Model logging</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="./5-deployment.html" aria-current="page"> 
+    <a class="nav-link active" href="./4-deployment.html" aria-current="page"> 
 <span class="menu-text">Deployment</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="https://flightradar-ui-demo.lab.sspcloud.fr"> 
-<span class="menu-text">Application démo</span></a>
+    <a class="nav-link" href="https://inseefrlab.github.io/satellite-images-webapp/"> 
+<span class="menu-text">Demonstration App</span></a>
   </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
@@ -141,7 +136,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Déploiement de l’application</h1>
+<h1 class="title">Deployment</h1>
 </div>
 
 
@@ -158,44 +153,6 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p>Dans cette partie on propose de déployer l’application sur le SSP Cloud et de la rendre accessible depuis Internet. L’exercice constitue une introduction à la mise en production d’applications dans un environnement Cloud. Pour aller plus loin, n’hésitez pas à consulter <a href="https://ensae-reproductibilite.github.io/website/">cet excellent cours</a>.</p>
-<div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="true" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Astuce</span><i class="bi bi-book"></i> Exercice 7: Déploiement de l’application Dash
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-1" class="callout-1-contents callout-collapse collapse show">
-<div class="callout-body-container callout-body">
-<ol type="1">
-<li><p>Pour déployer son application, la première étape consiste à la <a href="https://ensae-reproductibilite.github.io/website/chapters/portability.html#les-conteneurs">conteneuriser</a>, ce qui signifie la mettre dans une sorte de boîte virtuelle contenant tout ce dont l’application a besoin pour fonctionner. Le conteneur sépare l’application de son environnement extérieur, ce qui permet d’éviter les conflits avec d’autres applications ou dépendances sur le même système. Puisque le conteneur contient tout ce dont l’application a besoin (comme les bibliothèques et les dépendances), l’application peut être déplacée et exécutée sur n’importe quel système qui supporte les conteneurs, sans se soucier des différences entre ces systèmes.</p>
-<p>Ainsi, conteneuriser une application permet de la rendre plus facile à déployer, plus fiable et plus portable (en utilisant efficacement les ressources du système). Docker est un outil populaire pour créer et gérer des conteneurs. Le fichier <code>Dockerfile</code> contient le code nécessaire pour construire l’image Docker de l’application finale située dans le répertoire <code>correction</code>. Vous pouvez consulter la <a href="https://docs.docker.com/build/building/packaging/">documentation Docker</a> pour tenter de comprendre comment l’image est construite.</p>
-<p>Nous ne vous demandons pas de construire l’image vous-même, l’image du répertoire <code>correction</code> est déjà publique sur <a href="https://hub.docker.com/r/inseefrlab/funathon2024-sujet3/">Dockerhub</a> et peut-être utilisée pour déployer l’application.</p></li>
-<li><p>L’image peut à présent être récupérée et déployée. Dans notre cas, on va la déployer sur un cluster Kubernetes, l’infrastructure sous-jacente du SSP Cloud. Le fonctionnement de Kubernetes est technique et nous ne rentrerons pas dans les détails ici. Les fichiers nécessaires au déploiement se trouvent dans le répertoire <code>kubernetes</code>.</p>
-<p>Afin de déployer l’application, suivre les instructions suivantes:</p>
-<ul>
-<li>Inspecter les fichiers <code>kubernetes/deployment.yml</code>, <code>kubernetes/service.yml</code> et <code>kubernetes/ingress.yml</code> et repérer les éléments suivants:
-<ul>
-<li>L’emplacement où est spécifié l’image à déployer ;</li>
-<li>L’emplacement où est spécifié les ressources computationnelles allouées ;</li>
-<li>L’emplacement où est spécifié l’URL à laquelle sera exposée l’application sur Internet. La modifier (à 2 reprises) pour y indiquer une adresse personalisée pour le déploiement. Seule contrainte, elle doit être de la forme <code>*.lab.sspcloud.fr</code> ;</li>
-</ul></li>
-<li>Ouvrir un Terminal ;</li>
-<li>Se placer à la racine du projet ;</li>
-<li>Appliquer les contrats Kubernetes avec la commande <code>kubectl apply -f kubernetes/</code> ;</li>
-<li>Vérifier le lancement du conteneur avec la commande <code>watch kubectl get pods</code>. Le nom associé devrait être de la forme <code>flightradar-ui-*</code>. Vous pouvez sortir de cet écran avec <code>Ctrl + C</code> ;</li>
-<li>Attendre que le conteneur obtienne le statut <code>Running</code>.</li>
-</ul></li>
-<li><p>Entrer dans un navigateur l’URL spécifiée dans le fichier <code>kubernetes/ingress.yaml</code>, et vérifier que l’application fonctionne correctement !</p></li>
-<li><p>Dernier point important : il ne faut pas oublier de supprimer l’application pour ne pas occuper inutilement les ressources du SSP Cloud. Pour fermer l’application, exécuter <code>kubectl delete -f kubernetes/</code>.</p></li>
-</ol>
-</div>
-</div>
-</div>
 
 
 
@@ -273,7 +230,7 @@ ul.task-list li input[type="checkbox"] {
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/AIML4OS\.github\.io\/funathon-project3\/");
+        var filterRegex = new RegExp("https:\/\/aiml4os\.github\.io\/funathon-project3\/");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
@@ -608,7 +565,7 @@ ul.task-list li input[type="checkbox"] {
     </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/5-deployment.qmd" class="toc-action"><i class="bi bi-github"></i>Modifier cette page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Faire part d'un problème</a></li></ul></div></div>
+    <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/4-deployment.qmd" class="toc-action"><i class="bi bi-github"></i>Modifier cette page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Faire part d'un problème</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
     <li class="nav-item">

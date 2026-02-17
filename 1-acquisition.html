@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr-FR" xml:lang="fr-FR"><head>
 
 <meta charset="utf-8">
 <meta name="generator" content="quarto-1.8.27">
@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Funathon Project 3 – Introduction: Satellite Image Segmentation with Deep Learning – AIML4OS Funathon - Project 3</title>
+<title>Data acquisition – AIML4OS Funathon - Project 3</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -55,23 +55,22 @@ ul.task-list li input[type="checkbox"] {
   ],
   "show-item-context": false,
   "language": {
-    "search-no-results-text": "No results",
-    "search-matching-documents-text": "matching documents",
-    "search-copy-link-title": "Copy link to search",
-    "search-hide-matches-text": "Hide additional matches",
-    "search-more-match-text": "more match in this document",
-    "search-more-matches-text": "more matches in this document",
-    "search-clear-button-title": "Clear",
+    "search-no-results-text": "Pas de résultats",
+    "search-matching-documents-text": "documents trouvés",
+    "search-copy-link-title": "Copier le lien vers la recherche",
+    "search-hide-matches-text": "Cacher les correspondances additionnelles",
+    "search-more-match-text": "correspondance de plus dans ce document",
+    "search-more-matches-text": "correspondances de plus dans ce document",
+    "search-clear-button-title": "Effacer",
     "search-text-placeholder": "",
-    "search-detached-cancel-button-title": "Cancel",
-    "search-submit-button-title": "Submit",
-    "search-label": "Search"
+    "search-detached-cancel-button-title": "Annuler",
+    "search-submit-button-title": "Envoyer",
+    "search-label": "Recherche"
   }
 }</script>
 
 
-<meta property="og:title" content="Funathon Project 3 – Introduction: Satellite Image Segmentation with Deep Learning – AIML4OS Funathon - Project 3">
-<meta property="og:description" content="Satellite images segmentation">
+<meta property="og:title" content="Data acquisition – AIML4OS Funathon - Project 3">
 <meta property="og:site_name" content="AIML4OS Funathon - Project 3">
 </head>
 
@@ -81,8 +80,8 @@ ul.task-list li input[type="checkbox"] {
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-            <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+            <div id="quarto-search" class="" title="Recherche"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Basculer la navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -92,7 +91,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Introduction</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./1-acquisition.html"> 
+    <a class="nav-link active" href="./1-acquisition.html" aria-current="page"> 
 <span class="menu-text">Acquisition</span></a>
   </li>  
   <li class="nav-item">
@@ -137,7 +136,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Funathon Project 3 – Introduction: Satellite Image Segmentation with Deep Learning</h1>
+<h1 class="title">Data acquisition</h1>
 </div>
 
 
@@ -154,33 +153,6 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p>The topic focuses on …</p>
-<ul>
-<li><ol type="1">
-<li><strong>Acquisition</strong> <em>(optional)</em> <strong>and Vizualisation of the satellite data</strong>:</li>
-</ol>
-<ul>
-<li><em>Tools</em> :</li>
-</ul></li>
-<li><ol start="2" type="1">
-<li><strong>Training a Deep Learning Model for Satellite Image Segmentation</strong> <em>(optional)</em>:</li>
-</ol>
-<ul>
-<li><em>Tools</em> :</li>
-</ul></li>
-<li><ol start="3" type="1">
-<li><strong>Inference and statistics</strong> :</li>
-</ol>
-<ul>
-<li><em>Tools</em>:</li>
-</ul></li>
-<li><ol start="4" type="1">
-<li><strong>Deploy an application for visualizing results</strong> (<em>optional</em>):</li>
-</ol>
-<ul>
-<li><em>Tools</em>:</li>
-</ul></li>
-</ul>
 
 
 
@@ -210,12 +182,12 @@ ul.task-list li input[type="checkbox"] {
       // flash "checked"
       button.classList.add('code-copy-button-checked');
       var currentTitle = button.getAttribute("title");
-      button.setAttribute("title", "Copied!");
+      button.setAttribute("title", "Copié");
       let tooltip;
       if (window.bootstrap) {
         button.setAttribute("data-bs-toggle", "tooltip");
         button.setAttribute("data-bs-placement", "left");
-        button.setAttribute("data-bs-title", "Copied!");
+        button.setAttribute("data-bs-title", "Copié");
         tooltip = new bootstrap.Tooltip(button, 
           { trigger: "manual", 
             customClass: "code-copy-button-tooltip",
@@ -593,7 +565,7 @@ ul.task-list li input[type="checkbox"] {
     </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/doc_projet.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/1-acquisition.qmd" class="toc-action"><i class="bi bi-github"></i>Modifier cette page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Faire part d'un problème</a></li></ul></div></div>
     <div class="nav-footer-right">
       <ul class="footer-items list-unstyled">
     <li class="nav-item">

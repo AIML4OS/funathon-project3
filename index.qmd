@@ -50,6 +50,7 @@ editor_options:
 # Introduction {.unnumbered}
 
 What is the project about? What data, what methods, what skills?
+What is a satellite image ? What is a segmentation mask for satellite image ?
 
 # Structure of the project
 

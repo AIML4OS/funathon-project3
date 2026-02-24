@@ -40,7 +40,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-4804d2be80772aed24f3877bc22ec667.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-42bf3e1af73d1040bfd0cb58048c1b47.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -164,9 +164,9 @@ ul.task-list li input[type="checkbox"] {
 <section id="sentinel-2-images" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Sentinel-2 Images</h1>
 <p>This section describes how Sentinel-2 images are retrieved, visualised, and organised for model training.</p>
-<p>Explanations (what is a satellite image ?), other images, copernicus webapp…</p>
+<p>Explanations, other images, copernicus webapp…</p>
 <ol type="1">
-<li><p>Data acquisition<br>
+<li><p><strong>Data acquisition</strong><br>
 Download a Sentinel-2 image for a given bounding box (bbox) and acquisition date, specifying:</p>
 <ul>
 <li>spatial extent (bbox coordinates and CRS),</li>
@@ -174,26 +174,26 @@ Download a Sentinel-2 image for a given bounding box (bbox) and acquisition date
 <li>selected spectral bands,</li>
 <li>output file format.</li>
 </ul></li>
-<li><p>Visualisation<br>
+<li><p><strong>Visualisation</strong><br>
 Plot the downloaded Sentinel-2 image (e.g.&nbsp;RGB composition) to verify spatial coverage and data integrity.</p></li>
-<li><p>Training dataset structure<br>
+<li><p><strong>Training dataset structure</strong><br>
 Discover the directory structure containing all Sentinel-2 images used for training.</p></li>
-<li><p>Automation <strong>optional</strong><br>
+<li><p><strong>Automation</strong> <em>optional</em><br>
 Provide the reproducible code to automatically download all Sentinel-2 images required for the training dataset.</p></li>
 </ol>
 </section>
 <section id="clcplus-labels" class="level1" data-number="2">
 <h1 data-number="2"><span class="header-section-number">2</span> CLCPlus Labels</h1>
 <p>This section describes how CLCPlus land-cover labels are retrieved, visualised, and aligned with Sentinel-2 images.</p>
-<p>Explanations (what is a segmentation mask for satellite image ?), other labels, copernicus webapp…</p>
+<p>Explanations, other labels, copernicus webapp…</p>
 <ol type="1">
-<li><p>Label acquisition<br>
+<li><p><strong>Label acquisition</strong><br>
 Download CLCPlus labels for the same bounding box and a specified release version, ensuring spatial compatibility with Sentinel-2 images.</p></li>
-<li><p>Visualisation<br>
+<li><p><strong>Visualisation</strong><br>
 Plot the CLCPlus labels to verify class distribution and spatial alignment.</p></li>
-<li><p>Training dataset structure<br>
+<li><p><strong>Training dataset structure</strong><br>
 Discover the directory structure containing all label files corresponding to the Sentinel-2 images used for training.</p></li>
-<li><p>Automation <strong>optional</strong><br>
+<li><p><strong>Automation</strong> <em>optional</em><br>
 Provide reproducible code to automatically download all CLCPlus labels required for the training dataset.</p></li>
 </ol>
 

@@ -2,73 +2,46 @@
 # ============================================
 # STEP 1 — Data Acquisition
 # ============================================
-
-import numpy as np
-from PIL import Image
-import requests
+from astrovision.data.satellite_image import SatelliteImage
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
+from utils import download_clcpluslabel, tiff_to_numpy, get_file_system
+import numpy as np
+
+# =========================
+# Sentinel-2 image
+# =========================
 
 
-def download_label(format_ext, filename, common_params, export_url):
+fs = get_file_system()
 
-    """Télécharge une image dans le format spécifié (tiff ou png)"""
-    params = common_params.copy()
-    params["format"] = format_ext
+s3_path = "projet-hackathon-ntts-2025/data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/BG322/2021/250/5553950_2341530_0_244.tif"
+local_path = "5553950_2341530_0_244.tif"
 
-    response = requests.get(export_url, params=params, stream=True)
+fs.get(s3_path, local_path)  # ne fonctionne pas
 
-    if response.status_code == 200 and response.headers.get("content-type", "").startswith("image/"):
-        with open(filename, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-    else:
-        print(f"Erreur {format_ext.upper()} : ", response.status_code, response.text)
+satellite_image = SatelliteImage.from_raster(local_path)
+normalized_image = satellite_image.normalize()
 
+# (bands, H, W) -> (H, W, bands)
+rgb = np.transpose(normalized_image.array, (1, 2, 0))[:, :, [1, 2, 3]]
+
+# =========================
+# CLCPlus label
+# =========================
 
 bbox_tuple = [5553950, 2341530, 5556450, 2344030]
 year = 2021
-
-# Dowload Sentinel Image
-### Code
-
-# Dowload CLCPlus label
-
-export_url = f"https://copernicus.discomap.eea.europa.eu/arcgis/rest/services/CLC_plus/CLMS_CLCplus_RASTER_{year}_010m_eu/ImageServer/exportImage"
-
-xmin, ymin, xmax, ymax = bbox_tuple
-
-resolution = 10
-
-# Calcul de la taille en pixels pour garantir 1 pixel = 10 m
-size_x = int((xmax - xmin) / resolution)
-size_y = int((ymax - ymin) / resolution)
-
-# Construction de la bounding box sous forme de chaîne
-bbox_str = f"{xmin},{ymin},{xmax},{ymax}"
-
-# Paramètres communs pour l'export
-common_params = {
-    "f": "image",
-    "bbox": bbox_str,
-    "bboxSR": "3035",   # Lambert-93
-    "imageSR": "3035",  # Sortie aussi en Lambert-93
-    "size": f"{size_x},{size_y}",  # Ajusté automatiquement pour 1 pixel = 10 m
-}
-
 filename = "test_label.tif"
-download_label("tiff", filename, common_params, export_url)
 
-img = Image.open(filename)
-img_array = np.array(img)
-img_array[(img_array == 254) | (img_array == 255)] = 0
+download_clcpluslabel(filename, bbox_tuple, year)
+img_array = tiff_to_numpy(filename)
 
-npy_filename = filename.replace(".tif", ".npy")
-np.save(npy_filename, img_array)
+# =========================
+# Classes & colormap
+# =========================
 
-# Plot CLCPlus label
-# Définition des classes et couleurs (ordre = valeur - 1)
 classes = [
     ("Sealed (1)", "#FF0100"),
     ("Woody – needle leaved trees (2)", "#238B23"),
@@ -82,32 +55,42 @@ classes = [
     ("Water (10)", "#0080FF"),
 ]
 
-# Colormap matplotlib
 cmap = ListedColormap([color for _, color in classes])
 
+# =========================
 # Plot
-fig, ax = plt.subplots(figsize=(6, 6))
-im = ax.imshow(img_array, cmap=cmap, vmin=1, vmax=10)
-ax.set_xticks([])
-ax.set_yticks([])
-ax.set_title("Land Cover CLCPlus")
+# =========================
 
-# Légende
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+# Sentinel RGB
+axes[0].imshow(rgb)
+axes[0].set_title("Sentinel-2 RGB")
+axes[0].axis("off")
+
+# CLCPlus
+axes[1].imshow(img_array, cmap=cmap, vmin=1, vmax=10)
+axes[1].set_title("CLCPlus Label")
+axes[1].axis("off")
+
+# Légende globale
 legend_elements = [
     Patch(facecolor=color, edgecolor="black", label=label)
     for label, color in classes
 ]
 
-ax.legend(
+fig.legend(
     handles=legend_elements,
-    loc="center left",
-    bbox_to_anchor=(1.02, 0.5),
+    loc="center right",
+    bbox_to_anchor=(1.35, 0.5),
     frameon=True
 )
 
 plt.tight_layout()
 plt.show()
 
+# All the labels for the training :
+# s3://projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/
 
 
 # %%

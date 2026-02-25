@@ -1,4 +1,7 @@
 *.html
+*.tif
+*.tiff
+*.npy
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

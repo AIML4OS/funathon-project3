@@ -9,24 +9,25 @@ from matplotlib.patches import Patch
 from utils import download_clcpluslabel, tiff_to_numpy, get_file_system
 import numpy as np
 
+# %%
 # =========================
 # Sentinel-2 image
 # =========================
-
-
 fs = get_file_system()
 
 s3_path = "projet-hackathon-ntts-2025/data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/BG322/2021/250/5553950_2341530_0_244.tif"
-local_path = "5553950_2341530_0_244.tif"
+local_path = "test_image.tif"
 
-fs.get(s3_path, local_path)  # ne fonctionne pas
+fs.get(s3_path, local_path)
 
 satellite_image = SatelliteImage.from_raster(local_path)
 normalized_image = satellite_image.normalize()
 
 # (bands, H, W) -> (H, W, bands)
-rgb = np.transpose(normalized_image.array, (1, 2, 0))[:, :, [1, 2, 3]]
+bands_rgb = [1, 2, 3]
+rgb = np.transpose(normalized_image.array, (1, 2, 0))[:, :, bands_rgb]
 
+# %%
 # =========================
 # CLCPlus label
 # =========================
@@ -38,9 +39,12 @@ filename = "test_label.tif"
 download_clcpluslabel(filename, bbox_tuple, year)
 img_array = tiff_to_numpy(filename)
 
+# %%
 # =========================
+# Plot
+# =========================
+
 # Classes & colormap
-# =========================
 
 classes = [
     ("Sealed (1)", "#FF0100"),
@@ -56,10 +60,6 @@ classes = [
 ]
 
 cmap = ListedColormap([color for _, color in classes])
-
-# =========================
-# Plot
-# =========================
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -89,28 +89,8 @@ fig.legend(
 plt.tight_layout()
 plt.show()
 
+# All the images for the training :
+# s3/projet-hackathon-ntts-2025/data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/
+
 # All the labels for the training :
-# s3://projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/
-
-
-# %%
-# ============================================
-# STEP 2 — Model training
-# ============================================
-
-# YOUR CODE HERE
-
-
-# %%
-# ============================================
-# STEP 3 — Inference and Statistics
-# ============================================
-
-# YOUR CODE HERE
-
-# %%
-# ============================================
-# STEP 4 — Deployment
-# ============================================
-
-# YOUR CODE HERE
+# s3/projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/

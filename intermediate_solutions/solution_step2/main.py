@@ -1,145 +1,182 @@
-# %%
-# ============================================
-# STEP 2 — Model training
-# ============================================
-import torch
-import numpy as np
+# ==========================================================
+# main.py
+# ==========================================================
+
+import os
 import random
+import numpy as np
+import torch
+import pytorch_lightning as pl
+
 from torch.utils.data import DataLoader, random_split
 from torch import Generator
-from utils import (
-    compute_global_normalization,
-    load_data,
-    build_transform
-)
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
-nuts_years_train = [
-   "AT332_2018",
-   "BE100_2018",
-   "BE251_2018",
-   "BG322_2018",
-   "CY000_2018",
-   "CZ072_2018",
-   "DEA54_2018",
-   "DK041_2018",
-   "EE00A_2018",
-   "EL521_2018",
-   "ES612_2018",
-   "FI1C1_2018",
-   "FRJ27_2018",
-   "FRK26_2018",
-   "HR050_2018",
-   "IE061_2018",
-   "ITI32_2018",
-   "LT028_2018",
-   "LU000_2018",
-   "LV008_2018",
-   "MT001_2018",
-   "NL33C_2018",
-   "PL414_2018",
-   "PT16I_2018",
-   "RO123_2018",
-   "SI035_2018",
-   "SK022_2018",
-   "UKJ22_2018",
-   "AT332_2021",
-   "BE100_2021",
-   "BE251_2021",
-   "BG322_2021",
-   "CY000_2021",
-   "CZ072_2021",
-   "DEA54_2021",
-   "DK041_2021",
-   "EE00A_2021",
-   "EL521_2021",
-   "ES612_2021",
-   "FI1C1_2021",
-   "FRJ27_2021",
-   "FRK26_2021",
-   "HR050_2021",
-   "IE061_2021",
-   "ITI32_2021",
-   "LT028_2021",
-   "LU000_2021",
-   "LV008_2021",
-   "MT001_2021",
-   "NL33C_2021",
-   "PL414_2021",
-   "PT16I_2021",
-   "RO123_2021",
-   "SI035_2021",
-   "SK022_2021"
-]
+from data.loading import load_data
+from data.normalization import compute_global_normalization
+from data.transforms import build_transform
+from training.lightning import get_lightning_module
+from dataset import SegmentationDataset
 
-nuts_years_test = ["BE100_2021", "DEA54_2021", "CY000_2021", "LU000_2021"]
 
-# -----------------------
-# Config minimale
-# -----------------------
+# ==========================================================
+# 1️⃣ CONFIG
+# ==========================================================
 
 CONFIG = {
+    "train_regions": [
+        "AT332", "BE100", "BE251", "BG322", "CY000", "CZ072",
+        "DEA54", "DK041", "EE00A", "EL521", "ES612", "FI1C1",
+        "FRJ27", "FRK26", "HR050", "IE061", "ITI32", "LT028",
+        "LU000", "LV008", "MT001", "NL33C", "PL414", "PT16I",
+        "RO123", "SI035", "SK022"
+    ],
+    "train_years": ["2018", "2021"],
+    "test_regions": ["BE100", "DEA54", "CY000", "LU000"],
+    "test_year": "2021",
+
     "batch_size": 32,
-    "epochs": 5,
+    "test_batch_size": 16,
+    "epochs": 20,
     "lr": 1e-3,
     "n_bands": 14,
     "resize": 512,
-    "cuda": torch.cuda.is_available(),
+    "num_workers": os.cpu_count(),
+    "seed": 42,
 }
 
-# -----------------------
+
+# ==========================================================
+# 2️⃣ UTILS
+# ==========================================================
+
+def set_seed(seed: int):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    pl.seed_everything(seed, workers=True)
+
+
+def build_region_year_list(regions, years):
+    return [f"{r}_{y}" for r in regions for y in years]
+
+
+# ==========================================================
+# 3️⃣ MAIN PIPELINE
+# ==========================================================
+
+
 # Reproducibilité
-# -----------------------
+set_seed(CONFIG["seed"])
 
-torch.manual_seed(1)
-np.random.seed(1)
-random.seed(1)
+# -------- Dataset IDs --------
+train_ids = build_region_year_list(
+    CONFIG["train_regions"],
+    CONFIG["train_years"],
+)
 
-# -----------------------
-# Pipeline complet
-# -----------------------
+test_ids = build_region_year_list(
+    CONFIG["test_regions"],
+    [CONFIG["test_year"]],
+)
 
-mean, std = compute_global_normalization(nuts_years_train, CONFIG["n_bands"])
+# -------- Normalisation --------
+print("📊 Computing normalization...")
+mean, std = compute_global_normalization(
+    train_ids,
+    CONFIG["n_bands"]
+)
 
-train_patches, train_labels = load_data(nuts_years_train)
-test_patches, test_labels = load_data(nuts_years_test)
+# -------- Chargement --------
+print("📂 Loading data...")
+train_patches, train_labels = load_data(train_ids)
+test_patches, test_labels = load_data(test_ids)
 
-train_transform = build_transform(mean, std, True, CONFIG["resize"])
-test_transform = build_transform(mean, std, False, CONFIG["resize"])
+# -------- Transforms --------
+train_transform = build_transform(
+    mean, std, augment=True, resize=CONFIG["resize"]
+)
 
-dataset = get_dataset(train_patches, train_labels, CONFIG["n_bands"], train_transform)
-test_dataset = get_dataset(test_patches, test_labels, CONFIG["n_bands"], test_transform)
+test_transform = build_transform(
+    mean, std, augment=False, resize=CONFIG["resize"]
+)
+
+# -------- Dataset --------
+full_dataset = SegmentationDataset(
+    train_patches,
+    train_labels,
+    CONFIG["n_bands"],
+    train_transform,
+)
+
+test_dataset = SegmentationDataset(
+    test_patches,
+    test_labels,
+    CONFIG["n_bands"],
+    test_transform,
+)
+
+# -------- Split train / val --------
+train_size = int(0.8 * len(full_dataset))
+val_size = len(full_dataset) - train_size
 
 train_dataset, val_dataset = random_split(
-    dataset, [0.8, 0.2], generator=Generator().manual_seed(42)
+    full_dataset,
+    [train_size, val_size],
+    generator=Generator().manual_seed(CONFIG["seed"]),
 )
 
-train_loader = DataLoader(train_dataset, batch_size=CONFIG["batch_size"], shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=CONFIG["batch_size"])
-test_loader = DataLoader(test_dataset, batch_size=CONFIG["batch_size"])
+# -------- DataLoaders --------
+train_loader = DataLoader(
+    train_dataset,
+    batch_size=CONFIG["batch_size"],
+    shuffle=True,
+    num_workers=CONFIG["num_workers"],
+    pin_memory=True,
+)
 
-# -----------------------
-# 5️⃣ 🔥 TRAIN
-# -----------------------
+val_loader = DataLoader(
+    val_dataset,
+    batch_size=CONFIG["batch_size"],
+    num_workers=CONFIG["num_workers"],
+    pin_memory=True,
+)
 
+test_loader = DataLoader(
+    test_dataset,
+    batch_size=CONFIG["test_batch_size"],
+    num_workers=CONFIG["num_workers"],
+    pin_memory=True,
+)
+
+# -------- Model --------
 model = get_lightning_module(
-    module_name="segformer-b5",
     n_bands=CONFIG["n_bands"],
     lr=CONFIG["lr"],
-    cuda=CONFIG["cuda"],
 )
 
-trainer = get_trainer(
-    earlystop=None,
-    checkpoints=None,
-    epochs=CONFIG["epochs"],
-    num_sanity_val_steps=0,
-    accumulate_batch=1,
+# -------- Trainer --------
+callbacks = [
+    EarlyStopping(monitor="val_loss", patience=5, mode="min"),
+    ModelCheckpoint(
+        monitor="val_loss",
+        mode="min",
+        save_top_k=1,
+        filename="best-model",
+    ),
+]
+
+trainer = pl.Trainer(
+    max_epochs=CONFIG["epochs"],
+    accelerator="auto",
+    devices="auto",
+    callbacks=callbacks,
+    log_every_n_steps=10,
 )
 
+# -------- Training --------
+print("🔥 Training...")
 trainer.fit(model, train_loader, val_loader)
 
-# -----------------------
-# 6️⃣ TEST
-# -----------------------
-
+print("🧪 Testing...")
 trainer.test(model, test_loader)

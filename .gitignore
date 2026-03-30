@@ -168,3 +168,4 @@ cython_debug/
 /.quarto/
 .jupyter_cache/
 _site/
+**/*.quarto_ipynb

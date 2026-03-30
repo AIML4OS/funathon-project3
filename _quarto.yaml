@@ -32,11 +32,11 @@ website:
         href: index.qmd
       - text: "Acquisition"
         href: 1-acquisition.qmd
-      - text: "Model Training"
+      - text: "Model Training (Optional)"
         href: 2-model.qmd
-      - text: "Inference and statistics"
+      - text: "Inference and Statistics"
         href: 3-inference.qmd
-      - text: "Deployment"
+      - text: "Deployment (Optional)"
         href: 4-deployment.qmd
       - text: "Demonstration App"
         href: "https://inseefrlab.github.io/satellite-images-webapp/"
@@ -50,7 +50,6 @@ format:
     code-copy: true
     code-overflow: wrap
 
-execute: 
-  eval: true
-  cache: true
+execute:
+  eval: false
   warning: false

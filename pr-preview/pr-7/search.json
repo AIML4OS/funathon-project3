@@ -7,18 +7,32 @@
     "text": "Technical level\nTasks\n\n\n\n\nBeginner\nDoing the exercises of steps 1 and 3, relying on clues and solutions if needed.\n\n\nIntermediate\nDoing the exercises of steps 1 to 3, without relying on clues and solutions.\n\n\nExpert\nDoing the exercises of steps 1 to 3, without relying on clues and solutions, and completing steps 4 (deployment)."
   },
   {
-    "objectID": "index.html#clone-the-project-with-git",
-    "href": "index.html#clone-the-project-with-git",
+    "objectID": "index.html#what-is-satellite-image-segmentation",
+    "href": "index.html#what-is-satellite-image-segmentation",
     "title": "Project 3 – Satellite Image Segmentation with Deep Learning",
-    "section": "2.1 Clone the project with Git ",
-    "text": "2.1 Clone the project with Git \n\n\n\n\n\n\nNoteAttention\n\n\n\nVscode-python.\nCreate a VScode service on SSP Cloud. In the service, open a terminal by clicking on , then Terminal &gt; New Terminal. Clone the project repository with:\ngit clone https://github.com/AIML4OS/funathon-project3.git\nStructure of the project:\n\nThe .qmd files and the _quarto.yaml file are necessary to build the website ;\nThe file pyproject.toml describes the dependencies of the project ;\nIntermediate solutions to the exercices are available in the intermediate_solutions folder;\nThe final solution is available in the final_solution folder;\n\n\n2.2 Installation of dependencies\nInstall the project dependencies by running the following command in the terminal:\nuv sync"
+    "section": "0.1 What is satellite image segmentation?",
+    "text": "0.1 What is satellite image segmentation?\nA segmentation mask assigns a class label to each pixel in an image. In the context of land-cover mapping, those classes correspond to categories such as sealed surfaces (buildings, roads), forests, cropland, or water… The ground-truth labels we use come from CLC+ Backbone, a high-resolution land-cover product produced by the Copernicus Land Monitoring Service covering the whole of Europe."
+  },
+  {
+    "objectID": "index.html#what-you-will-learn",
+    "href": "index.html#what-you-will-learn",
+    "title": "Project 3 – Satellite Image Segmentation with Deep Learning",
+    "section": "0.2 What you will learn",
+    "text": "0.2 What you will learn\nBy completing this project you will learn to:\n\nDownload and manipulate satellite imagery and land-cover labels\nUnderstand the structure of multispectral raster data (bands, CRS, bounding boxes)\nManipulate geodata and associate it to maps\nRun inference with a pre-trained SegFormer model to produce land-cover maps\nCompute regional statistics (area by class, artificialization rates) using administrative boundaries\n(Optional) Train a segmentation model with PyTorch Lightning\n(Optional) Deploy an interactive dashboard to explore the results"
+  },
+  {
+    "objectID": "index.html#fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d",
+    "href": "index.html#fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d",
+    "title": "Project 3 – Satellite Image Segmentation with Deep Learning",
+    "section": "2.1 fork the github project in your own account with Git ",
+    "text": "2.1 fork the github project in your own account with Git \nThis will facilitate modification and tests :\nhttps://github.com/AIML4OS/funathon-project3/fork\n\n\n\n\n\n\nNoteGetting started on SSP Cloud\n\n\n\nVscode-python.\nCreate a VScode service on SSP Cloud. In the service, open a terminal by clicking on , then Terminal &gt; New Terminal. Clone the project repository with:\ngit clone https://github.com/AIML4OS/funathon-project3.git\nStructure of the project:\n\nThe .qmd files and the _quarto.yaml file are necessary to build the website;\nThe file pyproject.toml describes the dependencies of the project;\nThe starting_point/ folder contains exercise templates with TODO blanks;\nIntermediate solutions to the exercises are available in the intermediate_solutions/ folder;\nThe final solution is available in the final_solution/ folder."
   },
   {
     "objectID": "index.html#installation-of-dependencies",
     "href": "index.html#installation-of-dependencies",
     "title": "Project 3 – Satellite Image Segmentation with Deep Learning",
     "section": "2.2 Installation of dependencies",
-    "text": "2.2 Installation of dependencies\nInstall the project dependencies by running the following command in the terminal:\nuv sync"
+    "text": "2.2 Installation of dependencies\nInstall the project dependencies by running the following command in the terminal:\nuv sync\nIf you want to work on the optional model-training section, install the training extras:\nuv sync --extra training"
   },
   {
     "objectID": "1-acquisition.html",

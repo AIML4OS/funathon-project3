@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.27">
+<meta name="generator" content="quarto-1.9.36">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,6 +12,9 @@
 
 <title>Project 3 – Satellite Image Segmentation with Deep Learning – AIML4OS Funathon - Project 3</title>
 <style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -35,15 +38,14 @@ ul.task-list li input[type="checkbox"] {
 <meta name="quarto:offset" content="./">
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-4804d2be80772aed24f3877bc22ec667.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-1f038360665db117ae38b1e8b2350144.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <link href="site_libs/quarto-contrib/fontawesome6-0.1.0/all.css" rel="stylesheet">
 <link href="site_libs/quarto-contrib/fontawesome6-0.1.0/latex-fontsize.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
@@ -139,11 +141,16 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#what-is-satellite-image-segmentation" id="toc-what-is-satellite-image-segmentation" class="nav-link" data-scroll-target="#what-is-satellite-image-segmentation"><span class="header-section-number">0.1</span> What is satellite image segmentation?</a></li>
+  <li><a href="#what-you-will-learn" id="toc-what-you-will-learn" class="nav-link" data-scroll-target="#what-you-will-learn"><span class="header-section-number">0.2</span> What you will learn</a></li>
+  </ul></li>
   <li><a href="#structure-of-the-project" id="toc-structure-of-the-project" class="nav-link" data-scroll-target="#structure-of-the-project"><span class="header-section-number">1</span> Structure of the project</a></li>
   <li><a href="#initialization-of-the-project" id="toc-initialization-of-the-project" class="nav-link" data-scroll-target="#initialization-of-the-project"><span class="header-section-number">2</span> Initialization of the project</a>
   <ul class="collapse">
-  <li><a href="#clone-the-project-with-git" id="toc-clone-the-project-with-git" class="nav-link" data-scroll-target="#clone-the-project-with-git"><span class="header-section-number">2.1</span> Clone the project with <code>Git</code> <i class="fa-brands fa-git-alt" aria-label="git-alt"></i></a></li>
+  <li><a href="#fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d" id="toc-fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d" class="nav-link" data-scroll-target="#fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d"><span class="header-section-number">2.1</span> fork the github project in your own account with <code>Git</code> <i class="fa-brands fa-git-alt" aria-label="git-alt"></i></a></li>
+  <li><a href="#installation-of-dependencies" id="toc-installation-of-dependencies" class="nav-link" data-scroll-target="#installation-of-dependencies"><span class="header-section-number">2.2</span> Installation of dependencies</a></li>
   </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
@@ -223,29 +230,48 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="introduction" class="level1 unnumbered">
 <h1 class="unnumbered">Introduction</h1>
-<p>What is the project about? What data, what methods, what skills? What is a satellite image ? What is a segmentation mask for satellite image ?</p>
+<p>Satellite imagery is one of the richest data sources available for understanding how land is used and how it changes over time. With this project, you will work with <strong>Sentinel-2</strong> multispectral images from the European Copernicus programme and use a <strong>deep learning model (SegFormer)</strong> to perform <strong>semantic segmentation</strong> : classifying every pixel in an image into a land-cover category.</p>
+<section id="what-is-satellite-image-segmentation" class="level2" data-number="0.1">
+<h2 data-number="0.1" class="anchored" data-anchor-id="what-is-satellite-image-segmentation"><span class="header-section-number">0.1</span> What is satellite image segmentation?</h2>
+<p>A <em>segmentation mask</em> assigns a class label to each pixel in an image. In the context of land-cover mapping, those classes correspond to categories such as <em>sealed surfaces</em> (buildings, roads), <em>forests</em>, <em>cropland</em>, or <em>water</em>… The ground-truth labels we use come from <a href="https://land.copernicus.eu/en/products/clc-backbone"><strong>CLC+ Backbone</strong></a>, a high-resolution land-cover product produced by the Copernicus Land Monitoring Service covering the whole of Europe.</p>
+</section>
+<section id="what-you-will-learn" class="level2" data-number="0.2">
+<h2 data-number="0.2" class="anchored" data-anchor-id="what-you-will-learn"><span class="header-section-number">0.2</span> What you will learn</h2>
+<p>By completing this project you will learn to:</p>
+<ul>
+<li>Download and manipulate satellite imagery and land-cover labels</li>
+<li>Understand the structure of multispectral raster data (bands, CRS, bounding boxes)</li>
+<li>Manipulate geodata and associate it to maps</li>
+<li>Run inference with a pre-trained SegFormer model to produce land-cover maps</li>
+<li>Compute regional statistics (area by class, artificialization rates) using administrative boundaries</li>
+<li><em>(Optional)</em> Train a segmentation model with PyTorch Lightning</li>
+<li><em>(Optional)</em> Deploy an interactive dashboard to explore the results</li>
+</ul>
+</section>
 </section>
 <section id="structure-of-the-project" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Structure of the project</h1>
-<p>This project has five steps (listed in the banner at the top of the page):</p>
-<ul>
-<li>data acquisition;</li>
-<li>model training and evaluation;</li>
-<li>inference and statistics;</li>
-<li>deployment.</li>
-</ul>
+<p>This project has four sections (listed in the banner at the top of the page):</p>
+<ol type="1">
+<li><strong>Data Acquisition &amp; Manipulation</strong> – Download Sentinel-2 images and CLC+ labels, visualise and manipulate raster data.</li>
+<li><strong>Model Training</strong> <em>(optional)</em> – Understand the SegFormer architecture and how the segmentation model was trained.</li>
+<li><strong>Inference &amp; Statistics</strong> – Use a pre-trained model to produce land-cover maps, then compute regional statistics.</li>
+<li><strong>Deployment</strong> <em>(optional)</em> – Build an interactive dashboard to visualise the results.</li>
+</ol>
 </section>
 <section id="initialization-of-the-project" class="level1" data-number="2">
 <h1 data-number="2"><span class="header-section-number">2</span> Initialization of the project</h1>
-<section id="clone-the-project-with-git" class="level2" data-number="2.1">
-<h2 data-number="2.1" class="anchored" data-anchor-id="clone-the-project-with-git"><span class="header-section-number">2.1</span> Clone the project with <code>Git</code> <i class="fa-brands fa-git-alt" aria-label="git-alt"></i></h2>
+<section id="fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d"><span class="header-section-number">2.1</span> fork the github project in your own account with <code>Git</code> <i class="fa-brands fa-git-alt" aria-label="git-alt"></i></h2>
+<p>This will facilitate modification and tests :</p>
+<p>https://github.com/AIML4OS/funathon-project3/fork</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Attention
+<span class="screen-reader-only">Note</span>Getting started on SSP Cloud
 </div>
 </div>
 <div class="callout-body-container callout-body">
@@ -254,20 +280,23 @@ ul.task-list li input[type="checkbox"] {
 <pre><code>git clone https://github.com/AIML4OS/funathon-project3.git</code></pre>
 <p>Structure of the project:</p>
 <ul>
-<li>The <code>.qmd</code> files and the <code>_quarto.yaml</code> file are necessary to build the website ;</li>
-<li>The file <code>pyproject.toml</code> describes the dependencies of the project ;</li>
-<li>Intermediate solutions to the exercices are available in the <code>intermediate_solutions</code> folder;</li>
-<li>The final solution is available in the <code>final_solution</code> folder;</li>
+<li>The <code>.qmd</code> files and the <code>_quarto.yaml</code> file are necessary to build the website;</li>
+<li>The file <code>pyproject.toml</code> describes the dependencies of the project;</li>
+<li>The <code>starting_point/</code> folder contains exercise templates with TODO blanks;</li>
+<li>Intermediate solutions to the exercises are available in the <code>intermediate_solutions/</code> folder;</li>
+<li>The final solution is available in the <code>final_solution/</code> folder.</li>
 </ul>
+</div>
+</div>
+</section>
 <section id="installation-of-dependencies" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="installation-of-dependencies"><span class="header-section-number">2.2</span> Installation of dependencies</h2>
 <p>Install the project dependencies by running the following command in the terminal:</p>
 <pre><code>uv sync</code></pre>
+<p>If you want to work on the optional model-training section, install the training extras:</p>
+<pre><code>uv sync --extra training</code></pre>
 
 
-</section>
-</div>
-</div>
 </section>
 </section>
 

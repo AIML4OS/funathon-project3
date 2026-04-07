@@ -1,6 +1,6 @@
 ---
 lang: fr-FR
-title: Deployment
+title: Statistics
 
 format:
   html:

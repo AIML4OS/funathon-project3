@@ -1,8 +1,53 @@
 ---
-lang: fr-FR
-title: Inference and statistics
+lang: en-US
+title: Inference
 
 format:
   html:
     number-sections: true
 ---
+
+# Load the Trained Model
+
+## From S3
+
+## From MLflow (if you trained a model in the previous step)
+
+In MLflow:  
+  1. In the top left, select **Model Training**.  
+  2. Go to **Experiments**.  
+  3. Select the experiment `"funathon-2026-project3"`.  
+  4. In the **Runs** section, compare the different training runs using the logged metrics and choose the best-performing run.  
+  6. Create a new model named `"segmentation-sentinel2-model"` and save your model there.  
+  7. In the **Models**, click on the model from the selected run (look at Source run).
+  8. On the left, click **Register model**.  
+  9. Verify that it appears in the **Model Registry**.  
+
+This allows you to version your model by saving the best-performing runs as you train and improve performance. Only the version of the registered model will be updated when you change your code.
+```{python}
+#| eval: false
+import mlflow
+import os
+
+# Automatically
+mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+
+# # Manually
+# mlflow_tracking_uri = ""
+
+model_version = "1"
+
+mlflow.set_tracking_uri(mlflow_tracking_uri)
+model = mlflow.pyfunc.load_model(model_uri=f"models:/segmentation-sentinel2-model/{model_version}")
+```
+
+# Appliquer le modèle
+
+## Prédictions sur une image Sentinel2 
+
+## Transformer les prédictions en objets géométriques : des polygones
+
+# API
+
+Une API a été déployée pour produire des polygones pour une paire NUTS3/année donnée à partir des prédictions faites par un modèle entraîné sur MLFLOW et performant.
+Ceci va servir pour produire des statistiques au niveau NUTS3 dans la suite.

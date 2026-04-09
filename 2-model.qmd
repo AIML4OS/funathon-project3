@@ -1,5 +1,5 @@
 ---
-lang: fr-FR
+lang: en-US
 title: Training models
 
 format:

@@ -1,0 +1,12 @@
+---
+lang: en-US
+title: Statistics
+
+format:
+  html:
+    number-sections: true
+---
+
+# Statistiques sur une image Sentinel2
+
+# Statistiques sur un couple NUTS3/année

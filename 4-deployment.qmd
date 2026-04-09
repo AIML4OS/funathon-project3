@@ -1,8 +1,0 @@
----
-lang: fr-FR
-title: Deployment
-
-format:
-  html:
-    number-sections: true
----

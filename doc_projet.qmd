@@ -8,7 +8,7 @@ The topic focuses on ...
     - *Tools* :
 - 2. **Training a Deep Learning Model for Satellite Image Segmentation** *(optional)*:
     - *Tools* :
-- 3. **Inference and statistics** : 
+- 3. **Inference** : 
     - *Tools*:
-- 4. **Deploy an application for visualizing results** (*optional*):
+- 4. **statistics**:
     - *Tools*:

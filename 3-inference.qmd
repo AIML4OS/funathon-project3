@@ -29,13 +29,15 @@ This allows you to version your model by saving the best-performing runs as you 
 import mlflow
 import os
 
+os.environ["MLFLOW_TRACKING_USERNAME"] = "projet-formation"
+os.environ["MLFLOW_TRACKING_PASSWORD"] = "xxx"
+os.environ["MLFLOW_TRACKING_URI"] = "https://projet-formation-mlflow.user.lab.sspcloud.fr"
+
 # Automatically
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 
-# # Manually
-# mlflow_tracking_uri = ""
-
-model_version = "1"
+# The version of the registered model
+model_version = "2"
 
 mlflow.set_tracking_uri(mlflow_tracking_uri)
 model = mlflow.pyfunc.load_model(model_uri=f"models:/segmentation-sentinel2-model/{model_version}")

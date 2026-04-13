@@ -24,6 +24,7 @@ dependencies = [
     "rasterstats>=0.20.0",
     "s3fs>=2026.2.0",
     "scikit-learn>=1.8.0",
+    "pyyaml>=6.0.3",
 ]
 
 [project.optional-dependencies]
@@ -33,3 +34,19 @@ training = [
     "torch>=2.4.0",
     "transformers>=4.44.0",
 ]
+
+[tool.uv.sources]
+gdal = [
+  { index = "gdal-wheels", marker = "sys_platform == 'linux'" },
+  { index = "geospatial_wheels", marker = "sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "geospatial_wheels"
+url = "https://nathanjmcdougall.github.io/geospatial-wheels-index/"
+explicit = true
+
+[[tool.uv.index]]
+name = "gdal-wheels"
+url = "https://gitlab.com/api/v4/projects/61637378/packages/pypi/simple"
+explicit = true

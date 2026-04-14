@@ -151,6 +151,7 @@ ul.task-list li input[type="checkbox"] {
   <ul class="collapse">
   <li><a href="#fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d" id="toc-fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d" class="nav-link" data-scroll-target="#fork-the-github-project-in-your-own-account-with-git-b58fc729-690b-4000-b19f-365a4093b2ff7b7b3c206661206272616e6473206769742d616c74203e7d7d"><span class="header-section-number">2.1</span> fork the github project in your own account with <code>Git</code> <i class="fa-brands fa-git-alt" aria-label="git-alt"></i></a></li>
   <li><a href="#installation-of-dependencies" id="toc-installation-of-dependencies" class="nav-link" data-scroll-target="#installation-of-dependencies"><span class="header-section-number">2.2</span> Installation of dependencies</a></li>
+  <li><a href="#working-on-the-exercises" id="toc-working-on-the-exercises" class="nav-link" data-scroll-target="#working-on-the-exercises"><span class="header-section-number">2.3</span> Working on the exercises</a></li>
   </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
@@ -294,6 +295,30 @@ ul.task-list li input[type="checkbox"] {
 <pre><code>uv sync</code></pre>
 <p>If you want to work on the optional model-training section, install the training extras:</p>
 <pre><code>uv sync --extra training</code></pre>
+</section>
+<section id="working-on-the-exercises" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="working-on-the-exercises"><span class="header-section-number">2.3</span> Working on the exercises</h2>
+<p>The exercise templates in <code>starting_point/</code> are Python files split into <strong>cells</strong> delimited by <code># %%</code> comments. Each cell corresponds to one exercise from the tutorial pages.</p>
+<p>To execute them interactively:</p>
+<ol type="1">
+<li>Open a <code>.py</code> file from <code>starting_point/</code> in VSCode</li>
+<li>VSCode recognises <code># %%</code> markers and displays a <strong>“Run Cell”</strong> button above each one</li>
+<li>Click <strong>Run Cell</strong> (or press <code>Ctrl+Enter</code> / <code>Shift+Enter</code>) to execute a single cell in an interactive Python window</li>
+<li>Write your solution code under the corresponding <code># %%</code> header, then run the cell to test it</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The tutorial pages (<code>.qmd</code> files) contain the full exercise descriptions, hints, and solutions. Use them as reference while working in the <code>.py</code> files.</p>
+</div>
+</div>
 
 
 </section>

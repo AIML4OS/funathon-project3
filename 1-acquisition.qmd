@@ -90,7 +90,7 @@ You will practise these combinations in the exercises below.
 
 ## Loading a Sentinel-2 tile
 
-For this tutorial, we work with pre-processed Sentinel-2 patches that are publicly available. To keep things simple at this stage, we download a single sample tile to a local file and work with it directly. This avoids any network dependency for the rest of Part 1.
+For this tutorial, we work with pre-processed Sentinel-2 patches that are publicly available on sspcloud object storage. To keep things simple at this stage, we download a single sample tile of a [completely random location](https://www.openstreetbrowser.org/#map=16/49.6327/6.1660&basemap=hot) and work with it directly.
 
 ```{python}
 #| eval: true
@@ -102,9 +102,9 @@ import numpy as np
 
 # Download the sample tile locally (once)
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/"
-    "data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/"
-    "FRJ27/2018/250/3649890_2331750_0_937.tif"
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
 )
 os.makedirs("data", exist_ok=True)
 tile_path = "data/sample_tile.tif"
@@ -132,7 +132,8 @@ print(f"Shape:  {tile_count} bands x {tile_height} x {tile_width} px")
 Now let's display the tile as an **RGB composite** (true-colour: Red, Green, Blue):
 
 ```{python}
-#| eval: true
+# | eval: true
+#
 
 import matplotlib.pyplot as plt
 
@@ -143,11 +144,30 @@ rgb = np.clip(rgb / p98, 0, 1)
 
 fig, ax = plt.subplots(figsize=(5, 5))
 ax.imshow(rgb)
-ax.set_title("Sentinel-2 RGB composite (B4, B3, B2) — FRJ27")
+ax.set_title("Sentinel-2 RGB composite (B4, B3, B2) — LU000")
 ax.axis("off")
 plt.tight_layout()
 plt.show()
 ```
+
+::: {.callout-note collapse="true" title=""}
+The lines :
+
+```python
+rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+p98 = np.percentile(rgb, 98)
+rgb = np.clip(rgb / p98, 0, 1)
+```
+serve as a display normalization routine for Sentinel-2 imagery. Here's what each line does:
+
+- `np.transpose(rgb_data, (1, 2, 0))` — Rearranges the array from rasterio's native shape (bands, height, width) to (height, width, bands), which is what matplotlib/PIL expect for displaying an RGB image.
+- `np.percentile(rgb, 98)` — Finds the 98th percentile value across all pixels. This is used instead of the actual maximum because Sentinel-2 reflectance data often has a few extremely bright outlier pixels (clouds, specular reflections, sensor artifacts) that would otherwise compress the rest of the image into a very dark range.
+- `np.clip(rgb / p98, 0, 1)` — Divides all pixel values by that 98th percentile (so that ~98% of pixels fall in the 0–1 range), then clamps everything to [0, 1]. The top 2% of brightest pixels get clipped to white.
+
+In short, it's a contrast stretch. Raw Sentinel-2 L2A surface reflectance values are typically 16-bit integers (0–10,000 scale), which look almost entirely black if you display them directly. This technique maps the usable dynamic range to [0, 1] in a way that produces a visually pleasing true-color image, while being robust to outliers — essentially the same idea as the "percent clip" stretch in QGIS or ArcGIS.
+:::
+
+
 
 ::: {.callout-caution}
 ## Exercise 1 — Read a Sentinel-2 tile and display it
@@ -163,13 +183,26 @@ plt.show()
 :::
 
 ```{python}
-#| eval: false
+# | eval: false
 
 import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Download the sample tile locally (once)
+tile_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
+)
+os.makedirs("data", exist_ok=True)
 tile_path = "data/sample_tile.tif"
+
+if not os.path.exists(tile_path):
+    urllib.request.urlretrieve(tile_url, tile_path)
+    print(f"Downloaded sample tile to {tile_path}")
+else:
+    print(f"Sample tile already present at {tile_path}")
 
 # Step 1: Open the tile and read RGB bands (4, 3, 2)
 with rasterio.open(tile_path) as src:
@@ -207,7 +240,20 @@ import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Download the sample tile locally (once)
+tile_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
+)
+os.makedirs("data", exist_ok=True)
 tile_path = "data/sample_tile.tif"
+
+if not os.path.exists(tile_path):
+    urllib.request.urlretrieve(tile_url, tile_path)
+    print(f"Downloaded sample tile to {tile_path}")
+else:
+    print(f"Sample tile already present at {tile_path}")
 
 with rasterio.open(tile_path) as src:
     rgb_data = src.read([4, 3, 2])
@@ -239,21 +285,67 @@ A **band composite** is an image formed by mapping three spectral bands to the R
 ```{mermaid}
 %%| label: fig-band-combinations
 %%| fig-cap: "Three ways to combine Sentinel-2 bands for different analyses."
-flowchart LR
-    S["Band stack\n(13 bands)"] --> TC["B4, B3, B2\n= True-colour"]
-    S --> FC["B8, B4, B3\n= False-colour"]
-    S --> NDVI["(B8 − B4) / (B8 + B4)\n= NDVI"]
+%%| eval: true
+graph LR
+    subgraph BANDS["🛰️ Sentinel-2 Bands"]
+        B2["🔵 B2 Blue"]
+        B3["🟢 B3 Green"]
+        B4["🔴 B4 Red"]
+        B8["⬜ B8 NIR"]
+    end
+
+    subgraph TRUE["🌍 True Colour"]
+        direction TB
+        TC_R["R ← B4"]
+        TC_G["G ← B3"]
+        TC_B["B ← B2"]
+        TC_USE["Human eye view<br/>General orientation"]
+    end
+
+    subgraph FALSE["🌿 False Colour"]
+        direction TB
+        FC_R["R ← B8"]
+        FC_G["G ← B4"]
+        FC_B["B ← B3"]
+        FC_USE["Vegetation = bright red<br/>Urban & water detection"]
+    end
+
+    subgraph NDVI["📊 NDVI Index"]
+        direction TB
+        FORMULA["(B8 − B4) / (B8 + B4)"]
+        SCALE["-1 ← water · soil → 0 → vegetation · +1"]
+    end
+
+    B4 --> TC_R
+    B3 --> TC_G
+    B2 --> TC_B
+
+    B8 --> FC_R
+    B4 --> FC_G
+    B3 --> FC_B
+
+    B8 --> FORMULA
+    B4 --> FORMULA
+
+    style BANDS fill:#1a1a2e,stroke:#e94560,color:#eee
+    style TRUE fill:#2d6a4f,stroke:#40916c,color:#eee
+    style FALSE fill:#9d0208,stroke:#d00000,color:#eee
+    style NDVI fill:#0f3460,stroke:#533483,color:#eee
+    style B2 fill:#0077b6,color:#fff,stroke:#023e8a
+    style B3 fill:#2d6a4f,color:#fff,stroke:#1b4332
+    style B4 fill:#d00000,color:#fff,stroke:#9d0208
+    style B8 fill:#4a4e69,color:#fff,stroke:#22223b
 ```
 
 ::: {.callout-tip}
-**Learn more:** [Wikipedia — NDVI](https://en.wikipedia.org/wiki/Normalized_difference_vegetation_index) · [Sentinel Hub custom scripts gallery](https://custom-scripts.sentinel-hub.com/)
+**Learn more:** [Wikipedia — NDVI](https://en.wikipedia.org/wiki/Normalized_difference_vegetation_index) · [Sentinel Hub custom scripts gallery](https://custom-scripts.sentinel-hub.com/custom-scripts/sentinel/sentinel-2/#popular-rgb-composites)
 :::
 
 
 ::: {.callout-caution}
 ## Exercise 2 — Explore raster metadata and create a false-colour composite
 
-**Goal:** Inspect the raster metadata of a Sentinel-2 tile using `src.profile`, then create a **false-colour composite** using bands 8 (NIR), 4 (Red), 3 (Green). In this composite, vegetation appears bright red because it reflects strongly in the near-infrared.
+**Goal:** Inspect the raster metadata of a Sentinel-2 tile using `src.profile`, then create a **false-colour composite** using bands 8 (NIR), 4 (Red), 3 (Green).
 
 **Steps:**
 
@@ -381,7 +473,7 @@ ndvi = ___  # TODO: np.where(nir + red == 0, 0, (nir - red) / (nir + red))
 # Step 3c: Display
 fig, ax = plt.subplots(figsize=(6, 5))
 im = ___  # TODO: ax.imshow(ndvi, cmap="RdYlGn", vmin=-1, vmax=1)
-ax.set_title("NDVI — FRJ27 (2018)")
+ax.set_title("NDVI — LU000 (2024)")
 ax.axis("off")
 ___  # TODO: fig.colorbar(im, ax=ax, shrink=0.8, label="NDVI")
 plt.tight_layout()
@@ -417,7 +509,7 @@ ndvi = np.where(nir + red == 0, 0, (nir - red) / (nir + red))
 
 fig, ax = plt.subplots(figsize=(6, 5))
 im = ax.imshow(ndvi, cmap="RdYlGn", vmin=-1, vmax=1)
-ax.set_title("NDVI — FRJ27 (2018)")
+ax.set_title("NDVI — LU000 (2024)")
 ax.axis("off")
 fig.colorbar(im, ax=ax, shrink=0.8, label="NDVI")
 plt.tight_layout()
@@ -434,12 +526,12 @@ Now that you know how to read and display a single satellite image, the next que
 
 **NUTS** (Nomenclature of Territorial Units for Statistics) is a hierarchical classification of administrative regions used by [Eurostat](https://ec.europa.eu/eurostat) for statistical purposes across Europe. The hierarchy has four levels:
 
-| Level | Granularity | Example (France) | Example name |
-|-------|-------------|-------------------|--------------|
-| NUTS 0 | Country | `FR` | France |
-| NUTS 1 | Major region | `FRJ` | Occitanie |
-| NUTS 2 | Region | `FRJ2` | Midi-Pyrénées |
-| NUTS 3 | Province / department | `FRJ27` | Haute-Garonne |
+| Level | Granularity | Example (Luxembourg) | Example name |
+|-------|-------------|----------------------|--------------|
+| NUTS 0 | Country | `LU` | Luxembourg |
+| NUTS 1 | Major region | `LU0` | Luxembourg |
+| NUTS 2 | Region | `LU00` | Luxembourg |
+| NUTS 3 | Province / department | `LU000` | Luxembourg |
 
 In this project, **data is organized at the NUTS 3 level** — each satellite tile belongs to a specific NUTS3 region. The NUTS3 code appears in the file path and URL.
 
@@ -456,30 +548,37 @@ Pre-processed Sentinel-2 patches are publicly available on the SSP Cloud object 
 The **HTTPS URL** follows this pattern:
 
 ```
-https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/{NUTS}/{year}/{size}/{patch_id}.tif
+https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/{NUTS}/{year}/{patch_id}.tif
 ```
 
 The equivalent **S3 path** is:
 
 ```
-s3://projet-hackathon-ntts-2025/data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/{NUTS}/{year}/{size}/{patch_id}.tif
+s3://projet-formation/diffusion/funathon/2026/project3/data/images/{NUTS}/{year}/{patch_id}.tif
 ```
 
 Each pre-processed patch is a GeoTIFF covering a **250 x 250 pixel** area (2 500 m at 10 m resolution). The URL path encodes the key metadata:
 
 ```
-.../SENTINEL2/{NUTS}/{year}/{size}/{xmin}_{ymin}_{idx}_{id}.tif
+.../SENTINEL2/{NUTS}/{year}/{xmin}_{ymin}_{idx}_{id}.tif
 ```
 
 | Field | Example value | Meaning |
 |-------|---------------|---------|
-| NUTS | `FRJ27` | NUTS-3 region (Haute-Garonne, near Toulouse) |
-| year | `2018` | Acquisition year |
-| size | `250` | Tile size in pixels |
-| xmin, ymin | `3649890, 2331750` | Lower-left corner in EPSG:3035 (metres) |
+| NUTS | `LU000` | NUTS-3 region (Haute-Garonne, near Toulouse) |
+| year | `2024` | Acquisition year |
+| xmin, ymin | `4042000`,`2951690` | Lower-left corner in EPSG:3035 (metres) |
 
-::: {.callout-note}
-**HTTPS vs S3 access.** The HTTPS URLs work from anywhere without credentials — great for reading individual tiles with `rasterio`. The S3 paths require SSP Cloud credentials (`AWS_S3_ENDPOINT`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) but support directory listing and bulk operations via `s3fs`.
+Each `{NUTS}/{year}/` directory also contains a **`filename2bbox.parquet`** index file that maps every tile filename to its bounding box:
+
+```
+.../images/{NUTS}/{year}/filename2bbox.parquet
+```
+
+This file has two columns: `filename` (the `.tif` name) and `bbox` (a list of four floats `[xmin, ymin, xmax, ymax]` in EPSG:3035). It lets you find which tile covers a specific location without listing the full directory.
+
+::: {.callout-note collapse="true" title="HTTPS vs S3 access"}
+The HTTPS URLs work from anywhere without credentials — great for reading individual tiles with `rasterio`. The S3 paths require SSP Cloud credentials (`AWS_S3_ENDPOINT`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) but support directory listing and bulk operations via `s3fs`.
 :::
 
 ::: {.callout-important}
@@ -487,7 +586,7 @@ Each pre-processed patch is a GeoTIFF covering a **250 x 250 pixel** area (2 500
 
 ```
 AT130  BE100  BG411  CZ010  DE300  DEA23  DK011  EE001
-EL303  ES300  FI1B1  FR101  FRJ27  HRO41  HU110  ITI43
+EL303  ES300  FI1B1  FR101  LU000  HRO41  HU110  ITI43
 LT011  LU000  LV006  MT001  NL329  PL127  PT170  RO321
 SE110  SI041  SK010
 ```
@@ -502,11 +601,14 @@ Here is the complete workflow:
 ```{mermaid}
 %%| label: fig-city-to-tile
 %%| fig-cap: "From a city name to a satellite tile URL."
+%%| eval: true
 flowchart LR
     A["City name"] --> B["Nominatim API\n→ (lon, lat) WGS84"]
     B --> C["Reproject\nEPSG:3035"]
     C --> D["Spatial join\nwith NUTS3"]
-    D --> E["NUTS code\n→ S3 URL"]
+    D --> E["NUTS code"]
+    E --> F["filename2bbox\n.parquet"]
+    F --> G["Tile URL"]
 ```
 
 Here is a complete example for Toulouse:
@@ -542,7 +644,7 @@ nuts_url = (
 nuts = gpd.read_file(nuts_url)
 city_nuts = gpd.sjoin(city_point, nuts, predicate="within")
 nuts_code = city_nuts.iloc[0]["NUTS_ID"]
-print(f"NUTS3 region: {nuts_code}")  # → FRJ27
+print(f"NUTS3 region: {nuts_code}")  # → LU000
 ```
 
 Once you have the NUTS3 code, you can build the S3 base URL for tiles in that region:
@@ -607,7 +709,7 @@ nuts_code = city_nuts.iloc[0][___]  # TODO: column name
 # Step 4: Check availability
 available = [
     "AT130", "BE100", "BG411", "CZ010", "DE300", "DEA23", "DK011", "EE001",
-    "EL303", "ES300", "FI1B1", "FR101", "FRJ27", "HRO41", "HU110", "ITI43",
+    "EL303", "ES300", "FI1B1", "FR101", "LU000", "HRO41", "HU110", "ITI43",
     "LT011", "LU000", "LV006", "MT001", "NL329", "PL127", "PT170", "RO321",
     "SE110", "SI041", "SK010",
 ]
@@ -667,7 +769,7 @@ print(f"NUTS3 region: {nuts_code}")  # → BE100
 # Step 4: Check availability
 available = [
     "AT130", "BE100", "BG411", "CZ010", "DE300", "DEA23", "DK011", "EE001",
-    "EL303", "ES300", "FI1B1", "FR101", "FRJ27", "HRO41", "HU110", "ITI43",
+    "EL303", "ES300", "FI1B1", "FR101", "LU000", "HRO41", "HU110", "ITI43",
     "LT011", "LU000", "LV006", "MT001", "NL329", "PL127", "PT170", "RO321",
     "SE110", "SI041", "SK010",
 ]
@@ -676,6 +778,208 @@ print(f"Available: {nuts_code in available}")  # → True
 # Step 5: Build S3 URL
 base_url = f"s3://projet-hackathon-ntts-2025/data-preprocessed/satellite-images/SENTINEL2/{nuts_code}"
 print(base_url)
+```
+:::
+
+
+## Retrieving a tile for a specific city
+
+After finding the NUTS3 code, you know which region directory to look in — but there may be hundreds of tiles in that directory (e.g. LU000/2024 has 351 tiles). To find the **specific tile** that covers your city, use the `filename2bbox.parquet` index file described earlier.
+
+The workflow is straightforward: read the parquet file, extract the city's EPSG:3035 coordinates, and check which tile's bounding box contains those coordinates.
+
+Here is a complete example that continues from the Toulouse geocoding above:
+
+```{python}
+#| eval: false
+
+import pandas as pd
+import rasterio
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Build the URL to the parquet index
+year = 2024
+parquet_url = (
+    f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    f"funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet"
+)
+
+# Read the tile index
+tiles = pd.read_parquet(parquet_url)
+print(f"{len(tiles)} tiles in {nuts_code}/{year}")
+
+# Get city coordinates in EPSG:3035
+x = city_point.geometry.iloc[0].x
+y = city_point.geometry.iloc[0].y
+print(f"City point (EPSG:3035): x={x:.0f}, y={y:.0f}")
+
+# Find the tile whose bbox contains the city point
+tile_filename = None
+for _, row in tiles.iterrows():
+    xmin, ymin, xmax, ymax = row["bbox"]
+    if xmin <= x <= xmax and ymin <= y <= ymax:
+        tile_filename = row["filename"]
+        break
+
+print(f"Matching tile: {tile_filename}")
+
+# Build the full HTTPS URL
+tile_url = (
+    f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    f"funathon/2026/project3/data/images/{nuts_code}/{year}/{tile_filename}"
+)
+
+# Open the tile and display the RGB composite
+with rasterio.open(tile_url) as src:
+    rgb_data = src.read([4, 3, 2])  # Red, Green, Blue bands
+    tile_crs = src.crs
+    tile_bounds = src.bounds
+
+rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+rgb = np.clip(rgb / np.percentile(rgb, 98), 0, 1)
+
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.imshow(rgb)
+ax.set_title(f"Sentinel-2 — {tile_filename}")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-caution}
+## Exercise 5 — Find and display the satellite tile for your city
+
+**Goal:** Use the `filename2bbox.parquet` index to find which tile covers your city (from Exercise 4), download it, and display the RGB composite.
+
+**Steps:**
+
+1. Build the HTTPS URL to the `filename2bbox.parquet` file for your NUTS region and year 2024
+2. Read the parquet file with `pd.read_parquet()`
+3. Extract the city's EPSG:3035 coordinates from `city_point`
+4. Loop through the tile bounding boxes to find which one contains your city
+5. Build the full HTTPS URL for the matching tile
+6. Open the tile with `rasterio.open()`, read the RGB bands, normalize, and display
+:::
+
+```{python}
+#| eval: false
+
+import pandas as pd
+import rasterio
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Step 1: Build the parquet URL
+year = 2024
+parquet_url = ___  # TODO: f"https://minio.lab.sspcloud.fr/.../{nuts_code}/{year}/filename2bbox.parquet"
+
+# Step 2: Read the tile index
+tiles = ___  # TODO: pd.read_parquet(...)
+print(f"{len(tiles)} tiles available")
+
+# Step 3: Get city coordinates in EPSG:3035
+x = ___  # TODO: city_point.geometry.iloc[0].x
+y = ___  # TODO: city_point.geometry.iloc[0].y
+
+# Step 4: Find the matching tile
+tile_filename = None
+for _, row in tiles.iterrows():
+    xmin, ymin, xmax, ymax = ___  # TODO: unpack row["bbox"]
+    if ___:  # TODO: check xmin <= x <= xmax and ymin <= y <= ymax
+        tile_filename = row["filename"]
+        break
+
+print(f"Matching tile: {tile_filename}")
+
+# Step 5: Build the full tile URL
+tile_url = ___  # TODO
+
+# Step 6: Open, read RGB, normalize and display
+with rasterio.open(tile_url) as src:
+    rgb_data = ___  # TODO: src.read([4, 3, 2])
+    tile_crs = src.crs
+    tile_bounds = src.bounds
+
+rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+rgb = np.clip(rgb / np.percentile(rgb, 98), 0, 1)
+
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.imshow(rgb)
+ax.set_title(f"Sentinel-2 — {tile_filename}")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
+```
+
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 5
+
+- The parquet URL pattern is: `https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet`
+- `pd.read_parquet(url)` reads directly from an HTTPS URL (requires `pyarrow`).
+- City coordinates: `city_point.geometry.iloc[0].x` and `.y` — already in EPSG:3035 from Exercise 4.
+- Containment check: `xmin <= x <= xmax and ymin <= y <= ymax`.
+- The tile URL uses the same base path as the parquet URL, replacing `filename2bbox.parquet` with the tile filename.
+- RGB normalization: same technique as Exercise 1 — read bands `[4, 3, 2]`, transpose to `(H, W, 3)`, divide by 98th percentile, clip to `[0, 1]`.
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution — Exercise 5
+
+```{python}
+#| eval: false
+
+import pandas as pd
+import rasterio
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Step 1: Build the parquet URL
+year = 2024
+parquet_url = (
+    f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    f"funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet"
+)
+
+# Step 2: Read the tile index
+tiles = pd.read_parquet(parquet_url)
+print(f"{len(tiles)} tiles available")
+
+# Step 3: Get city coordinates in EPSG:3035
+x = city_point.geometry.iloc[0].x
+y = city_point.geometry.iloc[0].y
+
+# Step 4: Find the matching tile
+tile_filename = None
+for _, row in tiles.iterrows():
+    xmin, ymin, xmax, ymax = row["bbox"]
+    if xmin <= x <= xmax and ymin <= y <= ymax:
+        tile_filename = row["filename"]
+        break
+
+print(f"Matching tile: {tile_filename}")
+
+# Step 5: Build the full tile URL
+tile_url = (
+    f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    f"funathon/2026/project3/data/images/{nuts_code}/{year}/{tile_filename}"
+)
+
+# Step 6: Open, read RGB, normalize and display
+with rasterio.open(tile_url) as src:
+    rgb_data = src.read([4, 3, 2])
+    tile_crs = src.crs
+    tile_bounds = src.bounds
+
+rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+rgb = np.clip(rgb / np.percentile(rgb, 98), 0, 1)
+
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.imshow(rgb)
+ax.set_title(f"Sentinel-2 — {tile_filename}")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
 ```
 :::
 
@@ -713,7 +1017,7 @@ from shapely.geometry import box
 
 # Create a GeoDataFrame with the tile extent in EPSG:3035
 tile_geom = box(*tile_bounds)
-gdf = gpd.GeoDataFrame({"tile": ["FRJ27"]}, geometry=[tile_geom], crs="EPSG:3035")
+gdf = gpd.GeoDataFrame({"tile": ["LU000"]}, geometry=[tile_geom], crs="EPSG:3035")
 
 print("EPSG:3035 bounds:")
 print(gdf.total_bounds)
@@ -756,7 +1060,7 @@ In practice, you can build a `GeoDataFrame` directly from `rasterio` metadata �
 #| eval: true
 
 tile_gdf = gpd.GeoDataFrame(
-    {"tile": ["FRJ27"], "year": [2018]},
+    {"tile": ["LU000"], "year": [2024]},
     geometry=[box(*tile_bounds)],
     crs=tile_crs,
 )
@@ -782,7 +1086,7 @@ plt.show()
 ```
 
 ::: {.callout-caution}
-## Exercise 5 — Build a GeoDataFrame from tile bounds and convert CRS
+## Exercise 6 — Build a GeoDataFrame from tile bounds and convert CRS
 
 **Goal:** Create a GeoDataFrame from the tile's bounding box, then convert it from EPSG:3035 to EPSG:4326 (WGS84). Print the bounds in both CRS.
 
@@ -815,15 +1119,15 @@ print("EPSG:4326 bounds:", gdf_wgs84.total_bounds)
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 5
+## Hint — Exercise 6
 
 - `box(*tile_bounds)` unpacks `(left, bottom, right, top)` into a rectangular polygon.
-- `gpd.GeoDataFrame({"tile": ["FRJ27"]}, geometry=[tile_geom], crs="EPSG:3035")` creates the GeoDataFrame.
+- `gpd.GeoDataFrame({"tile": ["LU000"]}, geometry=[tile_geom], crs="EPSG:3035")` creates the GeoDataFrame.
 - `.to_crs("EPSG:4326")` reprojects to latitude/longitude.
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 5
+## Solution — Exercise 6
 
 ```{python}
 #| eval: false
@@ -832,7 +1136,7 @@ import geopandas as gpd
 from shapely.geometry import box
 
 tile_geom = box(*tile_bounds)
-gdf = gpd.GeoDataFrame({"tile": ["FRJ27"]}, geometry=[tile_geom], crs="EPSG:3035")
+gdf = gpd.GeoDataFrame({"tile": ["LU000"]}, geometry=[tile_geom], crs="EPSG:3035")
 gdf_wgs84 = gdf.to_crs("EPSG:4326")
 
 print("EPSG:3035 bounds:", gdf.total_bounds)
@@ -842,7 +1146,7 @@ print("EPSG:4326 bounds:", gdf_wgs84.total_bounds)
 
 
 ::: {.callout-caution}
-## Exercise 6 — Spatial join with NUTS3 regions
+## Exercise 7 — Spatial join with NUTS3 regions
 
 **Goal:** Identify which NUTS3 region(s) a Sentinel-2 tile intersects using a **spatial join**, and compute the tile's area in km².
 
@@ -887,16 +1191,16 @@ print(f"Tile area: {area_km2:.2f} km²")
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 6
+## Hint — Exercise 7
 
 - `gpd.read_file(url)` can read GeoJSON directly from a URL.
-- Build the tile GeoDataFrame the same way as in Exercise 5: `gpd.GeoDataFrame({"tile": ["FRJ27"]}, geometry=[box(*tile_bounds)], crs=tile_crs)`.
+- Build the tile GeoDataFrame the same way as in Exercise 6: `gpd.GeoDataFrame({"tile": ["LU000"]}, geometry=[box(*tile_bounds)], crs=tile_crs)`.
 - `gpd.sjoin(left, right, predicate="intersects")` returns rows from `left` enriched with columns from `right` where geometries intersect.
 - Since `tile_crs` is EPSG:3035 (units in metres), `tile_geom.area` gives square metres — divide by 1 000 000 for km².
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 6
+## Solution — Exercise 7
 
 ```{python}
 #| eval: false
@@ -912,7 +1216,7 @@ nuts = gpd.read_file(nuts_url)
 
 tile_geom = box(*tile_bounds)
 tile_gdf = gpd.GeoDataFrame(
-    {"tile": ["FRJ27"]}, geometry=[tile_geom], crs=tile_crs
+    {"tile": ["LU000"]}, geometry=[tile_geom], crs=tile_crs
 )
 
 joined = gpd.sjoin(tile_gdf, nuts, predicate="intersects")
@@ -982,7 +1286,7 @@ m
 
 
 ::: {.callout-caution}
-## Exercise 7 — Display a Sentinel-2 tile on an interactive folium map
+## Exercise 8 — Display a Sentinel-2 tile on an interactive folium map
 
 **Goal:** Reproject the tile bounds to WGS84 and display the RGB composite on an interactive folium map.
 
@@ -1018,7 +1322,7 @@ m
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 7
+## Hint — Exercise 8
 
 - `transform_bounds(tile_crs, "EPSG:4326", *tile_bounds)` returns `(west, south, east, north)` in degrees.
 - Centre: `center_lat = (south + north) / 2`, `center_lon = (west + east) / 2`.
@@ -1027,7 +1331,7 @@ m
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 7
+## Solution — Exercise 8
 
 ```{python}
 #| eval: false
@@ -1092,11 +1396,11 @@ Labels can be downloaded through the Copernicus Land Monitoring Service REST API
 
 from utils import download_clcpluslabel, tiff_to_numpy
 
-# Bounding box matching our FRJ27 tile (EPSG:3035)
+# Bounding box matching our LU000 tile (EPSG:3035)
 bbox = [3649890, 2331750, 3652390, 2334250]
 
-download_clcpluslabel("label_2018.tif", bbox, year=2018)
-label_array = tiff_to_numpy("label_2018.tif")  # 2D array of class IDs (1-10)
+download_clcpluslabel("label_2024.tif", bbox, year=2024)
+label_array = tiff_to_numpy("label_2024.tif")  # 2D array of class IDs (1-10)
 ```
 
 The function queries the **WCS** (Web Coverage Service) endpoint of the CLC+ Backbone service, requesting the raster data for the specified bounding box and year. The bounding box must match the satellite tile extent exactly to ensure pixel-level alignment.
@@ -1110,13 +1414,13 @@ The function queries the **WCS** (Web Coverage Service) endpoint of the CLC+ Bac
 The CLC+ labels and Sentinel-2 patches share the same CRS (EPSG:3035) and bounding box, which means they are spatially aligned by construction. Each pixel in the label corresponds to the same geographic area as the matching pixel in the satellite image.
 
 ::: {.callout-caution}
-## Exercise 8 — Download a CLC+ label for a given tile and year
+## Exercise 9 — Download a CLC+ label for a given tile and year
 
-**Goal:** Download the CLC+ Backbone land-cover label that matches the FRJ27 Sentinel-2 patch and convert it to a NumPy array.
+**Goal:** Download the CLC+ Backbone land-cover label that matches the LU000 Sentinel-2 patch and convert it to a NumPy array.
 
 **Steps:**
 
-1. Define the bounding box matching the FRJ27 tile (EPSG:3035): `[3649890, 2331750, 3652390, 2334250]`
+1. Define the bounding box matching the LU000 tile (EPSG:3035): `[3649890, 2331750, 3652390, 2334250]`
 2. Call `download_clcpluslabel()` with the filename, bounding box, and year
 3. Convert the downloaded TIFF to a NumPy array using `tiff_to_numpy()`
 :::
@@ -1126,9 +1430,9 @@ The CLC+ labels and Sentinel-2 patches share the same CRS (EPSG:3035) and boundi
 
 from utils import download_clcpluslabel, tiff_to_numpy
 
-# Bounding box matching the FRJ27 tile (EPSG:3035)
+# Bounding box matching the LU000 tile (EPSG:3035)
 bbox = [3649890, 2331750, 3652390, 2334250]
-year = 2018
+year = 2024
 filename = "test_label.tif"
 
 # Step 1: Download the label
@@ -1139,14 +1443,14 @@ img_array = ___  # TODO
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 8
+## Hint — Exercise 9
 
 - `download_clcpluslabel(filename, bbox, year)` downloads the label and saves it as a TIFF file.
 - `tiff_to_numpy(filename)` opens the TIFF, converts it to a NumPy array, cleans up nodata values (254, 255 → 0), and returns the array.
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 8
+## Solution — Exercise 9
 
 ```{python}
 #| eval: false
@@ -1154,7 +1458,7 @@ img_array = ___  # TODO
 from utils import download_clcpluslabel, tiff_to_numpy
 
 bbox = [3649890, 2331750, 3652390, 2334250]
-year = 2018
+year = 2024
 filename = "test_label.tif"
 
 download_clcpluslabel(filename, bbox, year)
@@ -1174,9 +1478,9 @@ s3://.../labels/CLCplus-Backbone/SENTINEL2/{NUTS}/{year}/{size}/{patch_id}.npy
 ```
 
 ::: {.callout-caution}
-## Exercise 9 — Save the label as `.npy` and upload to S3
+## Exercise 10 — Save the label as `.npy` and upload to S3
 
-**Goal:** Save the label array from Exercise 8 as a `.npy` file and upload it to S3 in the path expected by the training pipeline.
+**Goal:** Save the label array from Exercise 9 as a `.npy` file and upload it to S3 in the path expected by the training pipeline.
 
 **Steps:**
 
@@ -1201,7 +1505,7 @@ ___  # TODO: np.save(local_path, img_array)
 fs = ___  # TODO: get_file_system()
 
 # Step 3: Build the S3 destination path
-s3_path = ___  # TODO: "projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/FRJ27/2018/250/3649890_2331750_0_937.npy"
+s3_path = ___  # TODO: "projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/LU000/2024/250/3649890_2331750_0_937.npy"
 
 # Step 4: Upload to S3
 ___  # TODO: fs.put(local_path, s3_path)
@@ -1211,17 +1515,17 @@ print(fs.ls(___))  # TODO: S3 directory path (without filename)
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 9
+## Hint — Exercise 10
 
 - `np.save("file.npy", array)` saves a NumPy array to disk.
 - `get_file_system()` returns an `s3fs.S3FileSystem` configured with the SSP Cloud credentials.
 - The S3 path must **not** include the `s3://` prefix when using `fs.put()` and `fs.ls()`.
 - `fs.put(local_path, s3_path)` uploads a local file to S3.
-- `fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/FRJ27/2018/250")` lists all files in the directory.
+- `fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/LU000/2024/250")` lists all files in the directory.
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 9
+## Solution — Exercise 10
 
 ```{python}
 #| eval: false
@@ -1234,16 +1538,16 @@ np.save(local_path, img_array)
 
 fs = get_file_system()
 
-s3_path = "projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/FRJ27/2018/250/3649890_2331750_0_937.npy"
+s3_path = "projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/LU000/2024/250/3649890_2331750_0_937.npy"
 fs.put(local_path, s3_path)
 
-print(fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/FRJ27/2018/250"))
+print(fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/LU000/2024/250"))
 ```
 :::
 
 
 ::: {.callout-caution}
-## Exercise 10 — Plot the satellite image and CLC+ label side by side
+## Exercise 11 — Plot the satellite image and CLC+ label side by side
 
 **Goal:** Create a figure with two subplots: the Sentinel-2 RGB composite on the left and the CLC+ label map on the right, with a shared legend showing all 10 land-cover classes.
 
@@ -1307,7 +1611,7 @@ plt.show()
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 10
+## Hint — Exercise 11
 
 - `plt.subplots(1, 2, figsize=(12, 6))` returns a figure and an array of two axes.
 - Use `axes[0].imshow(rgb)` for the satellite image, and `axes[1].imshow(img_array, cmap=cmap, vmin=1, vmax=10)` for the label.
@@ -1316,7 +1620,7 @@ plt.show()
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 10
+## Solution — Exercise 11
 
 ```{python}
 #| eval: false
@@ -1491,7 +1795,7 @@ with open("output.tif", "wb") as f:
 - **`filter`**: CQL2 expression for metadata filtering, e.g. `"eo:cloud_cover < 20"` keeps only scenes with under 20 % cloud cover.
 
 ::: {.callout-caution}
-## Exercise 11 (optional) — Query the Sentinel Hub Catalog API
+## Exercise 12 (optional) — Query the Sentinel Hub Catalog API
 
 **Goal:** Use the Sentinel Hub Catalog API to search for Sentinel-2 L2A products over **Bulgaria** during **June 2021** with less than 10 % cloud cover.
 
@@ -1541,7 +1845,7 @@ print(f"Found {len(results['features'])} products")
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 11
+## Hint — Exercise 12
 
 - The CDSE token URL is `"https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"`.
 - Bulgaria's approximate bounding box in WGS84 is `[22.0, 41.0, 29.0, 44.5]`.
@@ -1550,7 +1854,7 @@ print(f"Found {len(results['features'])} products")
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 11
+## Solution — Exercise 12
 
 ```{python}
 #| eval: false
@@ -1599,13 +1903,13 @@ fs.put("./output.tif", "s3://my-bucket/sentinel2/output.tif")
 ```
 
 ::: {.callout-caution}
-## Exercise 12 (optional) — Download a Sentinel-2 image with the Processing API and upload to S3
+## Exercise 13 (optional) — Download a Sentinel-2 image with the Processing API and upload to S3
 
 **Goal:** Use the Sentinel Hub Processing API to download a true-colour Sentinel-2 image for Bulgaria (June 2021) and upload it to your personal S3 bucket.
 
 **Steps:**
 
-1. Authenticate with OAuth2 (reuse the session from Exercise 11)
+1. Authenticate with OAuth2 (reuse the session from Exercise 12)
 2. Build a Processing API request with bbox, time range, evalscript for true-colour RGB, and output as `image/tiff`
 3. POST to the Processing API endpoint and save the response content locally
 4. Initialise an `S3FileSystem` with `get_file_system()` and upload the file with `fs.put()`
@@ -1616,7 +1920,7 @@ fs.put("./output.tif", "s3://my-bucket/sentinel2/output.tif")
 
 from utils import get_file_system
 
-# Step 1: Reuse the authenticated OAuth2 session from Exercise 11
+# Step 1: Reuse the authenticated OAuth2 session from Exercise 12
 
 # Step 2: Build the Processing API request
 process_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
@@ -1670,7 +1974,7 @@ fs.put(___, ___)  # TODO: local_path, S3 destination path
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 12
+## Hint — Exercise 13
 
 - The Processing API URL is `"https://sh.dataspace.copernicus.eu/api/v1/process"`.
 - Use `[22.0, 41.0, 29.0, 44.5]` for the Bulgaria bounding box.
@@ -1681,7 +1985,7 @@ fs.put(___, ___)  # TODO: local_path, S3 destination path
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 12
+## Solution — Exercise 13
 
 ```{python}
 #| eval: false
@@ -1841,7 +2145,7 @@ print(f"Downloaded {products[0]['Name']}")
 
 
 ::: {.callout-caution}
-## Exercise 13 (optional) — Search and download a Sentinel-2 product via OData
+## Exercise 14 (optional) — Search and download a Sentinel-2 product via OData
 
 **Goal:** Use the OData API to search for Sentinel-2 L2A products over a city of your choice during summer 2021 with less than 15 % cloud cover, then download the first result.
 
@@ -1912,7 +2216,7 @@ print(f"Downloaded {products[0]['Name']}")
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 13
+## Hint — Exercise 14
 
 - Use the same `$filter` syntax as shown in the OData section above.
 - For the spatial filter, find your city's coordinates (lon, lat) and use: `OData.CSC.Intersects(area=geography'SRID=4326;POINT(lon lat)')` — note the space between lon and lat, not a comma.
@@ -1923,7 +2227,7 @@ print(f"Downloaded {products[0]['Name']}")
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 13
+## Solution — Exercise 14
 
 ```{python}
 #| eval: false

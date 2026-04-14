@@ -1393,7 +1393,423 @@ CLC+ Backbone uses **10 land-cover classes**:
 **Nodata values.** The raw CLC+ raster may contain values 254 and 255, which represent "unclassified" and "nodata" respectively. The `tiff_to_numpy()` utility maps these to 0 so they do not interfere with the 1–10 class range.
 :::
 
-## Downloading labels
+## How labels are stored on S3
+
+Pre-processed CLC+ Backbone labels are publicly available on the SSP Cloud object storage, alongside the satellite images. Each label is a 2D NumPy array (`.npy` file) of shape `(250, 250)` with `uint8` values representing land-cover class IDs (1–10, with 0 for nodata).
+
+The **HTTPS URL** follows this pattern:
+
+```
+https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy
+```
+
+The label and image paths mirror each other — to find the label for a given image, replace `images` with `labels` and `.tif` with `.npy`:
+
+```
+.../data/images/{NUTS}/{year}/{patch_id}.tif   ← satellite image (GeoTIFF)
+.../data/labels/{NUTS}/{year}/{patch_id}.npy   ← land-cover label (NumPy)
+```
+
+The `{patch_id}` encodes `{xmin}_{ymin}_{idx}_{id}` in EPSG:3035 metres and is identical between images and labels.
+
+::: {.callout-note}
+**Loading `.npy` from a URL.** Unlike GeoTIFF files (which `rasterio` can open directly from a URL), `.npy` files must be fetched into memory first using `urllib.request.urlopen()` + `io.BytesIO` + `np.load()`. They contain no embedded CRS or bounds metadata — the spatial information is encoded in the filename and matches the corresponding image tile.
+:::
+
+::: {.callout-tip}
+**Learn more:** [CLC+ Backbone product page](https://land.copernicus.eu/en/products/clc-backbone) · [Copernicus Land Monitoring Service](https://land.copernicus.eu/en)
+:::
+
+## Loading and displaying a label
+
+Let's load a CLC+ label from S3 and display it next to its matching satellite image. The three-step pattern for loading a `.npy` file over HTTPS is: **open the URL → read into a bytes buffer → load with NumPy**.
+
+```{python}
+#| eval: false
+
+import urllib.request
+import io
+import numpy as np
+
+# Label URL for a LU000 patch, year 2021
+label_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/labels/LU000/"
+    "2021/4017000_2974190_0_402.npy"
+)
+
+with urllib.request.urlopen(label_url) as response:
+    label_array = np.load(io.BytesIO(response.read()))
+
+print(f"Label shape: {label_array.shape}")
+print(f"Data type:   {label_array.dtype}")
+print(f"Classes:     {np.unique(label_array)}")
+```
+
+We can visualise the label using a custom colormap that assigns a colour to each of the 10 land-cover classes:
+
+```{python}
+#| eval: false
+
+import rasterio
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
+
+# CLC+ class names and colours
+classes = [
+    ("Sealed (1)", "#FF0100"),
+    ("Woody -- needle leaved trees (2)", "#238B23"),
+    ("Woody -- Broadleaved deciduous trees (3)", "#80FF00"),
+    ("Woody -- Broadleaved evergreen trees (4)", "#00FF00"),
+    ("Low-growing woody plants (bushes, shrubs) (5)", "#804000"),
+    ("Permanent herbaceous (6)", "#CCF24E"),
+    ("Periodically herbaceous (7)", "#FEFF80"),
+    ("Lichens and mosses (8)", "#FF81FF"),
+    ("Non- and sparsely-vegetated (9)", "#BFBFBF"),
+    ("Water (10)", "#0080FF"),
+]
+cmap = ListedColormap([color for _, color in classes])
+
+# Load the matching satellite image
+image_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2021/4017000_2974190_0_402.tif"
+)
+with rasterio.open(image_url) as src:
+    rgb_data = src.read([4, 3, 2])
+
+rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+rgb = np.clip(rgb / np.percentile(rgb, 98), 0, 1)
+
+# Side-by-side plot
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+axes[0].imshow(rgb)
+axes[0].set_title("Sentinel-2 RGB")
+axes[0].axis("off")
+
+axes[1].imshow(label_array, cmap=cmap, vmin=1, vmax=10)
+axes[1].set_title("CLC+ Backbone label")
+axes[1].axis("off")
+
+legend_elements = [
+    Patch(facecolor=color, edgecolor="black", label=label)
+    for label, color in classes
+]
+fig.legend(
+    handles=legend_elements,
+    loc="center right",
+    bbox_to_anchor=(1.30, 0.5),
+    frameon=True,
+)
+plt.tight_layout()
+plt.show()
+```
+
+## Label--image alignment
+
+The CLC+ labels and Sentinel-2 patches share the same CRS (EPSG:3035) and bounding box, which means they are **spatially aligned by construction**. Because images and labels share the naming convention `{xmin}_{ymin}_{idx}_{id}`, every pixel at position `(i, j)` in the label corresponds to the same 10 m ground cell as pixel `(i, j)` in the satellite image. This makes the dataset directly usable for training a segmentation model: the image is the input and the label is the target.
+
+::: {.callout-caution}
+## Exercise 9 — Load a CLC+ label from S3
+
+**Goal:** Load the CLC+ Backbone label for a patch of your choice from S3 over HTTPS, and display it with the land-cover colormap.
+
+**Steps:**
+
+1. Choose a NUTS region, year (`2021`), and patch ID (you can reuse the tile found in Exercise 5, replacing `.tif` with `.npy`)
+2. Build the HTTPS URL following the label path pattern
+3. Fetch the `.npy` file using `urllib.request.urlopen()` and load it with `np.load(io.BytesIO(...))`
+4. Print the array shape and unique class values
+5. Display the label using `imshow()` with the CLC+ colormap (`vmin=1`, `vmax=10`)
+:::
+
+```{python}
+#| eval: false
+
+import urllib.request
+import io
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+
+# Step 1: Choose your tile
+nuts_code = ___  # TODO: e.g. "LU000"
+year = ___        # TODO: e.g. 2021
+patch_id = ___    # TODO: e.g. "4017000_2974190_0_402"
+
+# Step 2: Build the label URL
+label_url = ___  # TODO: f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{nuts_code}/{year}/{patch_id}.npy"
+
+# Step 3: Load the label
+with urllib.request.urlopen(label_url) as response:
+    my_label = ___  # TODO: np.load(io.BytesIO(response.read()))
+
+# Step 4: Inspect
+print(f"Shape: {___}")   # TODO
+print(f"Classes: {___}")  # TODO
+
+# Step 5: Display with CLC+ colormap
+cmap = ListedColormap([
+    "#FF0100", "#238B23", "#80FF00", "#00FF00", "#804000",
+    "#CCF24E", "#FEFF80", "#FF81FF", "#BFBFBF", "#0080FF",
+])
+
+fig, ax = plt.subplots(figsize=(5, 5))
+___  # TODO: ax.imshow(my_label, cmap=cmap, vmin=1, vmax=10)
+ax.set_title(f"CLC+ label — {nuts_code}/{year}/{patch_id}")
+ax.axis("off")
+plt.show()
+```
+
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 9
+
+- The label URL pattern is: `https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy`
+- Use `urllib.request.urlopen(url)` as a context manager, then `np.load(io.BytesIO(response.read()))` to load the array.
+- `np.unique(my_label)` returns the distinct class IDs present in the tile.
+- Set `vmin=1, vmax=10` in `imshow()` so the colormap maps correctly to the 10 classes.
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution — Exercise 9
+
+```{python}
+#| eval: false
+
+import urllib.request
+import io
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+
+nuts_code = "LU000"
+year = 2021
+patch_id = "4017000_2974190_0_402"
+
+label_url = f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{nuts_code}/{year}/{patch_id}.npy"
+
+with urllib.request.urlopen(label_url) as response:
+    my_label = np.load(io.BytesIO(response.read()))
+
+print(f"Shape: {my_label.shape}")
+print(f"Classes: {np.unique(my_label)}")
+
+cmap = ListedColormap([
+    "#FF0100", "#238B23", "#80FF00", "#00FF00", "#804000",
+    "#CCF24E", "#FEFF80", "#FF81FF", "#BFBFBF", "#0080FF",
+])
+
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.imshow(my_label, cmap=cmap, vmin=1, vmax=10)
+ax.set_title(f"CLC+ label — {nuts_code}/{year}/{patch_id}")
+ax.axis("off")
+plt.show()
+```
+:::
+
+
+::: {.callout-caution}
+## Exercise 10 — Overlay the satellite image and CLC+ label on an interactive map
+
+**Goal:** Create an interactive folium map displaying both the Sentinel-2 RGB composite and the CLC+ land-cover label as toggleable overlays.
+
+**Steps:**
+
+1. Load the satellite image for `LU000/2021` with `rasterio` and build an RGB composite (bands 4, 3, 2)
+2. Load the matching CLC+ label from S3
+3. Convert the label array to an RGBA image: map each class ID to its CLC+ colour (with alpha = 0.7), and set nodata pixels (class 0) to fully transparent
+4. Reproject the tile bounds from EPSG:3035 to WGS84 using `transform_bounds()`
+5. Create a `folium.Map` centred on the tile
+6. Add two `ImageOverlay` layers: one for the RGB image, one for the label RGBA
+7. Add a `folium.LayerControl()` so layers can be toggled on and off
+:::
+
+```{python}
+#| eval: false
+
+import numpy as np
+import urllib.request
+import io
+import rasterio
+import folium
+from rasterio.warp import transform_bounds
+from matplotlib.colors import to_rgba
+
+# --- Given: class colours (same as the colormap above) ---
+classes = [
+    ("Sealed (1)", "#FF0100"),
+    ("Woody -- needle leaved trees (2)", "#238B23"),
+    ("Woody -- Broadleaved deciduous trees (3)", "#80FF00"),
+    ("Woody -- Broadleaved evergreen trees (4)", "#00FF00"),
+    ("Low-growing woody plants (bushes, shrubs) (5)", "#804000"),
+    ("Permanent herbaceous (6)", "#CCF24E"),
+    ("Periodically herbaceous (7)", "#FEFF80"),
+    ("Lichens and mosses (8)", "#FF81FF"),
+    ("Non- and sparsely-vegetated (9)", "#BFBFBF"),
+    ("Water (10)", "#0080FF"),
+]
+
+# Step 1: Load satellite image and build RGB composite
+image_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2021/4017000_2974190_0_402.tif"
+)
+with rasterio.open(image_url) as src:
+    rgb_data = src.read([4, 3, 2])
+    bounds_3035 = src.bounds
+    crs = src.crs
+
+rgb_overlay = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+rgb_overlay = np.clip(rgb_overlay / np.percentile(rgb_overlay, 98), 0, 1)
+
+# Step 2: Load the matching label
+label_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/labels/LU000/"
+    "2021/4017000_2974190_0_402.npy"
+)
+with urllib.request.urlopen(label_url) as response:
+    label = np.load(io.BytesIO(response.read()))
+
+# Step 3: Convert label to RGBA
+# Build a colour lookup table: index 0 = transparent, indices 1-10 = class colours
+color_lut = np.zeros((11, 4), dtype=np.float32)
+color_lut[0] = ___  # TODO: [0, 0, 0, 0]  (fully transparent for nodata)
+for i, (_, hex_color) in enumerate(classes, start=1):
+    color_lut[i] = ___  # TODO: list(to_rgba(hex_color, alpha=0.7))
+
+label_rgba = ___  # TODO: color_lut[label]  (fancy indexing maps (H,W) -> (H,W,4))
+
+# Step 4: Reproject bounds to WGS84
+west, south, east, north = ___  # TODO: transform_bounds(crs, "EPSG:4326", *bounds_3035)
+
+center_lat = ___  # TODO: (south + north) / 2
+center_lon = ___  # TODO: (west + east) / 2
+
+# Step 5: Create the folium map
+m = ___  # TODO: folium.Map(location=[center_lat, center_lon], zoom_start=15)
+
+# Step 6: Add overlays
+___  # TODO: folium.raster_layers.ImageOverlay(image=rgb_overlay, bounds=[[south, west], [north, east]], name="Sentinel-2 RGB").add_to(m)
+___  # TODO: folium.raster_layers.ImageOverlay(image=label_rgba, bounds=[[south, west], [north, east]], name="CLC+ Label", opacity=0.8).add_to(m)
+
+# Step 7: Layer control
+___  # TODO: folium.LayerControl().add_to(m)
+
+m
+```
+
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 10
+
+- `to_rgba("#FF0100", alpha=0.7)` returns an RGBA tuple with values in [0, 1].
+- `color_lut[label]` uses NumPy integer array indexing: each pixel value (0–10) selects the corresponding row from the lookup table, producing an `(H, W, 4)` array.
+- `transform_bounds(src_crs, "EPSG:4326", left, bottom, right, top)` returns `(west, south, east, north)` in WGS84.
+- `ImageOverlay(image=array, bounds=[[south, west], [north, east]], name="Layer Name")` — the `name` parameter is what appears in `LayerControl`.
+- `folium.LayerControl().add_to(m)` adds a toggle widget to switch layers on and off.
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution — Exercise 10
+
+```{python}
+#| eval: false
+
+import numpy as np
+import urllib.request
+import io
+import rasterio
+import folium
+from rasterio.warp import transform_bounds
+from matplotlib.colors import to_rgba
+
+classes = [
+    ("Sealed (1)", "#FF0100"),
+    ("Woody -- needle leaved trees (2)", "#238B23"),
+    ("Woody -- Broadleaved deciduous trees (3)", "#80FF00"),
+    ("Woody -- Broadleaved evergreen trees (4)", "#00FF00"),
+    ("Low-growing woody plants (bushes, shrubs) (5)", "#804000"),
+    ("Permanent herbaceous (6)", "#CCF24E"),
+    ("Periodically herbaceous (7)", "#FEFF80"),
+    ("Lichens and mosses (8)", "#FF81FF"),
+    ("Non- and sparsely-vegetated (9)", "#BFBFBF"),
+    ("Water (10)", "#0080FF"),
+]
+
+# Step 1: Load satellite image
+image_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2021/4017000_2974190_0_402.tif"
+)
+with rasterio.open(image_url) as src:
+    rgb_data = src.read([4, 3, 2])
+    bounds_3035 = src.bounds
+    crs = src.crs
+
+rgb_overlay = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+rgb_overlay = np.clip(rgb_overlay / np.percentile(rgb_overlay, 98), 0, 1)
+
+# Step 2: Load the matching label
+label_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/labels/LU000/"
+    "2021/4017000_2974190_0_402.npy"
+)
+with urllib.request.urlopen(label_url) as response:
+    label = np.load(io.BytesIO(response.read()))
+
+# Step 3: Convert label to RGBA
+color_lut = np.zeros((11, 4), dtype=np.float32)
+color_lut[0] = [0, 0, 0, 0]
+for i, (_, hex_color) in enumerate(classes, start=1):
+    color_lut[i] = list(to_rgba(hex_color, alpha=0.7))
+
+label_rgba = color_lut[label]
+
+# Step 4: Reproject bounds to WGS84
+west, south, east, north = transform_bounds(crs, "EPSG:4326", *bounds_3035)
+
+center_lat = (south + north) / 2
+center_lon = (west + east) / 2
+
+# Step 5: Create the map
+m = folium.Map(location=[center_lat, center_lon], zoom_start=15)
+
+# Step 6: Add overlays
+folium.raster_layers.ImageOverlay(
+    image=rgb_overlay,
+    bounds=[[south, west], [north, east]],
+    name="Sentinel-2 RGB",
+).add_to(m)
+
+folium.raster_layers.ImageOverlay(
+    image=label_rgba,
+    bounds=[[south, west], [north, east]],
+    name="CLC+ Label",
+    opacity=0.8,
+).add_to(m)
+
+# Step 7: Layer control
+folium.LayerControl().add_to(m)
+
+m
+```
+:::
+
+
+# Acquiring CLC+ Labels from APIs
+
+:::: {.callout-note collapse="true"}
+## Optional — Click to expand
+
+This section shows how to download CLC+ Backbone labels directly from the Copernicus Land Monitoring Service REST API and prepare them for the training pipeline. It is **not** needed for the rest of the tutorial — the pre-processed labels on S3 are sufficient.
+
+## Downloading from the CDSE WCS API
 
 Labels can be downloaded through the Copernicus Land Monitoring Service REST API. The `download_clcpluslabel()` utility function handles this:
 
@@ -1402,7 +1818,7 @@ Labels can be downloaded through the Copernicus Land Monitoring Service REST API
 
 from utils import download_clcpluslabel, tiff_to_numpy
 
-# Bounding box matching our LU000 tile (EPSG:3035)
+# Bounding box matching a LU000 tile (EPSG:3035)
 bbox = [3649890, 2331750, 3652390, 2334250]
 
 download_clcpluslabel("label_2024.tif", bbox, year=2024)
@@ -1411,18 +1827,10 @@ label_array = tiff_to_numpy("label_2024.tif")  # 2D array of class IDs (1-10)
 
 The function queries the **WCS** (Web Coverage Service) endpoint of the CLC+ Backbone service, requesting the raster data for the specified bounding box and year. The bounding box must match the satellite tile extent exactly to ensure pixel-level alignment.
 
-::: {.callout-tip}
-**Learn more:** [CLC+ Backbone product page](https://land.copernicus.eu/en/products/clc-backbone) · [Copernicus Land Monitoring Service](https://land.copernicus.eu/en)
-:::
-
-## Label--image alignment
-
-The CLC+ labels and Sentinel-2 patches share the same CRS (EPSG:3035) and bounding box, which means they are spatially aligned by construction. Each pixel in the label corresponds to the same geographic area as the matching pixel in the satellite image.
-
 ::: {.callout-caution}
-## Exercise 9 — Download a CLC+ label for a given tile and year
+## Exercise 11 (optional) — Download a CLC+ label from CDSE
 
-**Goal:** Download the CLC+ Backbone land-cover label that matches the LU000 Sentinel-2 patch and convert it to a NumPy array.
+**Goal:** Download the CLC+ Backbone land-cover label that matches a Sentinel-2 patch and convert it to a NumPy array.
 
 **Steps:**
 
@@ -1449,14 +1857,14 @@ img_array = ___  # TODO
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 9
+## Hint — Exercise 11
 
 - `download_clcpluslabel(filename, bbox, year)` downloads the label and saves it as a TIFF file.
 - `tiff_to_numpy(filename)` opens the TIFF, converts it to a NumPy array, cleans up nodata values (254, 255 → 0), and returns the array.
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 9
+## Solution — Exercise 11
 
 ```{python}
 #| eval: false
@@ -1472,8 +1880,9 @@ img_array = tiff_to_numpy(filename)
 ```
 :::
 
+## Uploading labels to S3
 
-The training pipeline in section 2 expects labels as NumPy `.npy` files stored on S3, following a specific path convention. The satellite and label paths mirror each other:
+The training pipeline in section 2 expects labels as NumPy `.npy` files stored on S3, following a specific path convention:
 
 ```
 # Satellite image
@@ -1484,9 +1893,9 @@ s3://.../labels/CLCplus-Backbone/SENTINEL2/{NUTS}/{year}/{size}/{patch_id}.npy
 ```
 
 ::: {.callout-caution}
-## Exercise 10 — Save the label as `.npy` and upload to S3
+## Exercise 12 (optional) — Save the label as `.npy` and upload to S3
 
-**Goal:** Save the label array from Exercise 9 as a `.npy` file and upload it to S3 in the path expected by the training pipeline.
+**Goal:** Save the label array from Exercise 11 as a `.npy` file and upload it to S3 in the path expected by the training pipeline.
 
 **Steps:**
 
@@ -1521,7 +1930,7 @@ print(fs.ls(___))  # TODO: S3 directory path (without filename)
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 10
+## Hint — Exercise 12
 
 - `np.save("file.npy", array)` saves a NumPy array to disk.
 - `get_file_system()` returns an `s3fs.S3FileSystem` configured with the SSP Cloud credentials.
@@ -1531,7 +1940,7 @@ print(fs.ls(___))  # TODO: S3 directory path (without filename)
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 10
+## Solution — Exercise 12
 
 ```{python}
 #| eval: false
@@ -1551,131 +1960,7 @@ print(fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbon
 ```
 :::
 
-
-::: {.callout-caution}
-## Exercise 11 — Plot the satellite image and CLC+ label side by side
-
-**Goal:** Create a figure with two subplots: the Sentinel-2 RGB composite on the left and the CLC+ label map on the right, with a shared legend showing all 10 land-cover classes.
-
-**Steps:**
-
-1. Create a figure with `plt.subplots(1, 2, ...)`
-2. Display the RGB array on the left subplot
-3. Display the label array on the right subplot with the CLC+ colormap
-4. Add a legend describing the 10 land-cover classes using `Patch`
-:::
-
-```{python}
-#| eval: false
-
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from matplotlib.patches import Patch
-
-# Classes & colormap (provided)
-classes = [
-    ("Sealed (1)", "#FF0100"),
-    ("Woody -- needle leaved trees (2)", "#238B23"),
-    ("Woody -- Broadleaved deciduous trees (3)", "#80FF00"),
-    ("Woody -- Broadleaved evergreen trees (4)", "#00FF00"),
-    ("Low-growing woody plants (bushes, shrubs) (5)", "#804000"),
-    ("Permanent herbaceous (6)", "#CCF24E"),
-    ("Periodically herbaceous (7)", "#FEFF80"),
-    ("Lichens and mosses (8)", "#FF81FF"),
-    ("Non- and sparsely-vegetated (9)", "#BFBFBF"),
-    ("Water (10)", "#0080FF"),
-]
-
-cmap = ListedColormap([color for _, color in classes])
-
-# Step 1: Create the figure
-fig, axes = ___  # TODO: plt.subplots(1, 2, figsize=(12, 6))
-
-# Step 2: Sentinel-2 RGB on the left
-___  # TODO: axes[0].imshow(rgb)
-___  # TODO: set title and turn off axis
-
-# Step 3: CLC+ label on the right
-___  # TODO: axes[1].imshow(img_array, cmap=cmap, vmin=1, vmax=10)
-___  # TODO: set title and turn off axis
-
-# Step 4: Legend
-legend_elements = [
-    ___  # TODO: Patch(facecolor=color, edgecolor="black", label=label)
-    # for label, color in classes
-]
-
-fig.legend(
-    handles=legend_elements,
-    loc="center right",
-    bbox_to_anchor=(1.35, 0.5),
-    frameon=True,
-)
-
-plt.tight_layout()
-plt.show()
-```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 11
-
-- `plt.subplots(1, 2, figsize=(12, 6))` returns a figure and an array of two axes.
-- Use `axes[0].imshow(rgb)` for the satellite image, and `axes[1].imshow(img_array, cmap=cmap, vmin=1, vmax=10)` for the label.
-- Turn off axes ticks with `axes[i].axis("off")`.
-- Build the legend with a list comprehension: `[Patch(facecolor=color, edgecolor="black", label=label) for label, color in classes]`.
-:::
-
-::: {.callout-tip collapse="true"}
-## Solution — Exercise 11
-
-```{python}
-#| eval: false
-
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-from matplotlib.patches import Patch
-
-classes = [
-    ("Sealed (1)", "#FF0100"),
-    ("Woody -- needle leaved trees (2)", "#238B23"),
-    ("Woody -- Broadleaved deciduous trees (3)", "#80FF00"),
-    ("Woody -- Broadleaved evergreen trees (4)", "#00FF00"),
-    ("Low-growing woody plants (bushes, shrubs) (5)", "#804000"),
-    ("Permanent herbaceous (6)", "#CCF24E"),
-    ("Periodically herbaceous (7)", "#FEFF80"),
-    ("Lichens and mosses (8)", "#FF81FF"),
-    ("Non- and sparsely-vegetated (9)", "#BFBFBF"),
-    ("Water (10)", "#0080FF"),
-]
-
-cmap = ListedColormap([color for _, color in classes])
-
-fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-
-axes[0].imshow(rgb)
-axes[0].set_title("Sentinel-2 RGB")
-axes[0].axis("off")
-
-axes[1].imshow(img_array, cmap=cmap, vmin=1, vmax=10)
-axes[1].set_title("CLC+ Label")
-axes[1].axis("off")
-
-legend_elements = [
-    Patch(facecolor=color, edgecolor="black", label=label)
-    for label, color in classes
-]
-
-fig.legend(
-    handles=legend_elements,
-    loc="center right",
-    bbox_to_anchor=(1.35, 0.5),
-    frameon=True,
-)
-
-plt.tight_layout()
-plt.show()
-```
-:::
+::::
 
 
 # Acquiring Sentinel-2 Data from APIs
@@ -1801,7 +2086,7 @@ with open("output.tif", "wb") as f:
 - **`filter`**: CQL2 expression for metadata filtering, e.g. `"eo:cloud_cover < 20"` keeps only scenes with under 20 % cloud cover.
 
 ::: {.callout-caution}
-## Exercise 12 (optional) — Query the Sentinel Hub Catalog API
+## Exercise 13 (optional) — Query the Sentinel Hub Catalog API
 
 **Goal:** Use the Sentinel Hub Catalog API to search for Sentinel-2 L2A products over **Bulgaria** during **June 2021** with less than 10 % cloud cover.
 
@@ -1851,7 +2136,7 @@ print(f"Found {len(results['features'])} products")
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 12
+## Hint — Exercise 13
 
 - The CDSE token URL is `"https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"`.
 - Bulgaria's approximate bounding box in WGS84 is `[22.0, 41.0, 29.0, 44.5]`.
@@ -1860,7 +2145,7 @@ print(f"Found {len(results['features'])} products")
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 12
+## Solution — Exercise 13
 
 ```{python}
 #| eval: false
@@ -1909,13 +2194,13 @@ fs.put("./output.tif", "s3://my-bucket/sentinel2/output.tif")
 ```
 
 ::: {.callout-caution}
-## Exercise 13 (optional) — Download a Sentinel-2 image with the Processing API and upload to S3
+## Exercise 14 (optional) — Download a Sentinel-2 image with the Processing API and upload to S3
 
 **Goal:** Use the Sentinel Hub Processing API to download a true-colour Sentinel-2 image for Bulgaria (June 2021) and upload it to your personal S3 bucket.
 
 **Steps:**
 
-1. Authenticate with OAuth2 (reuse the session from Exercise 12)
+1. Authenticate with OAuth2 (reuse the session from Exercise 13)
 2. Build a Processing API request with bbox, time range, evalscript for true-colour RGB, and output as `image/tiff`
 3. POST to the Processing API endpoint and save the response content locally
 4. Initialise an `S3FileSystem` with `get_file_system()` and upload the file with `fs.put()`
@@ -1926,7 +2211,7 @@ fs.put("./output.tif", "s3://my-bucket/sentinel2/output.tif")
 
 from utils import get_file_system
 
-# Step 1: Reuse the authenticated OAuth2 session from Exercise 12
+# Step 1: Reuse the authenticated OAuth2 session from Exercise 13
 
 # Step 2: Build the Processing API request
 process_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
@@ -1980,7 +2265,7 @@ fs.put(___, ___)  # TODO: local_path, S3 destination path
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 13
+## Hint — Exercise 14
 
 - The Processing API URL is `"https://sh.dataspace.copernicus.eu/api/v1/process"`.
 - Use `[22.0, 41.0, 29.0, 44.5]` for the Bulgaria bounding box.
@@ -1991,7 +2276,7 @@ fs.put(___, ___)  # TODO: local_path, S3 destination path
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 13
+## Solution — Exercise 14
 
 ```{python}
 #| eval: false
@@ -2151,7 +2436,7 @@ print(f"Downloaded {products[0]['Name']}")
 
 
 ::: {.callout-caution}
-## Exercise 14 (optional) — Search and download a Sentinel-2 product via OData
+## Exercise 15 (optional) — Search and download a Sentinel-2 product via OData
 
 **Goal:** Use the OData API to search for Sentinel-2 L2A products over a city of your choice during summer 2021 with less than 15 % cloud cover, then download the first result.
 
@@ -2222,7 +2507,7 @@ print(f"Downloaded {products[0]['Name']}")
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 14
+## Hint — Exercise 15
 
 - Use the same `$filter` syntax as shown in the OData section above.
 - For the spatial filter, find your city's coordinates (lon, lat) and use: `OData.CSC.Intersects(area=geography'SRID=4326;POINT(lon lat)')` — note the space between lon and lat, not a comma.
@@ -2233,7 +2518,7 @@ print(f"Downloaded {products[0]['Name']}")
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 14
+## Solution — Exercise 15
 
 ```{python}
 #| eval: false

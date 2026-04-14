@@ -100,6 +100,21 @@ Structure of the project:
 - final solutions are available in the `final_solution/` folder.
 :::
 
+## Working on the exercises
+
+The exercise templates in `starting_point/` are Python files split into **cells** delimited by `# %%` comments. Each cell corresponds to one exercise from the tutorial pages.
+
+To execute them interactively:
+
+1. Open a `.py` file from `starting_point/` in VSCode
+2. VSCode recognises `# %%` markers and displays a **"Run Cell"** button above each one
+3. Click **Run Cell** (or press `Ctrl+Enter` / `Shift+Enter`) to execute a single cell in an interactive Python window
+4. Write your solution code under the corresponding `# %%` header, then run the cell to test it
+
+::: {.callout-tip}
+The tutorial pages (`.qmd` files) contain the full exercise descriptions, hints, and solutions. Use them as reference while working in the `.py` files.
+:::
+
 ## Installation of dependencies
 
 Install the project dependencies by running the following command in the terminal:

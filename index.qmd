@@ -109,11 +109,5 @@ Structure of the project:
 Install the project dependencies by running the following command in the terminal:
 
 ```
-uv sync
-```
-
-If you want to work on the optional model-training section, install the training extras:
-
-```
-uv sync --extra training
+source ./init.sh
 ```

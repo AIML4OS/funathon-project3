@@ -17,9 +17,6 @@ author:
 format:
   html:
     number-sections: true
-editor: visual
-editor_options:
-  chunk_output_type: console
 ---
 
 ```{=html}
@@ -60,21 +57,20 @@ A *segmentation mask* assigns a class label to each pixel in an image. In the co
 By completing this project you will learn to:
 
 - Download and manipulate satellite imagery and land-cover labels
+- *(Optional)* Use CDSE interfaces to fetch Sentinel2 images
 - Understand the structure of multispectral raster data (bands, CRS, bounding boxes)
 - Manipulate geodata and associate it to maps
 - Run inference with a pre-trained SegFormer model to produce land-cover maps
 - Compute regional statistics (area by class, artificialization rates) using administrative boundaries
 - *(Optional)* Train a segmentation model with PyTorch Lightning
-- *(Optional)* Deploy an interactive dashboard to explore the results
 
 # Structure of the project
 
-This project has four sections (listed in the banner at the top of the page):
+This project has Three sections (listed in the banner at the top of the page):
 
 1.  **Data Acquisition & Manipulation** -- Download Sentinel-2 images and CLC+ labels, visualise and manipulate raster data.
-2.  **Model Training** *(optional)* -- Understand the SegFormer architecture and how the segmentation model was trained.
+2.  **Model Training** *(optional)* -- Understand the SegFormer architecture and how the segmentation model was trained (and train a model by yourself)
 3.  **Inference & Statistics** -- Use a pre-trained model to produce land-cover maps, then compute regional statistics.
-4.  **Deployment** *(optional)* -- Build an interactive dashboard to visualise the results.
 
 # Initialization of the project
 
@@ -91,7 +87,7 @@ https://github.com/AIML4OS/funathon-project3/fork
 
 Create a VScode service on SSP Cloud. In the service, open a terminal by clicking on {{< fa brands fa-bars >}}, then `Terminal > New Terminal`. Clone the project repository with:
 
-```         
+```
 git clone https://github.com/AIML4OS/funathon-project3.git
 ```
 
@@ -99,21 +95,21 @@ Structure of the project:
 
 - The `.qmd` files and the `_quarto.yaml` file are necessary to build the website;
 - The file `pyproject.toml` describes the dependencies of the project;
-- The `starting_point/` folder contains exercise templates with TODO blanks;
+- The `starting_point/` folder contains exercise templates to complete.
 - Intermediate solutions to the exercises are available in the `intermediate_solutions/` folder;
-- The final solution is available in the `final_solution/` folder.
+- final solutions are available in the `final_solution/` folder.
 :::
 
 ## Installation of dependencies
 
 Install the project dependencies by running the following command in the terminal:
 
-```         
+```
 uv sync
 ```
 
 If you want to work on the optional model-training section, install the training extras:
 
-```         
+```
 uv sync --extra training
 ```

@@ -565,7 +565,7 @@ Each pre-processed patch is a GeoTIFF covering a **250 x 250 pixel** area (2 500
 
 | Field | Example value | Meaning |
 |-------|---------------|---------|
-| NUTS | `LU000` | NUTS-3 region (Haute-Garonne, near Toulouse) |
+| NUTS | `LU000` | NUTS-3 region (Luxembourg) |
 | year | `2024` | Acquisition year |
 | xmin, ymin | `4042000`,`2951690` | Lower-left corner in EPSG:3035 (metres) |
 
@@ -611,7 +611,7 @@ flowchart LR
     F --> G["Tile URL"]
 ```
 
-Here is a complete example for Toulouse:
+Here is a complete example for the Eurostat headquarters in Luxembourg:
 
 ```{python}
 #| eval: false
@@ -632,7 +632,7 @@ print(f"Eurostat coordinates: lon={lon}, lat={lat}")
 
 # Step 2: Create a GeoDataFrame with the point in WGS84, then reproject
 city_point = gpd.GeoDataFrame(
-    {"city": ["Toulouse"]}, geometry=[Point(lon, lat)], crs="EPSG:4326"
+    {"city": ["Luxembourg"]}, geometry=[Point(lon, lat)], crs="EPSG:4326"
 )
 city_point = city_point.to_crs("EPSG:3035")
 
@@ -788,7 +788,7 @@ After finding the NUTS3 code, you know which region directory to look in — but
 
 The workflow is straightforward: read the parquet file, extract the city's EPSG:3035 coordinates, and check which tile's bounding box contains those coordinates.
 
-Here is a complete example that continues from the Toulouse geocoding above:
+Here is a complete example that continues from the Luxembourg geocoding above:
 
 ```{python}
 #| eval: false
@@ -2075,7 +2075,7 @@ filter_parts = [
     "ContentDate/Start gt 2021-06-01T00:00:00.000Z",
     "ContentDate/Start lt 2021-08-31T23:59:59.999Z",
     "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value lt 15.00)",
-    "OData.CSC.Intersects(area=geography'SRID=4326;POINT(1.4437 43.6047)')",  # Toulouse
+    "OData.CSC.Intersects(area=geography'SRID=4326;POINT(6.1296 49.6341)')",  # Luxembourg (Eurostat)
 ]
 
 params = {
@@ -2234,7 +2234,7 @@ print(f"Downloaded {products[0]['Name']}")
 
 import requests
 
-# Step 1: Build the OData filter (example: Toulouse)
+# Step 1: Build the OData filter (example: Luxembourg)
 odata_url = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
 
 filter_parts = [
@@ -2243,7 +2243,7 @@ filter_parts = [
     "ContentDate/Start gt 2021-06-01T00:00:00.000Z",
     "ContentDate/Start lt 2021-08-31T23:59:59.999Z",
     "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value lt 15.00)",
-    "OData.CSC.Intersects(area=geography'SRID=4326;POINT(1.4437 43.6047)')",
+    "OData.CSC.Intersects(area=geography'SRID=4326;POINT(6.1296 49.6341)')",  # Luxembourg (Eurostat)
 ]
 
 params = {

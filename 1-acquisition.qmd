@@ -603,11 +603,11 @@ Here is the complete workflow:
 %%| fig-cap: "From a city name to a satellite tile URL."
 %%| eval: true
 flowchart LR
-    A["City name"] --> B["Nominatim API\n→ (lon, lat) WGS84"]
-    B --> C["Reproject\nEPSG:3035"]
-    C --> D["Spatial join\nwith NUTS3"]
+    A["City name"] --> B["Nominatim API<br>→ (lon, lat) WGS84"]
+    B --> C["Reproject<br>EPSG:3035"]
+    C --> D["Spatial join<br>with NUTS3"]
     D --> E["NUTS code"]
-    E --> F["filename2bbox\n.parquet"]
+    E --> F["filename2bbox<br>.parquet"]
     F --> G["Tile URL"]
 ```
 
@@ -623,12 +623,12 @@ from shapely.geometry import Point
 # Step 1: Geocode the city name
 response = requests.get(
     "https://nominatim.openstreetmap.org/search",
-    params={"q": "Toulouse, France", "format": "json", "limit": 1},
+    params={"q": "5, rue Alphonse Weicker  Luxembourg", "format": "json", "limit": 1},
     headers={"User-Agent": "funathon-project3"},
 )
 result = response.json()[0]
 lon, lat = float(result["lon"]), float(result["lat"])
-print(f"Toulouse coordinates: lon={lon}, lat={lat}")
+print(f"Eurostat coordinates: lon={lon}, lat={lat}")
 
 # Step 2: Create a GeoDataFrame with the point in WGS84, then reproject
 city_point = gpd.GeoDataFrame(

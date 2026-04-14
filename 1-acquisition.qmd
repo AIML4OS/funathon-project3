@@ -158,6 +158,7 @@ rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
 p98 = np.percentile(rgb, 98)
 rgb = np.clip(rgb / p98, 0, 1)
 ```
+
 serve as a display normalization routine for Sentinel-2 imagery. Here's what each line does:
 
 - `np.transpose(rgb_data, (1, 2, 0))` — Rearranges the array from rasterio's native shape (bands, height, width) to (height, width, bands), which is what matplotlib/PIL expect for displaying an RGB image.
@@ -584,12 +585,36 @@ The HTTPS URLs work from anywhere without credentials — great for reading indi
 ::: {.callout-important}
 **Available regions.** Not all NUTS3 regions have pre-processed tiles. The following **27 regions** are covered:
 
-```
-AT130  BE100  BG411  CZ010  DE300  DEA23  DK011  EE001
-EL303  ES300  FI1B1  FR101  LU000  HRO41  HU110  ITI43
-LT011  LU000  LV006  MT001  NL329  PL127  PT170  RO321
-SE110  SI041  SK010
-```
+| NUTS3 Code | Region | Country |
+|---|---|---|
+| AT130 | Wien (Vienna) | Austria |
+| BE100 | Bruxelles-Capitale (Brussels) | Belgium |
+| BG411 | Sofia (Capital) | Bulgaria |
+| CZ010 | Praha (Prague) | Czechia |
+| DE300 | Berlin | Germany |
+| DEA23 | Köln (Cologne) | Germany |
+| DK011 | Byen København (Copenhagen) | Denmark |
+| EE001 | Põhja-Eesti (Northern Estonia / Tallinn) | Estonia |
+| EL303 | Kentrikos Tomeas Athinon (Central Athens) | Greece |
+| ES300 | Comunidad de Madrid | Spain |
+| FI1B1 | Helsinki-Uusimaa | Finland |
+| FR101 | Paris | France |
+| FRJ27 | Tarn (Albi) | France |
+| HRO41 | Grad Zagreb (City of Zagreb) | Croatia |
+| HU110 | Budapest | Hungary |
+| ITI43 | Roma (Rome) | Italy |
+| LT011 | Vilniaus apskritis (Vilnius) | Lithuania |
+| LU000 | Luxembourg | Luxembourg |
+| LV006 | Rīga | Latvia |
+| MT001 | Malta | Malta |
+| NL329 | Groot-Amsterdam (Amsterdam area) | Netherlands |
+| PL127 | Miasto Warszawa (Warsaw) | Poland |
+| PT170 | Área Metropolitana de Lisboa (Lisbon) | Portugal |
+| RO321 | București (Bucharest) | Romania |
+| SE110 | Stockholms län (Stockholm) | Sweden |
+| SI041 | Osrednjeslovenska (Ljubljana area) | Slovenia |
+| SK010 | Bratislavský kraj (Bratislava) | Slovakia |
+
 :::
 
 ## Finding a NUTS3 region from a city name
@@ -649,10 +674,10 @@ print(f"NUTS3 region: {nuts_code}")  # → LU000
 
 Once you have the NUTS3 code, you can build the S3 base URL for tiles in that region:
 
-```{python}
+```python
 #| eval: false
 
-base_url = f"s3://projet-hackathon-ntts-2025/data-preprocessed/satellite-images/SENTINEL2/{nuts_code}"
+base_url = f"s3://projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_code}"
 print(base_url)
 ```
 
@@ -672,7 +697,7 @@ print(base_url)
 2. Create a `Point(lon, lat)` geometry and wrap it in a GeoDataFrame (CRS: EPSG:4326)
 3. Reproject to EPSG:3035 and spatial-join with the NUTS3 boundaries
 4. Check if the resulting NUTS3 code is in the list of available regions
-5. Build the S3 base URL: `s3://projet-hackathon-ntts-2025/data-preprocessed/satellite-images/SENTINEL2/{nuts_code}`
+5. Build the S3 base URL: `s3://projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_code}`
 :::
 
 ```{python}
@@ -1032,25 +1057,6 @@ print(gdf_wgs84.total_bounds)
 **Learn more:** [epsg.io](https://epsg.io/) — search and visualize any coordinate reference system.
 :::
 
-## Building geometries from tile metadata
-
-The patch filename encodes the lower-left corner coordinates. Combined with the tile size (2 500 m), you can reconstruct the bounding box and create a `shapely` geometry:
-
-```{python}
-#| eval: true
-
-patch_filename = "3649890_2331750_0_937.tif"
-parts = patch_filename.replace(".tif", "").split("_")
-xmin, ymin = int(parts[0]), int(parts[1])
-tile_size_m = 2500  # 250 px x 10 m/px
-
-xmax = xmin + tile_size_m
-ymax = ymin + tile_size_m
-
-tile_box = box(xmin, ymin, xmax, ymax)
-print(f"Bounding box (EPSG:3035): [{xmin}, {ymin}, {xmax}, {ymax}]")
-print(f"Shapely geometry: {tile_box}")
-```
 
 ## Working with GeoDataFrames
 

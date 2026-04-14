@@ -183,6 +183,15 @@ In short, it's a contrast stretch. Raw Sentinel-2 L2A surface reflectance values
 4. Display the RGB composite with `matplotlib`
 :::
 
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 1
+
+- Inside the `with rasterio.open(tile_path) as src:` block, use `src.read([4, 3, 2])` to get a `(3, H, W)` array.
+- `src.crs` and `src.bounds` give you the CRS and bounding box.
+- Transpose with `np.transpose(rgb_data, (1, 2, 0))`, cast to `float32`, then normalize: divide by `np.percentile(rgb, 98)` and clip to `[0, 1]` with `np.clip`.
+
+**Code template:**
+
 ```{python}
 # | eval: false
 
@@ -222,13 +231,6 @@ ax.axis("off")
 plt.tight_layout()
 plt.show()
 ```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 1
-
-- Inside the `with rasterio.open(tile_path) as src:` block, use `src.read([4, 3, 2])` to get a `(3, H, W)` array.
-- `src.crs` and `src.bounds` give you the CRS and bounding box.
-- Transpose with `np.transpose(rgb_data, (1, 2, 0))`, cast to `float32`, then normalize: divide by `np.percentile(rgb, 98)` and clip to `[0, 1]` with `np.clip`.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -356,6 +358,15 @@ graph LR
 4. Display the true-colour RGB (from Exercise 1) and false-colour composite side by side
 :::
 
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 2
+
+- `src.profile` is a dictionary — just `print(src.profile)` to see driver, dtype, crs, transform, etc.
+- `src.read([8, 4, 3])` reads NIR, Red, Green in that order → shape `(3, H, W)`.
+- Normalize exactly as in Exercise 1: transpose to `(H, W, 3)`, divide by `np.percentile(fc, 98)`, clip to `[0, 1]`.
+
+**Code template:**
+
 ```{python}
 #| eval: false
 
@@ -388,13 +399,6 @@ axes[1].axis("off")
 plt.tight_layout()
 plt.show()
 ```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 2
-
-- `src.profile` is a dictionary — just `print(src.profile)` to see driver, dtype, crs, transform, etc.
-- `src.read([8, 4, 3])` reads NIR, Red, Green in that order → shape `(3, H, W)`.
-- Normalize exactly as in Exercise 1: transpose to `(H, W, 3)`, divide by `np.percentile(fc, 98)`, clip to `[0, 1]`.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -454,6 +458,16 @@ NDVI values range from −1 to +1:
 3. Display with `imshow(cmap="RdYlGn", vmin=-1, vmax=1)` and a colorbar
 :::
 
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 3
+
+- `src.read(8)` reads a single band → shape `(H, W)`. Cast to `float32` for division.
+- Use `np.where(nir + red == 0, 0, (nir - red) / (nir + red))` to avoid division by zero.
+- `cmap="RdYlGn"` gives a red-yellow-green colour scale: red for low NDVI, green for high.
+- `fig.colorbar(im, ax=ax, shrink=0.8, label="NDVI")` adds a colour legend.
+
+**Code template:**
+
 ```{python}
 #| eval: false
 
@@ -480,14 +494,6 @@ ___  # TODO: fig.colorbar(im, ax=ax, shrink=0.8, label="NDVI")
 plt.tight_layout()
 plt.show()
 ```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 3
-
-- `src.read(8)` reads a single band → shape `(H, W)`. Cast to `float32` for division.
-- Use `np.where(nir + red == 0, 0, (nir - red) / (nir + red))` to avoid division by zero.
-- `cmap="RdYlGn"` gives a red-yellow-green colour scale: red for low NDVI, green for high.
-- `fig.colorbar(im, ax=ax, shrink=0.8, label="NDVI")` adds a colour legend.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -700,6 +706,17 @@ print(base_url)
 5. Build the S3 base URL: `s3://projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_code}`
 :::
 
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 4
+
+- Nominatim params: `{"q": "City, Country", "format": "json", "limit": 1}`. Always include a `User-Agent` header.
+- Coordinates: `Point(lon, lat)` — longitude first, latitude second.
+- Initial CRS is `"EPSG:4326"` (WGS84), reproject to `"EPSG:3035"` to match the NUTS3 boundaries.
+- Use `predicate="within"` for the spatial join (point inside polygon).
+- The NUTS3 code column is `"NUTS_ID"`.
+
+**Code template:**
+
 ```{python}
 #| eval: false
 
@@ -744,15 +761,6 @@ print(f"NUTS3 code: {nuts_code}, available: {nuts_code in available}")
 base_url = f"s3://projet-hackathon-ntts-2025/data-preprocessed/satellite-images/SENTINEL2/{___}"  # TODO
 print(base_url)
 ```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 4
-
-- Nominatim params: `{"q": "City, Country", "format": "json", "limit": 1}`. Always include a `User-Agent` header.
-- Coordinates: `Point(lon, lat)` — longitude first, latitude second.
-- Initial CRS is `"EPSG:4326"` (WGS84), reproject to `"EPSG:3035"` to match the NUTS3 boundaries.
-- Use `predicate="within"` for the spatial join (point inside polygon).
-- The NUTS3 code column is `"NUTS_ID"`.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -887,6 +895,18 @@ plt.show()
 6. Open the tile with `rasterio.open()`, read the RGB bands, normalize, and display
 :::
 
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 5
+
+- The parquet URL pattern is: `https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet`
+- `pd.read_parquet(url)` reads directly from an HTTPS URL (requires `pyarrow`).
+- City coordinates: `city_point.geometry.iloc[0].x` and `.y` — already in EPSG:3035 from Exercise 4.
+- Containment check: `xmin <= x <= xmax and ymin <= y <= ymax`.
+- The tile URL uses the same base path as the parquet URL, replacing `filename2bbox.parquet` with the tile filename.
+- RGB normalization: same technique as Exercise 1 — read bands `[4, 3, 2]`, transpose to `(H, W, 3)`, divide by 98th percentile, clip to `[0, 1]`.
+
+**Code template:**
+
 ```{python}
 #| eval: false
 
@@ -936,16 +956,6 @@ ax.axis("off")
 plt.tight_layout()
 plt.show()
 ```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 5
-
-- The parquet URL pattern is: `https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet`
-- `pd.read_parquet(url)` reads directly from an HTTPS URL (requires `pyarrow`).
-- City coordinates: `city_point.geometry.iloc[0].x` and `.y` — already in EPSG:3035 from Exercise 4.
-- Containment check: `xmin <= x <= xmax and ymin <= y <= ymax`.
-- The tile URL uses the same base path as the parquet URL, replacing `filename2bbox.parquet` with the tile filename.
-- RGB normalization: same technique as Exercise 1 — read bands `[4, 3, 2]`, transpose to `(H, W, 3)`, divide by 98th percentile, clip to `[0, 1]`.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -1104,6 +1114,15 @@ plt.show()
 4. Print `total_bounds` in both CRS
 :::
 
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 6
+
+- `box(*tile_bounds)` unpacks `(left, bottom, right, top)` into a rectangular polygon.
+- `gpd.GeoDataFrame({"tile": ["LU000"]}, geometry=[tile_geom], crs="EPSG:3035")` creates the GeoDataFrame.
+- `.to_crs("EPSG:4326")` reprojects to latitude/longitude.
+
+**Code template:**
+
 ```{python}
 #| eval: false
 
@@ -1123,13 +1142,6 @@ gdf_wgs84 = ___  # TODO: gdf.to_crs(...)
 print("EPSG:3035 bounds:", gdf.total_bounds)
 print("EPSG:4326 bounds:", gdf_wgs84.total_bounds)
 ```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 6
-
-- `box(*tile_bounds)` unpacks `(left, bottom, right, top)` into a rectangular polygon.
-- `gpd.GeoDataFrame({"tile": ["LU000"]}, geometry=[tile_geom], crs="EPSG:3035")` creates the GeoDataFrame.
-- `.to_crs("EPSG:4326")` reprojects to latitude/longitude.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -1167,35 +1179,6 @@ A spatial join (`gpd.sjoin`) combines two GeoDataFrames based on the geometric r
 5. Compute the tile area in km² (`tile_geom.area / 1e6`)
 :::
 
-```{python}
-#| eval: false
-
-import geopandas as gpd
-from shapely.geometry import box
-
-# Step 6a: Load NUTS3 boundaries (EPSG:3035)
-nuts_url = (
-    "https://gisco-services.ec.europa.eu/distribution/v2/"
-    "nuts/geojson/NUTS_RG_01M_2021_3035_LEVL_3.geojson"
-)
-nuts = ___  # TODO: gpd.read_file(nuts_url)
-
-# Step 6b: Create a GeoDataFrame for the tile
-tile_geom = box(*tile_bounds)
-tile_gdf = ___  # TODO: gpd.GeoDataFrame(..., geometry=[tile_geom], crs=tile_crs)
-
-# Step 6c: Spatial join — find which NUTS3 regions the tile intersects
-joined = ___  # TODO: gpd.sjoin(tile_gdf, nuts, predicate="intersects")
-
-# Step 6d: Print matching regions
-for _, row in joined.iterrows():
-    print(f"NUTS_ID: {row['NUTS_ID']}, NUTS_NAME: {row['NUTS_NAME']}")
-
-# Step 6e: Compute tile area in km²
-area_km2 = ___  # TODO: tile_geom.area / 1e6
-print(f"Tile area: {area_km2:.2f} km²")
-```
-
 ::: {.callout-tip collapse="true"}
 ## Hint — Exercise 7
 
@@ -1203,6 +1186,37 @@ print(f"Tile area: {area_km2:.2f} km²")
 - Build the tile GeoDataFrame the same way as in Exercise 6: `gpd.GeoDataFrame({"tile": ["LU000"]}, geometry=[box(*tile_bounds)], crs=tile_crs)`.
 - `gpd.sjoin(left, right, predicate="intersects")` returns rows from `left` enriched with columns from `right` where geometries intersect.
 - Since `tile_crs` is EPSG:3035 (units in metres), `tile_geom.area` gives square metres — divide by 1 000 000 for km².
+
+**Code template:**
+
+```{python}
+#| eval: false
+
+import geopandas as gpd
+from shapely.geometry import box
+
+# Step 7a: Load NUTS3 boundaries (EPSG:3035)
+nuts_url = (
+    "https://gisco-services.ec.europa.eu/distribution/v2/"
+    "nuts/geojson/NUTS_RG_01M_2021_3035_LEVL_3.geojson"
+)
+nuts = ___  # TODO: gpd.read_file(nuts_url)
+
+# Step 7b: Create a GeoDataFrame for the tile
+tile_geom = box(*tile_bounds)
+tile_gdf = ___  # TODO: gpd.GeoDataFrame(..., geometry=[tile_geom], crs=tile_crs)
+
+# Step 7c: Spatial join — find which NUTS3 regions the tile intersects
+joined = ___  # TODO: gpd.sjoin(tile_gdf, nuts, predicate="intersects")
+
+# Step 7d: Print matching regions
+for _, row in joined.iterrows():
+    print(f"NUTS_ID: {row['NUTS_ID']}, NUTS_NAME: {row['NUTS_NAME']}")
+
+# Step 7e: Compute tile area in km²
+area_km2 = ___  # TODO: tile_geom.area / 1e6
+print(f"Tile area: {area_km2:.2f} km²")
+```
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -1304,6 +1318,16 @@ m
 4. Add an `ImageOverlay` with the RGB array and WGS84 bounds
 :::
 
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 8
+
+- `transform_bounds(tile_crs, "EPSG:4326", *tile_bounds)` returns `(west, south, east, north)` in degrees.
+- Centre: `center_lat = (south + north) / 2`, `center_lon = (west + east) / 2`.
+- `folium.Map(location=[center_lat, center_lon], zoom_start=14)` creates the map.
+- `ImageOverlay(image=rgb, bounds=[[south, west], [north, east]], opacity=0.7).add_to(m)` overlays the image.
+
+**Code template:**
+
 ```{python}
 #| eval: false
 
@@ -1326,14 +1350,6 @@ ___  # TODO: ImageOverlay(...).add_to(m)
 
 m
 ```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 8
-
-- `transform_bounds(tile_crs, "EPSG:4326", *tile_bounds)` returns `(west, south, east, north)` in degrees.
-- Centre: `center_lat = (south + north) / 2`, `center_lon = (west + east) / 2`.
-- `folium.Map(location=[center_lat, center_lon], zoom_start=14)` creates the map.
-- `ImageOverlay(image=rgb, bounds=[[south, west], [north, east]], opacity=0.7).add_to(m)` overlays the image.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -1526,6 +1542,16 @@ The CLC+ labels and Sentinel-2 patches share the same CRS (EPSG:3035) and boundi
 5. Display the label using `imshow()` with the CLC+ colormap (`vmin=1`, `vmax=10`)
 :::
 
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 9
+
+- The label URL pattern is: `https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy`
+- Use `urllib.request.urlopen(url)` as a context manager, then `np.load(io.BytesIO(response.read()))` to load the array.
+- `np.unique(my_label)` returns the distinct class IDs present in the tile.
+- Set `vmin=1, vmax=10` in `imshow()` so the colormap maps correctly to the 10 classes.
+
+**Code template:**
+
 ```{python}
 #| eval: false
 
@@ -1563,14 +1589,6 @@ ax.set_title(f"CLC+ label — {nuts_code}/{year}/{patch_id}")
 ax.axis("off")
 plt.show()
 ```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 9
-
-- The label URL pattern is: `https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy`
-- Use `urllib.request.urlopen(url)` as a context manager, then `np.load(io.BytesIO(response.read()))` to load the array.
-- `np.unique(my_label)` returns the distinct class IDs present in the tile.
-- Set `vmin=1, vmax=10` in `imshow()` so the colormap maps correctly to the 10 classes.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -1626,6 +1644,17 @@ plt.show()
 6. Add two `ImageOverlay` layers: one for the RGB image, one for the label RGBA
 7. Add a `folium.LayerControl()` so layers can be toggled on and off
 :::
+
+::: {.callout-tip collapse="true"}
+## Hint — Exercise 10
+
+- `to_rgba("#FF0100", alpha=0.7)` returns an RGBA tuple with values in [0, 1].
+- `color_lut[label]` uses NumPy integer array indexing: each pixel value (0–10) selects the corresponding row from the lookup table, producing an `(H, W, 4)` array.
+- `transform_bounds(src_crs, "EPSG:4326", left, bottom, right, top)` returns `(west, south, east, north)` in WGS84.
+- `ImageOverlay(image=array, bounds=[[south, west], [north, east]], name="Layer Name")` — the `name` parameter is what appears in `LayerControl`.
+- `folium.LayerControl().add_to(m)` adds a toggle widget to switch layers on and off.
+
+**Code template:**
 
 ```{python}
 #| eval: false
@@ -1702,15 +1731,6 @@ ___  # TODO: folium.LayerControl().add_to(m)
 
 m
 ```
-
-::: {.callout-tip collapse="true"}
-## Hint — Exercise 10
-
-- `to_rgba("#FF0100", alpha=0.7)` returns an RGBA tuple with values in [0, 1].
-- `color_lut[label]` uses NumPy integer array indexing: each pixel value (0–10) selects the corresponding row from the lookup table, producing an `(H, W, 4)` array.
-- `transform_bounds(src_crs, "EPSG:4326", left, bottom, right, top)` returns `(west, south, east, north)` in WGS84.
-- `ImageOverlay(image=array, bounds=[[south, west], [north, east]], name="Layer Name")` — the `name` parameter is what appears in `LayerControl`.
-- `folium.LayerControl().add_to(m)` adds a toggle widget to switch layers on and off.
 :::
 
 ::: {.callout-tip collapse="true"}

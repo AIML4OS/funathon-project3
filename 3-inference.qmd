@@ -24,19 +24,26 @@ to a **Model Registry**. Follow these steps to register your model:
 4. Click **Register model**, name it `"segmentation-sentinel2-model"`, and confirm.
 5. Verify it appears in the **Model Registry**.
 
+Create a .env file and fill this model :
+
+```
+MLFLOW_TRACKING_URI=""
+MLFLOW_TRACKING_USERNAME""
+MLFLOW_TRACKING_PASSWORD""
+```
+
 Once registered, load the model using the `get_model()` utility:
 ```{python}
 #| eval: false
 
 import os
-from utils import get_model, get_normalization_metrics
+from utils import get_model
+from dotenv import load_dotenv
 
-os.environ["MLFLOW_TRACKING_URI"] = "https://projet-formation-mlflow.user.lab.sspcloud.fr"
-os.environ["MLFLOW_TRACKING_USERNAME"] = "projet-formation"
-os.environ["MLFLOW_TRACKING_PASSWORD"] = "xxx"
+load_dotenv()
 
-model_name = "segmentation-sentinel2-model"
-model_version = "2"
+model_name = ___  # TODO: the model name registred
+model_version = ___  # TODO: the model name registred
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 
 model = get_model(model_name, model_version, mlflow_tracking_uri)
@@ -53,6 +60,7 @@ configure the inference pipeline consistently with how the model was trained:
 #| eval: false
 
 import mlflow
+from utils import get_normalization_metrics
 
 run = mlflow.get_run(model.metadata.run_id)
 
@@ -84,16 +92,14 @@ preprocessing, tiling if needed, and assembling the result back into a
 ```{python}
 #| eval: false
 
-from utils import predict, get_file_system
-
-fs = get_file_system()
+from utils import predict
 
 image_path = (
-    "projet-formation/diffusion/funathon/2026/project3/"
+    "s3/projet-formation/diffusion/funathon/2026/project3/"
     "data/images/LU000/2024/3034500_2011690.tif"
 )
 
-lsi = predict(
+labelled_satellite_img = predict(
     images=image_path,
     model=model,
     tiles_size=tiles_size,
@@ -121,10 +127,10 @@ Convert the raw logits to a 2D array of predicted class IDs with `produce_mask()
 
 from utils import produce_mask
 
-lsi.label = produce_mask(lsi.label, module_name)
+labelled_satellite_img.label = produce_mask(labelled_satellite_img.label, module_name)
 
-print(f"Mask shape : {lsi.label.shape}")
-print(f"Classes found : {set(lsi.label.flatten().tolist())}")
+print(f"Mask shape : {labelled_satellite_img.label.shape}")
+print(f"Classes found : {set(labelled_satellite_img.label.flatten().tolist())}")
 ```
 
 `produce_mask()` applies `torch.argmax` along the class dimension, returning
@@ -156,7 +162,7 @@ classes = [
 cmap = ListedColormap([color for _, color in classes])
 
 # RGB composite for visualisation (bands 4, 3, 2)
-rgb = np.transpose(lsi.satellite_image.array[[3, 2, 1]], (1, 2, 0)).astype(np.float32)
+rgb = np.transpose(labelled_satellite_img.satellite_image.array[[3, 2, 1]], (1, 2, 0)).astype(np.float32)
 p98 = np.percentile(rgb, 98)
 rgb = np.clip(rgb / p98, 0, 1)
 
@@ -166,7 +172,7 @@ axes[0].imshow(rgb)
 axes[0].set_title("Sentinel-2 RGB (B4, B3, B2)")
 axes[0].axis("off")
 
-axes[1].imshow(lsi.label, cmap=cmap, vmin=1, vmax=10)
+axes[1].imshow(labelled_satellite_img.label, cmap=cmap, vmin=1, vmax=10)
 axes[1].set_title("Predicted land cover")
 axes[1].axis("off")
 
@@ -197,7 +203,7 @@ temporary GeoTIFF to preserve the georeference, then calls
 
 from utils import create_geojson_from_mask
 
-gdf_pred = create_geojson_from_mask(lsi)
+gdf_pred = create_geojson_from_mask(labelled_satellite_img)
 
 print(f"{len(gdf_pred)} polygons extracted")
 print(gdf_pred.head())

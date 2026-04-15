@@ -427,7 +427,7 @@ For this project, pre-processed Sentinel-2 patches are publicly available on the
 The URL follows this pattern:
 
 ```
-https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/{NUTS}/{year}/{size}/{patch_id}.tif
+https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/{NUTS}/{year}/{patch_id}.tif
 ```
 
 Each pre-processed patch is a GeoTIFF covering a **250 x 250 pixel** area (2 500 m at 10 m resolution). The URL path encodes the key metadata:
@@ -452,9 +452,9 @@ import rasterio
 import numpy as np
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/"
-    "data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/"
-    "FRJ27/2018/250/3649890_2331750_0_937.tif"
+    "https://minio.lab.sspcloud.fr/projet-formation/"
+    "diffusion/funathon/2026/project3/data/images/"
+    "FRJ27/2018/3649890_2331750_0_937.tif"
 )
 
 with rasterio.open(tile_url) as src:
@@ -512,9 +512,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/"
-    "data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/"
-    "FRJ27/2018/250/3649890_2331750_0_937.tif"
+    "https://minio.lab.sspcloud.fr/projet-formation/"
+    "diffusion/funathon/2026/project3/data/images/"
+    "FRJ27/2018/3649890_2331750_0_937.tif"
 )
 
 # Step 1: Open the tile and read RGB bands (4, 3, 2)
@@ -554,9 +554,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/"
-    "data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/"
-    "FRJ27/2018/250/3649890_2331750_0_937.tif"
+    "https://minio.lab.sspcloud.fr/projet-formation/"
+    "diffusion/funathon/2026/project3/data/images/"
+    "FRJ27/2018/3649890_2331750_0_937.tif"
 )
 
 with rasterio.open(tile_url) as src:
@@ -599,9 +599,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/"
-    "data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/"
-    "FRJ27/2018/250/3649890_2331750_0_937.tif"
+    "https://minio.lab.sspcloud.fr/projet-formation/"
+    "diffusion/funathon/2026/project3/data/images/"
+    "FRJ27/2018/3649890_2331750_0_937.tif"
 )
 
 # Step 4a: Open the tile and print the raster profile
@@ -647,9 +647,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/"
-    "data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/"
-    "FRJ27/2018/250/3649890_2331750_0_937.tif"
+    "https://minio.lab.sspcloud.fr/projet-formation/"
+    "diffusion/funathon/2026/project3/data/images/"
+    "FRJ27/2018/3649890_2331750_0_937.tif"
 )
 
 with rasterio.open(tile_url) as src:
@@ -705,9 +705,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/"
-    "data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/"
-    "FRJ27/2018/250/3649890_2331750_0_937.tif"
+    "https://minio.lab.sspcloud.fr/projet-formation/"
+    "diffusion/funathon/2026/project3/data/images/"
+    "FRJ27/2018/3649890_2331750_0_937.tif"
 )
 
 # Step 5a: Read NIR (band 8) and Red (band 4) as float32
@@ -748,9 +748,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/"
-    "data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/"
-    "FRJ27/2018/250/3649890_2331750_0_937.tif"
+    "https://minio.lab.sspcloud.fr/projet-formation/"
+    "diffusion/funathon/2026/project3/data/images/"
+    "FRJ27/2018/3649890_2331750_0_937.tif"
 )
 
 with rasterio.open(tile_url) as src:
@@ -1227,7 +1227,7 @@ img_array = tiff_to_numpy(filename)
 The training pipeline in section 2 expects labels as NumPy `.npy` files stored on S3, following a specific path convention. The expected S3 path structure is:
 
 ```
-s3://projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/{NUTS}/{year}/{tile_size}/{patch_id}.npy
+https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy
 ```
 
 ::: {.callout-caution}
@@ -1258,7 +1258,7 @@ ___  # TODO: np.save(local_path, img_array)
 fs = ___  # TODO: get_file_system()
 
 # Step 3: Build the S3 destination path
-s3_path = ___  # TODO: "projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/FRJ27/2018/250/3649890_2331750_0_937.npy"
+s3_path = ___  # TODO: "https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/FRJ27/2018/3649890_2331750_0_937.npy"
 
 # Step 4: Upload to S3
 ___  # TODO: fs.put(local_path, s3_path)
@@ -1274,7 +1274,7 @@ print(fs.ls(___))  # TODO: S3 directory path (without filename)
 - `get_file_system()` returns an `s3fs.S3FileSystem` configured with the SSP Cloud credentials.
 - The S3 path must **not** include the `s3://` prefix when using `fs.put()` and `fs.ls()`.
 - `fs.put(local_path, s3_path)` uploads a local file to S3.
-- `fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/FRJ27/2018/250")` lists all files in the directory.
+- `fs.ls("s3_directory_path")` lists all files in the directory.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -1291,10 +1291,10 @@ np.save(local_path, img_array)
 
 fs = get_file_system()
 
-s3_path = "projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/FRJ27/2018/250/3649890_2331750_0_937.npy"
+s3_path = "https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/FRJ27/2018/3649890_2331750_0_937.npy"
 fs.put(local_path, s3_path)
 
-print(fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/FRJ27/2018/250"))
+print(fs.ls("https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/FRJ27/2018/"))
 ```
 :::
 

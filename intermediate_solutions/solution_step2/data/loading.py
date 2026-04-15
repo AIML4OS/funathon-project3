@@ -5,8 +5,10 @@
 import os
 from pathlib import Path
 from typing import List, Tuple
+import pandas as pd
+import subprocess
 
-from data.download import get_file_system, download_data
+from data.download import download_data
 from data.filter import filter_indices_from_labels
 
 
@@ -23,17 +25,10 @@ def get_patchs_labels(
     """
 
     if from_s3:
-        fs = get_file_system()
-
-        patchs = fs.ls(
-            f"projet-hackathon-ntts-2025/data-preprocessed/patchs/"
-            f"{type_labeler}/{source}/{dep}/{year}/{tiles_size}"
-        )
-
-        labels = fs.ls(
-            f"projet-hackathon-ntts-2025/data-preprocessed/labels/"
-            f"{type_labeler}/{source}/{dep}/{year}/{tiles_size}"
-        )
+        url_filenames = f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_3}/{year}/filename2bbox.parquet"
+        df_filenames = pd.read_parquet(url_filenames)
+        patchs = df_filenames.filename.tolist()
+        labels = [filename.split('.')[0]+'.npy' for filename in patchs]
 
     else:
         patchs_path = (
@@ -107,17 +102,25 @@ def format_datasets(args_dict: dict) -> Tuple[List[str], List[str], dict]:
     nuts, years = zip(*[item.split("_") for item in args_dict["datasets"]])
     nuts = [n.upper() for n in nuts]
 
-    fs = get_file_system()
-
     for nut, year in zip(nuts, years):
-        s3_path = (
-            f"s3://projet-hackathon-ntts-2025/data-preprocessed/"
-            f"patchs/{args_dict['type_labeler']}/"
-            f"{args_dict['source']}/{nut}/{year}"
-        )
+        alias_cmd = [
+            "mc", "alias", "set", "public",
+            "https://minio.lab.sspcloud.fr",
+            "", ""
+        ]
 
-        if not fs.exists(s3_path):
-            raise ValueError(f"S3 path {s3_path} does not exist.")
+        with open("/dev/null", "w") as devnull:
+            # set public alias
+            subprocess.run(alias_cmd, check=True, stdout=devnull, stderr=devnull)
+            patch_cmd = [
+                "mc",
+                "stat",
+                f"public/projet-formation/diffusion/funathon/2026/project3/data/images/{nuts}/{years}/",
+            ]
+            subprocess.run(patch_cmd, check=True, stdout=devnull, stderr=devnull)  
+
+            if not patch_cmd:
+                raise ValueError("S3 path does not exist.")
 
     args_dict.pop("datasets")
 

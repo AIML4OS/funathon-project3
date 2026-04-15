@@ -142,9 +142,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/"
-    "data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/"
-    "FRJ27/2018/250/3649890_2331750_0_937.tif"
+    "https://minio.lab.sspcloud.fr/projet-formation/"
+    "diffusion/funathon/2026/project3/data/images/"
+    "FRJ27/2018/3649890_2331750_0_937.tif"
 )
 
 # Step 3a: Open the tile with rasterio and read RGB bands (4, 3, 2)
@@ -349,7 +349,7 @@ fs = ___
 
 # Step 10c: Build the S3 destination path
 # TODO: Use the training pipeline convention:
-# "projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/FRJ27/2018/250/3649890_2331750_0_937.npy"
+# "https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/FRJ27/2018/3649890_2331750_0_937.npy"
 s3_path = ___
 
 # Step 10d: Upload to S3

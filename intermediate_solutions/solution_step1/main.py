@@ -15,7 +15,7 @@ import numpy as np
 # =========================
 fs = get_file_system()
 
-s3_path = "projet-hackathon-ntts-2025/data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/BG322/2021/250/5553950_2341530_0_244.tif"
+s3_path = "https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/BG322/2021/5553950_2341530_0_244.tif"
 local_path = "test_image.tif"
 
 fs.get(s3_path, local_path)
@@ -90,7 +90,7 @@ plt.tight_layout()
 plt.show()
 
 # All the images for the training :
-# s3/projet-hackathon-ntts-2025/data-preprocessed/patchs/CLCplus-Backbone/SENTINEL2/
+# https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/
 
 # All the labels for the training :
-# s3/projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/
+# https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/

@@ -41,7 +41,7 @@ editor_options:
     </tr>
     <tr>
       <td><span class="level-button level-expert">Expert</span></td>
-      <td>Doing the exercises of steps 1 to 3, without relying on clues and solutions, and completing steps 4 (deployment).</td>
+      <td>Doing the exercises of steps 1 to 4, without relying on clues and solutions.</td>
     </tr>
   </tbody>
 </table>
@@ -73,8 +73,8 @@ This project has four sections (listed in the banner at the top of the page):
 
 1.  **Data Acquisition & Manipulation** -- Download Sentinel-2 images and CLC+ labels, visualise and manipulate raster data.
 2.  **Model Training** *(optional)* -- Understand the SegFormer architecture and how the segmentation model was trained.
-3.  **Inference & Statistics** -- Use a pre-trained model to produce land-cover maps, then compute regional statistics.
-4.  **Deployment** *(optional)* -- Build an interactive dashboard to visualise the results.
+3.  **Inference** -- Use a pre-trained model to produce land-cover maps.
+4.  **Statistics** *(optional)* -- Compute regional statistics based on the predictions.
 
 # Initialization of the project
 
@@ -109,11 +109,5 @@ Structure of the project:
 Install the project dependencies by running the following command in the terminal:
 
 ```
-uv sync
-```
-
-If you want to work on the optional model-training section, install the training extras:
-
-```
-uv sync --extra training
+source ./init.sh
 ```

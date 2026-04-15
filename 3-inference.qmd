@@ -1,8 +1,282 @@
 ---
-lang: fr-FR
-title: Inference and statistics
+lang: en-US
+title: Inference
 
 format:
   html:
     number-sections: true
 ---
+
+# Load the Trained Model
+
+This section covers how to load a trained segmentation model from the MLflow
+Model Registry and apply it to a Sentinel-2 image to produce land-cover predictions.
+
+## From MLflow
+
+MLflow lets you version and compare training runs, then promote the best model
+to a **Model Registry**. Follow these steps to register your model:
+
+1. In the top left, select **Model Training**.
+2. Go to **Experiments** and open `"funathon-2026-project3"`.
+3. In the **Runs** section, compare runs using the logged metrics and select
+   the best-performing one.
+4. Click **Register model**, name it `"segmentation-sentinel2-model"`, and confirm.
+5. Verify it appears in the **Model Registry**.
+
+Create a .env file and fill this model :
+
+```
+MLFLOW_TRACKING_URI=""
+MLFLOW_TRACKING_USERNAME""
+MLFLOW_TRACKING_PASSWORD""
+```
+
+Once registered, load the model using the `get_model()` utility:
+```{python}
+#| eval: false
+
+import os
+from utils import get_model
+from dotenv import load_dotenv
+
+load_dotenv()
+
+model_name = ___  # TODO: the model name registred
+model_version = ___  # TODO: the model name registred
+mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+
+model = get_model(model_name, model_version, mlflow_tracking_uri)
+```
+
+`get_model()` wraps `mlflow.pyfunc.load_model` and raises a descriptive
+exception if the model or version cannot be found.
+
+## Retrieve model metadata
+
+The training run stores key hyperparameters as MLflow params. Retrieve them to
+configure the inference pipeline consistently with how the model was trained:
+```{python}
+#| eval: false
+
+import mlflow
+from utils import get_normalization_metrics
+
+run = mlflow.get_run(model.metadata.run_id)
+
+n_bands = int(run.data.params["n_bands"])
+tiles_size = int(run.data.params["tiles_size"])
+augment_size = int(run.data.params["augment_size"])
+module_name = run.data.params["module_name"]
+
+normalization_mean, normalization_std = get_normalization_metrics(model, n_bands)
+
+print(f"n_bands={n_bands}, tiles_size={tiles_size}, augment_size={augment_size}")
+print(f"mean={normalization_mean}")
+print(f"std={normalization_std}")
+```
+
+- **`tiles_size`**: the spatial resolution (in pixels) the model was trained on.
+- **`augment_size`**: if different from `tiles_size`, a resize is automatically
+  inserted in the preprocessing pipeline.
+- **`normalization_mean` / `normalization_std`**: per-band statistics used to
+  standardise the image before inference.
+
+# Apply the Model
+
+## Predict on a single Sentinel-2 image
+
+The `predict()` utility handles the full pipeline — loading the image from S3,
+preprocessing, tiling if needed, and assembling the result back into a
+`SegmentationLabeledSatelliteImage`:
+```{python}
+#| eval: false
+
+from utils import predict
+
+image_path = (
+    "s3/projet-formation/diffusion/funathon/2026/project3/"
+    "data/images/LU000/2024/3034500_2011690.tif"
+)
+
+labelled_satellite_img = predict(
+    images=image_path,
+    model=model,
+    tiles_size=tiles_size,
+    augment_size=augment_size,
+    n_bands=n_bands,
+    normalization_mean=normalization_mean,
+    normalization_std=normalization_std,
+    module_name=module_name,
+)
+```
+
+Internally, `predict()`:
+
+1. Opens the image from S3 via `/vsis3/` (no local download needed).
+2. Normalises and resizes with `albumentations`.
+3. Splits the image into tiles of `tiles_size × tiles_size` if the image is
+   larger, then reassembles the predictions with `make_mosaic`.
+4. Returns a `SegmentationLabeledSatelliteImage` containing the raw logits.
+
+## Produce the class mask
+
+Convert the raw logits to a 2D array of predicted class IDs with `produce_mask()`:
+```{python}
+#| eval: false
+
+from utils import produce_mask
+
+labelled_satellite_img.label = produce_mask(labelled_satellite_img.label, module_name)
+
+print(f"Mask shape : {labelled_satellite_img.label.shape}")
+print(f"Classes found : {set(labelled_satellite_img.label.flatten().tolist())}")
+```
+
+`produce_mask()` applies `torch.argmax` along the class dimension, returning
+an integer array of shape `(H, W)` where each value is the predicted class ID
+(1–10 for CLC+ Backbone).
+
+## Display the prediction
+```{python}
+#| eval: false
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
+
+classes = [
+    ("Sealed (1)",                              "#FF0100"),
+    ("Woody – needle leaved trees (2)",         "#238B23"),
+    ("Woody – broadleaved deciduous (3)",       "#80FF00"),
+    ("Woody – broadleaved evergreen (4)",       "#00FF00"),
+    ("Low-growing woody plants (5)",            "#804000"),
+    ("Permanent herbaceous (6)",                "#CCF24E"),
+    ("Periodically herbaceous (7)",             "#FEFF80"),
+    ("Lichens and mosses (8)",                  "#FF81FF"),
+    ("Non- and sparsely-vegetated (9)",         "#BFBFBF"),
+    ("Water (10)",                              "#0080FF"),
+]
+
+cmap = ListedColormap([color for _, color in classes])
+
+# RGB composite for visualisation (bands 4, 3, 2)
+rgb = np.transpose(labelled_satellite_img.satellite_image.array[[3, 2, 1]], (1, 2, 0)).astype(np.float32)
+p98 = np.percentile(rgb, 98)
+rgb = np.clip(rgb / p98, 0, 1)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+axes[0].imshow(rgb)
+axes[0].set_title("Sentinel-2 RGB (B4, B3, B2)")
+axes[0].axis("off")
+
+axes[1].imshow(labelled_satellite_img.label, cmap=cmap, vmin=1, vmax=10)
+axes[1].set_title("Predicted land cover")
+axes[1].axis("off")
+
+legend_elements = [
+    Patch(facecolor=color, edgecolor="black", label=label)
+    for label, color in classes
+]
+
+fig.legend(
+    handles=legend_elements,
+    loc="center right",
+    bbox_to_anchor=(1.35, 0.5),
+    frameon=True,
+)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Convert predictions to polygons
+
+`create_geojson_from_mask()` vectorises the class mask into a GeoDataFrame of
+polygons, each carrying its `label` (class ID). It writes the mask to a
+temporary GeoTIFF to preserve the georeference, then calls
+`rasterio.features.shapes` to extract contiguous regions:
+```{python}
+#| eval: false
+
+from utils import create_geojson_from_mask
+
+gdf_pred = create_geojson_from_mask(labelled_satellite_img)
+
+print(f"{len(gdf_pred)} polygons extracted")
+print(gdf_pred.head())
+
+gdf_nuts.to_parquet("predictions_LU000_3034500_2011690_2024.parquet")
+```
+
+::: {.callout-note}
+Pixels with class value `0` (no-data / background) are automatically excluded
+from the output GeoDataFrame.
+:::
+
+Plot the polygons coloured by class on top of the satellite image:
+```{python}
+#| eval: false
+
+import geopandas as gpd
+
+fig, ax = plt.subplots(figsize=(8, 8))
+ax.imshow(rgb)
+
+gdf_pred.plot(
+    column="label",
+    cmap=cmap,
+    vmin=1,
+    vmax=10,
+    alpha=0.5,
+    ax=ax,
+    legend=False,
+)
+
+ax.set_title("Predicted polygons overlay")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
+```
+
+# API
+
+A REST API has been deployed to run inference at scale for a given NUTS3/year
+pair. It wraps the same `predict()` / `create_geojson_from_mask()` pipeline
+with an S3 cache layer, and exposes three endpoints:
+
+| Endpoint | Description |
+|---|---|
+| `GET /find_image` | Returns the image filename that contains a GPS point |
+| `GET /predict_image` | Predicts a single image by path; optionally returns polygons |
+| `GET /predict_nuts` | Predicts all images for a NUTS3/year pair |
+
+Call the NUTS-level endpoint and load the result as a GeoDataFrame:
+```{python}
+#| eval: false
+
+import requests
+import geopandas as gpd
+
+api_url = "https://projet-formation-api.user.lab.sspcloud.fr"
+
+response = requests.get(
+    f"{api_url}/predict_nuts",
+    params={"nuts_id": "LU000", "year": 2024},
+)
+response.raise_for_status()
+
+gdf_nuts = gpd.GeoDataFrame.from_features(
+    response.json()["predictions"], crs="EPSG:3035"
+)
+
+print(f"{len(gdf_nuts)} polygons received")
+gdf_nuts.head()
+
+gdf_nuts.to_parquet("predictions_LU000_2024.parquet")
+```
+
+The response is a **GeoJSON FeatureCollection** serialised as a JSON string
+inside the `"predictions"` key.

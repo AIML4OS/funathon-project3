@@ -2,11 +2,20 @@
 # ============================================
 # STEP 3 — Inference
 # ============================================
+
+# %%
+# ============================================
+# Load the Trained Model
+# ============================================
 import os
 import mlflow
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
+from dotenv import load_dotenv
 import requests
 import geopandas as gpd
-from dotenv import load_dotenv
 from utils import (
     get_model,
     get_normalization_metrics,
@@ -22,7 +31,7 @@ load_dotenv()
 # Load model from MLflow
 # =========================
 
-model_name    = ___  # TODO: the model name registered
+model_name = ___  # TODO: the model name registered
 model_version = ___  # TODO: the model version registered
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 
@@ -35,10 +44,10 @@ model = get_model(model_name, model_version, mlflow_tracking_uri)
 
 run = mlflow.get_run(model.metadata.run_id)
 
-n_bands      = int(run.data.params["n_bands"])
-tiles_size   = int(run.data.params["tiles_size"])
+n_bands = int(run.data.params["n_bands"])
+tiles_size = int(run.data.params["tiles_size"])
 augment_size = int(run.data.params["augment_size"])
-module_name  = run.data.params["module_name"]
+module_name = run.data.params["module_name"]
 
 normalization_mean, normalization_std = get_normalization_metrics(model, n_bands)
 
@@ -46,9 +55,15 @@ print(f"n_bands={n_bands}, tiles_size={tiles_size}, augment_size={augment_size}"
 print(f"mean={normalization_mean}")
 print(f"std={normalization_std}")
 
+
+# %%
+# ============================================
+# Apply the Model
+# ============================================
+
 # %%
 # =========================
-# Predict a single image
+# Predict on a single Sentinel-2 image
 # =========================
 
 image_path = (
@@ -74,23 +89,44 @@ labelled_satellite_img = predict(
 
 labelled_satellite_img.label = produce_mask(labelled_satellite_img.label, module_name)
 
-print(f"Mask shape  : {labelled_satellite_img.label.shape}")
+print(f"Mask shape    : {labelled_satellite_img.label.shape}")
 print(f"Classes found : {set(labelled_satellite_img.label.flatten().tolist())}")
 
 # %%
 # =========================
-# Display prediction
+# Display the prediction
 # =========================
 
-rgb_pred = np.transpose(
+classes = [
+    ("Sealed (1)",                       "#FF0100"),
+    ("Woody – needle leaved trees (2)",  "#238B23"),
+    ("Woody – broadleaved deciduous (3)","#80FF00"),
+    ("Woody – broadleaved evergreen (4)","#00FF00"),
+    ("Low-growing woody plants (5)",     "#804000"),
+    ("Permanent herbaceous (6)",         "#CCF24E"),
+    ("Periodically herbaceous (7)",      "#FEFF80"),
+    ("Lichens and mosses (8)",           "#FF81FF"),
+    ("Non- and sparsely-vegetated (9)",  "#BFBFBF"),
+    ("Water (10)",                       "#0080FF"),
+]
+
+cmap = ListedColormap([color for _, color in classes])
+
+# RGB composite for visualisation (bands 4, 3, 2)
+rgb = np.transpose(
     labelled_satellite_img.satellite_image.array[[3, 2, 1]], (1, 2, 0)
 ).astype(np.float32)
-p98 = np.percentile(rgb_pred, 98)
-rgb_pred = np.clip(rgb_pred / p98, 0, 1)
+p98 = np.percentile(rgb, 98)
+rgb = np.clip(rgb / p98, 0, 1)
+
+legend_elements = [
+    Patch(facecolor=color, edgecolor="black", label=label)
+    for label, color in classes
+]
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 
-axes[0].imshow(rgb_pred)
+axes[0].imshow(rgb)
 axes[0].set_title("Sentinel-2 RGB (B4, B3, B2)")
 axes[0].axis("off")
 
@@ -110,7 +146,7 @@ plt.show()
 
 # %%
 # =========================
-# Convert mask to polygons
+# Convert predictions to polygons
 # =========================
 
 gdf_pred = create_geojson_from_mask(labelled_satellite_img)
@@ -126,7 +162,7 @@ gdf_pred.to_parquet("predictions_LU000_3034500_2011690_2024.parquet")
 # =========================
 
 fig, ax = plt.subplots(figsize=(8, 8))
-ax.imshow(rgb_pred)
+ax.imshow(rgb)
 
 gdf_pred.plot(
     column="label",
@@ -143,9 +179,10 @@ ax.axis("off")
 plt.tight_layout()
 plt.show()
 
+
 # %%
 # ============================================
-# STEP 3 — API (NUTS3-level predictions)
+# API (NUTS3-level predictions)
 # ============================================
 
 api_url = "https://projet-formation-api.user.lab.sspcloud.fr"

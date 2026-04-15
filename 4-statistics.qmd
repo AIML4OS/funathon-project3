@@ -104,8 +104,8 @@ land-cover composition, and allows comparison with the individual tile.
 #| eval: false
 
 gdf_nuts = gpd.read_parquet("predictions_LU000_2024.parquet")
-gdf_nuts["area_m2"]    = gdf_nuts.geometry.area
-gdf_nuts["area_km2"]   = gdf_nuts["area_m2"] / 1e6
+gdf_nuts["area_m2"] = gdf_nuts.geometry.area
+gdf_nuts["area_km2"] = gdf_nuts["area_m2"] / 1e6
 gdf_nuts["class_name"] = gdf_nuts["label"].map(class_names)
 ```
 
@@ -116,10 +116,10 @@ gdf_nuts["class_name"] = gdf_nuts["label"].map(class_names)
 stats_nuts = (
     gdf_nuts.groupby(["label", "class_name"])
     .agg(
-        n_polygons            = ("geometry", "count"),
-        total_area_km2        = ("area_km2", "sum"),
-        mean_polygon_area_m2  = ("area_m2",  "mean"),
-        max_polygon_area_m2   = ("area_m2",  "max"),
+        n_polygons = ("geometry", "count"),
+        total_area_km2 = ("area_km2", "sum"),
+        mean_polygon_area_m2 = ("area_m2",  "mean"),
+        max_polygon_area_m2 = ("area_m2",  "max"),
     )
     .reset_index()
     .sort_values("total_area_km2", ascending=False)
@@ -137,13 +137,13 @@ print(stats_nuts.to_string(index=False))
 
 sealed_km2 = stats_nuts.loc[stats_nuts["label"] == 1,           "total_area_km2"].sum()
 forest_km2 = stats_nuts.loc[stats_nuts["label"].isin([2, 3, 4]),"total_area_km2"].sum()
-agri_km2   = stats_nuts.loc[stats_nuts["label"].isin([6, 7]),   "total_area_km2"].sum()
-water_km2  = stats_nuts.loc[stats_nuts["label"] == 10,          "total_area_km2"].sum()
+agri_km2 = stats_nuts.loc[stats_nuts["label"].isin([6, 7]),   "total_area_km2"].sum()
+water_km2 = stats_nuts.loc[stats_nuts["label"] == 10,          "total_area_km2"].sum()
 
 print(f"Sealed (built-up)  : {sealed_km2:.2f} km²  ({sealed_km2 / total_nuts_km2 * 100:.1f} %)")
 print(f"Forest             : {forest_km2:.2f} km²  ({forest_km2 / total_nuts_km2 * 100:.1f} %)")
-print(f"Agricultural       : {agri_km2:.2f}  km²  ({agri_km2   / total_nuts_km2 * 100:.1f} %)")
-print(f"Water              : {water_km2:.2f} km²  ({water_km2  / total_nuts_km2 * 100:.1f} %)")
+print(f"Agricultural       : {agri_km2:.2f}  km²  ({agri_km2 / total_nuts_km2 * 100:.1f} %)")
+print(f"Water              : {water_km2:.2f} km²  ({water_km2 / total_nuts_km2 * 100:.1f} %)")
 ```
 
 ## Compare tile vs. NUTS3
@@ -184,3 +184,49 @@ axes[1].set_title("Land-cover share — LU000 (2024)")
 plt.tight_layout()
 plt.show()
 ```
+
+## Interactive map — sealed area per polygon
+
+```{python}
+#| eval: false
+import folium
+import branca.colormap as cm
+
+# Reproject to WGS84 for folium
+gdf_nuts_wgs84 = gdf_nuts[gdf_nuts["label"] == 1].to_crs("EPSG:4326")
+
+# Centroid of each polygon
+gdf_nuts_wgs84["centroid"] = gdf_nuts_wgs84.geometry.centroid
+gdf_nuts_wgs84["lat"] = gdf_nuts_wgs84["centroid"].y
+gdf_nuts_wgs84["lon"] = gdf_nuts_wgs84["centroid"].x
+
+# Colormap scaled to polygon area
+colormap = cm.LinearColormap(
+    colors=["#ffffcc", "#fd8d3c", "#800026"],
+    vmin=gdf_nuts_wgs84["area_m2"].min(),
+    vmax=gdf_nuts_wgs84["area_m2"].max(),
+    caption="Sealed area (m²)",
+)
+
+# Map centred on the NUTS3 region
+center = [gdf_nuts_wgs84["lat"].mean(), gdf_nuts_wgs84["lon"].mean()]
+m = folium.Map(location=center, zoom_start=11, tiles="CartoDB positron")
+
+for _, row in gdf_nuts_wgs84.iterrows():
+    # Radius proportional to area (m²), capped at 30
+    radius = min(3 + row["area_m2"] / 500, 30)
+    folium.CircleMarker(
+        location=[row["lat"], row["lon"]],
+        radius=radius,
+        color=colormap(row["area_m2"]),
+        fill=True,
+        fill_color=colormap(row["area_m2"]),
+        fill_opacity=0.7,
+        tooltip=f"Area: {row['area_m2']:.0f} m²",
+    ).add_to(m)
+
+colormap.add_to(m)
+m
+```
+
+## Be free to create new statistics and visualizations

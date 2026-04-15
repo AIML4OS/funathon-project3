@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Model Training – AIML4OS Funathon - Project 3</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-9c86c6a150ad8204aa26c688cf8b52e3.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<meta property="og:title" content="Model Training – AIML4OS Funathon - Project 3">
+<meta property="og:description" content="Satellite images segmentation">
+<meta property="og:site_name" content="AIML4OS Funathon - Project 3">
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Introduction</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./1-acquisition.html"> 
+<span class="menu-text">Acquisition</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="./2-model.html" aria-current="page"> 
+<span class="menu-text">Model Training (Optional)</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./3-inference.html"> 
+<span class="menu-text">Inference and Statistics</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./4-deployment.html"> 
+<span class="menu-text">Deployment (Optional)</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://inseefrlab.github.io/satellite-images-webapp/"> 
+<span class="menu-text">Demonstration App</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/AIML4OS/funathon-project3"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-segformer-architecture" id="toc-the-segformer-architecture" class="nav-link active" data-scroll-target="#the-segformer-architecture"><span class="header-section-number">1</span> The SegFormer Architecture</a>
+  <ul class="collapse">
+  <li><a href="#encoder-the-mix-transformer-mit" id="toc-encoder-the-mix-transformer-mit" class="nav-link" data-scroll-target="#encoder-the-mix-transformer-mit"><span class="header-section-number">1.1</span> Encoder: the Mix Transformer (MiT)</a></li>
+  <li><a href="#decoder-lightweight-all-mlp" id="toc-decoder-lightweight-all-mlp" class="nav-link" data-scroll-target="#decoder-lightweight-all-mlp"><span class="header-section-number">1.2</span> Decoder: lightweight all-MLP</a></li>
+  <li><a href="#why-segformer-for-satellite-imagery" id="toc-why-segformer-for-satellite-imagery" class="nav-link" data-scroll-target="#why-segformer-for-satellite-imagery"><span class="header-section-number">1.3</span> Why SegFormer for satellite imagery?</a></li>
+  </ul></li>
+  <li><a href="#instantiating-the-model" id="toc-instantiating-the-model" class="nav-link" data-scroll-target="#instantiating-the-model"><span class="header-section-number">2</span> Instantiating the Model</a></li>
+  <li><a href="#exploring-the-model" id="toc-exploring-the-model" class="nav-link" data-scroll-target="#exploring-the-model"><span class="header-section-number">3</span> Exploring the Model</a>
+  <ul class="collapse">
+  <li><a href="#printing-the-architecture" id="toc-printing-the-architecture" class="nav-link" data-scroll-target="#printing-the-architecture"><span class="header-section-number">3.1</span> Printing the architecture</a></li>
+  <li><a href="#counting-parameters" id="toc-counting-parameters" class="nav-link" data-scroll-target="#counting-parameters"><span class="header-section-number">3.2</span> Counting parameters</a></li>
+  <li><a href="#freezing-the-encoder" id="toc-freezing-the-encoder" class="nav-link" data-scroll-target="#freezing-the-encoder"><span class="header-section-number">3.3</span> Freezing the encoder</a></li>
+  </ul></li>
+  <li><a href="#running-a-forward-pass" id="toc-running-a-forward-pass" class="nav-link" data-scroll-target="#running-a-forward-pass"><span class="header-section-number">4</span> Running a Forward Pass</a>
+  <ul class="collapse">
+  <li><a href="#input-shape" id="toc-input-shape" class="nav-link" data-scroll-target="#input-shape"><span class="header-section-number">4.1</span> Input shape</a></li>
+  <li><a href="#output-shapes" id="toc-output-shapes" class="nav-link" data-scroll-target="#output-shapes"><span class="header-section-number">4.2</span> Output shapes</a></li>
+  <li><a href="#inspecting-intermediate-hidden-states" id="toc-inspecting-intermediate-hidden-states" class="nav-link" data-scroll-target="#inspecting-intermediate-hidden-states"><span class="header-section-number">4.3</span> Inspecting intermediate hidden states</a></li>
+  </ul></li>
+  <li><a href="#wrapping-the-model-in-a-lightning-module" id="toc-wrapping-the-model-in-a-lightning-module" class="nav-link" data-scroll-target="#wrapping-the-model-in-a-lightning-module"><span class="header-section-number">5</span> Wrapping the Model in a Lightning Module</a>
+  <ul class="collapse">
+  <li><a href="#structure-of-segmentationmodule" id="toc-structure-of-segmentationmodule" class="nav-link" data-scroll-target="#structure-of-segmentationmodule"><span class="header-section-number">5.1</span> Structure of <code>SegmentationModule</code></a></li>
+  <li><a href="#loss-function-cross-entropy" id="toc-loss-function-cross-entropy" class="nav-link" data-scroll-target="#loss-function-cross-entropy"><span class="header-section-number">5.2</span> Loss function: Cross-Entropy</a></li>
+  <li><a href="#metrics-intersection-over-union-iou" id="toc-metrics-intersection-over-union-iou" class="nav-link" data-scroll-target="#metrics-intersection-over-union-iou"><span class="header-section-number">5.3</span> Metrics: Intersection over Union (IoU)</a></li>
+  </ul></li>
+  <li><a href="#the-full-training-pipeline" id="toc-the-full-training-pipeline" class="nav-link" data-scroll-target="#the-full-training-pipeline"><span class="header-section-number">6</span> The Full Training Pipeline</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">7</span> Summary</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/2-model.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Model Training</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="the-segformer-architecture" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> The SegFormer Architecture</h1>
+<p>In the previous section we downloaded and prepared Sentinel-2 multispectral images together with their CLC+ Backbone land-cover labels. We now have patches of shape <code>(14, H, W)</code> — 14 spectral bands, height, width — each paired with a pixel-wise class mask. The goal of this section is to understand the <strong>model</strong> that will turn those patches into segmentation maps.</p>
+<p>We use <strong>SegFormer</strong>, a Vision Transformer architecture designed specifically for semantic segmentation. SegFormer was introduced by Xie et al.&nbsp;(2021) in <a href="https://arxiv.org/abs/2105.15203"><em>“SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers”</em></a>. Its two key design choices make it both powerful and practical:</p>
+<ol type="1">
+<li><strong>A hierarchical Mix Transformer encoder (MiT)</strong> that produces multi-scale feature representations without positional encodings.</li>
+<li><strong>A lightweight all-MLP decoder</strong> that aggregates information from all encoder stages with almost no parameters.</li>
+</ol>
+<section id="encoder-the-mix-transformer-mit" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="encoder-the-mix-transformer-mit"><span class="header-section-number">1.1</span> Encoder: the Mix Transformer (MiT)</h2>
+<p>A classic ViT cuts the image into non-overlapping 16×16 patches and processes them as a flat sequence. SegFormer instead uses a <strong>hierarchical</strong> encoder inspired by convolutional networks: the image passes through four successive stages, each one halving the spatial resolution while doubling the channel depth, very much like the stages in a ResNet.</p>
+<pre><code>Input (H × W × C)
+    │
+Stage 1 → feature map H/4  × W/4  × C₁     (high resolution, local details)
+Stage 2 → feature map H/8  × W/8  × C₂
+Stage 3 → feature map H/16 × W/16 × C₃
+Stage 4 → feature map H/32 × W/32 × C₄     (low resolution, global context)</code></pre>
+<p>Two design choices within each stage make the MiT especially efficient:</p>
+<ul>
+<li><strong>Efficient Self-Attention with Sequence Reduction (SR)</strong>: standard self-attention is O(N²) in the sequence length N. MiT reduces the key/value sequence by a factor R before computing attention, cutting the cost to O(N²/R). The reduction ratio decreases across stages (R = 64, 16, 4, 1) so that deeper stages, which already have a shorter sequence, can afford more attention.</li>
+<li><strong>Mix-FFN</strong>: the feed-forward network in each transformer block includes a depth-wise 3×3 convolution, which implicitly encodes local positional information. This removes the need for fixed positional encodings and allows SegFormer to handle any input resolution at inference time.</li>
+</ul>
+<p>The largest variant, <strong>MiT-B5</strong>, has ~82 M parameters in the encoder alone and was pre-trained on ImageNet-1k.</p>
+</section>
+<section id="decoder-lightweight-all-mlp" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="decoder-lightweight-all-mlp"><span class="header-section-number">1.2</span> Decoder: lightweight all-MLP</h2>
+<p>Once the encoder has produced four feature maps at different scales, a traditional approach (like FPN or UPerNet) would use complex convolutional blocks to fuse them. SegFormer’s decoder does something strikingly simple:</p>
+<ol type="1">
+<li><strong>Project</strong> each stage output to a common embedding dimension with a linear layer.</li>
+<li><strong>Upsample</strong> all projected maps to the same resolution (H/4 × W/4).</li>
+<li><strong>Concatenate</strong> them along the channel dimension.</li>
+<li><strong>Predict</strong> class logits with a single linear layer.</li>
+</ol>
+<p>This all-MLP decoder has ~4 M parameters — about 5 % of the total model size — and yet consistently matches or outperforms much heavier decoder heads. The key insight is that multi-scale context is already baked into the encoder features; the decoder just needs to combine them.</p>
+<pre><code>Stage 1 features  ──┐
+Stage 2 features  ──┤  Linear proj → upsample → H/4 × W/4
+Stage 3 features  ──┤                ↓
+Stage 4 features  ──┘             Concat → Linear → logits (H/4 × W/4 × num_classes)</code></pre>
+<p>The final logits are at <strong>quarter resolution</strong> (H/4 × W/4). During training they are bilinearly upsampled to the label resolution before computing the loss; during inference they are upsampled to the original image resolution.</p>
+</section>
+<section id="why-segformer-for-satellite-imagery" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="why-segformer-for-satellite-imagery"><span class="header-section-number">1.3</span> Why SegFormer for satellite imagery?</h2>
+<p>Satellite imagery presents specific challenges compared to natural images:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Challenge</th>
+<th>How SegFormer helps</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>14 spectral bands</strong> (not 3)</td>
+<td>Encoder’s first patch embedding is replaced — <code>num_channels</code> is a config parameter</td>
+</tr>
+<tr class="even">
+<td><strong>Large images</strong> (512 × 512 patches)</td>
+<td>No positional encodings → resolution-agnostic; SR attention → memory-efficient</td>
+</tr>
+<tr class="odd">
+<td><strong>Small objects</strong> (buildings, roads)</td>
+<td>Stage-1 features at H/4 preserve fine spatial details</td>
+</tr>
+<tr class="even">
+<td><strong>Large context</strong> (land-cover categories span hundreds of pixels)</td>
+<td>Deep stages capture global context at H/32</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="instantiating-the-model" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Instantiating the Model</h1>
+<p>The project wraps SegFormer in two classes defined in <code>intermediate_solutions/solution_step2/models/model.py</code>:</p>
+<ul>
+<li><strong><code>SemanticSegmentationSegformer</code></strong>: a thin subclass of HuggingFace’s <code>SegformerPreTrainedModel</code> that adds freeze/unfreeze helpers and a cleaner forward method.</li>
+<li><strong><code>SegformerB5</code></strong>: a factory that fetches the label mapping from an S3 bucket, builds a <code>SegformerConfig</code>, and downloads the pre-trained <code>nvidia/mit-b5</code> weights.</li>
+</ul>
+<div id="7c865e5a" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">"intermediate_solutions/solution_step2"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SegformerB5</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># This downloads ~330 MB of weights from HuggingFace on first run</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> SegformerB5(</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    n_bands<span class="op">=</span><span class="dv">14</span>,              <span class="co"># 14 Sentinel-2 bands</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    logits<span class="op">=</span><span class="va">True</span>,             <span class="co"># return raw logits (not probabilities)</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    freeze_encoder<span class="op">=</span><span class="va">False</span>,    <span class="co"># keep encoder trainable</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    type_labeler<span class="op">=</span><span class="st">"CLCplus-Backbone"</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>What happens inside <code>SegformerB5.__new__</code>?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>SegformerB5</code> overrides <code>__new__</code> (not <code>__init__</code>) because it returns an instance of the <em>parent</em> class <code>SemanticSegmentationSegformer</code> rather than of <code>SegformerB5</code> itself. This is a Python trick that lets a plain function call <code>SegformerB5(...)</code> act as a factory.</p>
+<p>Inside, three things happen:</p>
+<ol type="1">
+<li>The <code>id2label</code> / <code>label2id</code> dicts are fetched from S3 (a JSON file mapping integer class ids to human-readable names).</li>
+<li>A <code>SegformerConfig</code> is built from the <code>nvidia/mit-b5</code> preset and patched with <code>num_channels=14</code> and the correct number of classes.</li>
+<li><code>SemanticSegmentationSegformer.from_pretrained("nvidia/mit-b5", ...)</code> is called with <code>ignore_mismatched_sizes=True</code> so that the first patch-embedding layer (whose weight shape changes when <code>num_channels</code> differs from 3) is re-initialised from scratch while all other layers keep their ImageNet weights.</li>
+</ol>
+</div>
+</div>
+</section>
+<section id="exploring-the-model" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Exploring the Model</h1>
+<section id="printing-the-architecture" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="printing-the-architecture"><span class="header-section-number">3.1</span> Printing the architecture</h2>
+<p>The model object is a standard <code>torch.nn.Module</code>. You can print it to see every sub-module:</p>
+<div id="0845f806" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The output is long, but the top-level structure is clear:</p>
+<pre><code>SemanticSegmentationSegformer(
+  (segformer): SegformerModel(
+    (encoder): SegformerEncoder(
+      (patch_embeddings): ModuleList(...)   # 4 patch-embedding layers
+      (block): ModuleList(...)              # 4 lists of transformer blocks
+      (layer_norm): ModuleList(...)         # 4 layer norms
+    )
+  )
+  (decode_head): SegformerDecodeHead(
+    (linear_c): ModuleList(...)             # 4 projection layers
+    (linear_fuse): Conv2d(...)              # channel fusion
+    (batch_norm): BatchNorm2d(...)
+    (classifier): Conv2d(...)              # final class prediction
+  )
+)</code></pre>
+</section>
+<section id="counting-parameters" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="counting-parameters"><span class="header-section-number">3.2</span> Counting parameters</h2>
+<p>A quick way to understand a model’s capacity is to count how many parameters it has, and how many are currently trainable (i.e.&nbsp;not frozen).</p>
+<div id="c18e4974" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> count_params(module):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> module.parameters())</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    trainable <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> module.parameters() <span class="cf">if</span> p.requires_grad)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total, trainable</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>total, trainable <span class="op">=</span> count_params(model)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>enc_total, enc_trainable <span class="op">=</span> count_params(model.segformer)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>dec_total, dec_trainable <span class="op">=</span> count_params(model.decode_head)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Component'</span><span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Total params'</span><span class="sc">:&gt;15}</span><span class="ss"> </span><span class="sc">{</span><span class="st">'Trainable params'</span><span class="sc">:&gt;18}</span><span class="ss">"</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"-"</span> <span class="op">*</span> <span class="dv">55</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Encoder (MiT-B5)'</span><span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span>enc_total<span class="sc">:&gt;15,}</span><span class="ss"> </span><span class="sc">{</span>enc_trainable<span class="sc">:&gt;18,}</span><span class="ss">"</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Decoder (MLP)'</span><span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span>dec_total<span class="sc">:&gt;15,}</span><span class="ss"> </span><span class="sc">{</span>dec_trainable<span class="sc">:&gt;18,}</span><span class="ss">"</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="st">'Full model'</span><span class="sc">:&lt;20}</span><span class="ss"> </span><span class="sc">{</span>total<span class="sc">:&gt;15,}</span><span class="ss"> </span><span class="sc">{</span>trainable<span class="sc">:&gt;18,}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Expected output (approximate):</p>
+<pre><code>Component            Total params   Trainable params
+-------------------------------------------------------
+Encoder (MiT-B5)       82,030,720         82,030,720
+Decoder (MLP)           4,217,248          4,217,248
+Full model             86,247,968         86,247,968</code></pre>
+<p>Notice how lopsided the split is: <strong>the encoder carries ~95 % of the parameters</strong>, yet the decoder is what actually learns to combine multi-scale features for this specific task. This asymmetry is central to the SegFormer design philosophy.</p>
+</section>
+<section id="freezing-the-encoder" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="freezing-the-encoder"><span class="header-section-number">3.3</span> Freezing the encoder</h2>
+<p>When fine-tuning on a new domain (e.g.&nbsp;switching from RGB natural images to 14-band satellite imagery), a common strategy is to <strong>freeze the encoder</strong> at first and only train the decoder. This is much faster and prevents overfitting when labelled data is scarce.</p>
+<div id="78d0b00a" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Freeze all encoder parameters</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>model.freeze()</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>total, trainable <span class="op">=</span> count_params(model)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"After freezing encoder — trainable: </span><span class="sc">{</span>trainable<span class="sc">:,}</span><span class="ss"> / </span><span class="sc">{</span>total<span class="sc">:,}</span><span class="ss">"</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Unfreeze for full fine-tuning</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>model.unfreeze()</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>total, trainable <span class="op">=</span> count_params(model)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"After unfreezing — trainable: </span><span class="sc">{</span>trainable<span class="sc">:,}</span><span class="ss"> / </span><span class="sc">{</span>total<span class="sc">:,}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 1 — Parameter exploration
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Implement the <code>count_params</code> helper from scratch, then:</p>
+<ol type="1">
+<li>Count the number of parameters in <strong>each of the 4 encoder stages</strong> individually (<code>model.segformer.encoder.block[i]</code>).</li>
+<li>Which stage has the most parameters? Does this match your intuition about deeper stages being wider?</li>
+<li>Count the parameters in the decoder’s <strong>four projection layers</strong> (<code>model.decode_head.linear_c</code>) and in the final <strong>classifier</strong> (<code>model.decode_head.classifier</code>). What fraction of decoder parameters does the classifier represent?</li>
+</ol>
+<div id="9efaa029" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Parameters per encoder stage</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, stage <span class="kw">in</span> <span class="bu">enumerate</span>(model.segformer.encoder.block):</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> ___  <span class="co"># </span><span class="al">TODO</span><span class="co">: count parameters in this stage</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Stage </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n<span class="sc">:,}</span><span class="ss"> parameters"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Decoder breakdown</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, proj <span class="kw">in</span> <span class="bu">enumerate</span>(model.decode_head.linear_c):</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> ___  <span class="co"># </span><span class="al">TODO</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Decoder projection </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n<span class="sc">:,}</span><span class="ss"> parameters"</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>clf_params <span class="op">=</span> ___  <span class="co"># </span><span class="al">TODO</span><span class="co">: classifier layer</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Classifier: </span><span class="sc">{</span>clf_params<span class="sc">:,}</span><span class="ss"> parameters"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint — Exercise 1
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Use <code>sum(p.numel() for p in module.parameters())</code> to count parameters for any <code>nn.Module</code>. Each encoder stage is a <code>ModuleList</code> of transformer blocks accessible at <code>model.segformer.encoder.block[i]</code>.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution — Exercise 1
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="e0db14a7" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Parameters per encoder stage</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, stage <span class="kw">in</span> <span class="bu">enumerate</span>(model.segformer.encoder.block):</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> stage.parameters())</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Stage </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n<span class="sc">:,}</span><span class="ss"> parameters"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Decoder breakdown</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, proj <span class="kw">in</span> <span class="bu">enumerate</span>(model.decode_head.linear_c):</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> proj.parameters())</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Decoder projection </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n<span class="sc">:,}</span><span class="ss"> parameters"</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>clf_params <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> model.decode_head.classifier.parameters())</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>dec_total <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> model.decode_head.parameters())</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Classifier: </span><span class="sc">{</span>clf_params<span class="sc">:,}</span><span class="ss"> / </span><span class="sc">{</span>dec_total<span class="sc">:,}</span><span class="ss"> decoder params "</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span><span class="dv">100</span><span class="op">*</span>clf_params<span class="op">/</span>dec_total<span class="sc">:.1f}</span><span class="ss">%)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="running-a-forward-pass" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Running a Forward Pass</h1>
+<p>Before training, it is useful to trace a <strong>dummy forward pass</strong> to verify that all shapes are consistent.</p>
+<section id="input-shape" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="input-shape"><span class="header-section-number">4.1</span> Input shape</h2>
+<p>Our dataset produces patches of shape <code>(14, H, W)</code> — 14 spectral bands. The DataLoader stacks them into batches <code>(B, 14, H, W)</code>. Let us create a random dummy batch:</p>
+<div id="3af3f2b9" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>B, C, H, W <span class="op">=</span> <span class="dv">2</span>, <span class="dv">14</span>, <span class="dv">512</span>, <span class="dv">512</span>   <span class="co"># batch size, channels, height, width</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>dummy_input <span class="op">=</span> torch.randn(B, C, H, W)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>dummy_labels <span class="op">=</span> torch.randint(<span class="dv">0</span>, model.config.num_labels, (B, H, W))</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Input  shape: </span><span class="sc">{</span><span class="bu">tuple</span>(dummy_input.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Labels shape: </span><span class="sc">{</span><span class="bu">tuple</span>(dummy_labels.shape)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="output-shapes" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="output-shapes"><span class="header-section-number">4.2</span> Output shapes</h2>
+<p>The model has two calling modes depending on whether you pass <code>labels</code>:</p>
+<div id="ed33d83b" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">eval</span>()</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad():</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Without labels → raw logits at H/4 × W/4</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    logits <span class="op">=</span> model(dummy_input)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Logits shape (no labels):   </span><span class="sc">{</span><span class="bu">tuple</span>(logits.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Expected: (2, num_classes, 128, 128)  — quarter resolution</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># With labels → logits upsampled to label resolution</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    upsampled <span class="op">=</span> model(dummy_input, dummy_labels)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Logits shape (with labels): </span><span class="sc">{</span><span class="bu">tuple</span>(upsampled.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Expected: (2, num_classes, 512, 512)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why quarter resolution?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>After 4 stages of patch merging, the spatial dimensions are reduced by 2 at each stage: 512 → 256 → 128 → 64 → 32. Wait — that would give 1/16, not 1/4! The key is that the <strong>first</strong> patch embedding in SegFormer uses stride 4 (not stride 2), which brings the resolution immediately to H/4. Subsequent stages then halve once each: H/4 → H/8 → H/16 → H/32. The decoder upsamples all four feature maps to the <strong>finest</strong> scale (H/4) before fusing them, so the output is at H/4 × W/4.</p>
+</div>
+</div>
+</section>
+<section id="inspecting-intermediate-hidden-states" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="inspecting-intermediate-hidden-states"><span class="header-section-number">4.3</span> Inspecting intermediate hidden states</h2>
+<p>The encoder returns all four intermediate feature maps when <code>output_hidden_states=True</code>. This is exactly how the <code>forward</code> method feeds the decoder:</p>
+<div id="79eb2826" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>outputs <span class="op">=</span> model.segformer(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    dummy_input,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    output_hidden_states<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    return_dict<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, hs <span class="kw">in</span> <span class="bu">enumerate</span>(outputs.hidden_states):</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Stage </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss"> hidden state: </span><span class="sc">{</span><span class="bu">tuple</span>(hs.shape)<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>You should see something like:</p>
+<pre><code>Stage 1 hidden state: (2, 64,  128, 128)   # H/4  × W/4
+Stage 2 hidden state: (2, 128,  64,  64)   # H/8  × W/8
+Stage 3 hidden state: (2, 320,  32,  32)   # H/16 × W/16
+Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 2 — Forward pass anatomy
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>Run the dummy forward pass <strong>without</strong> labels, then manually upsample the logits to the original (512, 512) resolution using <code>torch.nn.functional.interpolate</code> with <code>mode="bilinear"</code>. Verify the shape matches what you get when you pass labels directly.</li>
+<li>Apply <code>torch.softmax(logits, dim=1)</code> to the upsampled logits and call <code>torch.argmax(..., dim=1)</code> to obtain a predicted class map. What shape does it have? What do its values represent?</li>
+<li><em>(Bonus)</em> For each of the 4 hidden states, compute the ratio of spatial area to the original image: <code>(H_stage * W_stage) / (H * W)</code>. Does the pattern match the quarter-resolution rule?</li>
+</ol>
+<div id="ac74cc6d" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn.functional <span class="im">as</span> F</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Manual upsampling</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>logits_full <span class="op">=</span> F.interpolate(</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    ___,                      <span class="co"># </span><span class="al">TODO</span><span class="co">: the raw logits tensor</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    size<span class="op">=</span>___,                 <span class="co"># </span><span class="al">TODO</span><span class="co">: target (H, W)</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"bilinear"</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    align_corners<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Manually upsampled: </span><span class="sc">{</span><span class="bu">tuple</span>(logits_full.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Predicted class map</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> ___   <span class="co"># </span><span class="al">TODO</span><span class="co">: softmax over class dimension</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>pred  <span class="op">=</span> ___   <span class="co"># </span><span class="al">TODO</span><span class="co">: argmax → (B, H, W)</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted map shape: </span><span class="sc">{</span><span class="bu">tuple</span>(pred.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Unique predicted classes: </span><span class="sc">{</span>pred<span class="sc">.</span>unique()<span class="sc">.</span>tolist()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Spatial area ratios</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, hs <span class="kw">in</span> <span class="bu">enumerate</span>(outputs.hidden_states):</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    ratio <span class="op">=</span> ___  <span class="co"># </span><span class="al">TODO</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Stage </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>ratio<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution — Exercise 2
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="40956279" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn.functional <span class="im">as</span> F</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">eval</span>()</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad():</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    logits <span class="op">=</span> model(dummy_input)           <span class="co"># (B, num_classes, H/4, W/4)</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    outputs <span class="op">=</span> model.segformer(</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>        dummy_input, output_hidden_states<span class="op">=</span><span class="va">True</span>, return_dict<span class="op">=</span><span class="va">True</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Manual upsampling</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>logits_full <span class="op">=</span> F.interpolate(</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    logits,</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    size<span class="op">=</span>(H, W),</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"bilinear"</span>,</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    align_corners<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Manually upsampled: </span><span class="sc">{</span><span class="bu">tuple</span>(logits_full.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Predicted class map</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> torch.softmax(logits_full, dim<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>pred  <span class="op">=</span> torch.argmax(probs, dim<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted map shape: </span><span class="sc">{</span><span class="bu">tuple</span>(pred.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Unique predicted classes: </span><span class="sc">{</span>pred<span class="sc">.</span>unique()<span class="sc">.</span>tolist()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Spatial area ratios</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, hs <span class="kw">in</span> <span class="bu">enumerate</span>(outputs.hidden_states):</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    ratio <span class="op">=</span> (hs.shape[<span class="op">-</span><span class="dv">2</span>] <span class="op">*</span> hs.shape[<span class="op">-</span><span class="dv">1</span>]) <span class="op">/</span> (H <span class="op">*</span> W)</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Stage </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>ratio<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="wrapping-the-model-in-a-lightning-module" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Wrapping the Model in a Lightning Module</h1>
+<p>PyTorch Lightning separates the model definition from the training logic. The <code>SegmentationModule</code> class in <code>intermediate_solutions/solution_step2/models/module.py</code> wraps <code>SemanticSegmentationSegformer</code> and implements the standard Lightning hooks.</p>
+<section id="structure-of-segmentationmodule" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="structure-of-segmentationmodule"><span class="header-section-number">5.1</span> Structure of <code>SegmentationModule</code></h2>
+<div id="e53fc88f" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.module <span class="im">import</span> SegmentationModule</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn, optim</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>module <span class="op">=</span> SegmentationModule(</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>model,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    loss<span class="op">=</span>nn.CrossEntropyLoss(ignore_index<span class="op">=</span><span class="dv">255</span>),</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    optimizer<span class="op">=</span>optim.AdamW,</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    optimizer_params<span class="op">=</span>{<span class="st">"lr"</span>: <span class="fl">1e-3</span>, <span class="st">"weight_decay"</span>: <span class="fl">1e-2</span>},</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    scheduler<span class="op">=</span>optim.lr_scheduler.OneCycleLR,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    scheduler_params<span class="op">=</span>{},</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    scheduler_interval<span class="op">=</span><span class="st">"step"</span>,</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The module’s key methods are:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>forward(batch, labels)</code></td>
+<td>Delegates to <code>model.forward</code>; upsamples logits when labels are given</td>
+</tr>
+<tr class="even">
+<td><code>training_step</code></td>
+<td>Computes loss + logs IoU and building-rate metrics</td>
+</tr>
+<tr class="odd">
+<td><code>validation_step</code></td>
+<td>Same as training, on the validation set</td>
+</tr>
+<tr class="even">
+<td><code>test_step</code></td>
+<td>Evaluates on test dataloaders</td>
+</tr>
+<tr class="odd">
+<td><code>configure_optimizers</code></td>
+<td>Returns <code>[optimizer], [scheduler]</code> in the Lightning format</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="loss-function-cross-entropy" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="loss-function-cross-entropy"><span class="header-section-number">5.2</span> Loss function: Cross-Entropy</h2>
+<p>For multi-class segmentation, the standard loss is <strong>pixel-wise cross-entropy</strong>:</p>
+<p><span class="math display">\[
+\mathcal{L} = -\frac{1}{HW} \sum_{h,w} \log \hat{p}_{y_{h,w},h,w}
+\]</span></p>
+<p>where <span class="math inline">\(\hat{p}_{c,h,w}\)</span> is the softmax probability assigned to class <span class="math inline">\(c\)</span> at pixel <span class="math inline">\((h, w)\)</span>, and <span class="math inline">\(y_{h,w}\)</span> is the true class label. The <code>ignore_index=255</code> argument tells PyTorch to skip pixels labelled 255 (used here as a “no-data” sentinel).</p>
+</section>
+<section id="metrics-intersection-over-union-iou" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="metrics-intersection-over-union-iou"><span class="header-section-number">5.3</span> Metrics: Intersection over Union (IoU)</h2>
+<p>Raw accuracy is misleading in segmentation because classes are often heavily imbalanced (e.g.&nbsp;buildings occupy a small fraction of pixels). <strong>Intersection over Union (IoU)</strong> for a class <span class="math inline">\(c\)</span> is:</p>
+<p><span class="math display">\[
+\text{IoU}_c = \frac{|\hat{M}_c \cap M_c|}{|\hat{M}_c \cup M_c|}
+\]</span></p>
+<p>where <span class="math inline">\(\hat{M}_c\)</span> is the set of pixels predicted as class <span class="math inline">\(c\)</span> and <span class="math inline">\(M_c\)</span> is the set of true pixels of class <span class="math inline">\(c\)</span>. An IoU of 1.0 means perfect overlap; 0.0 means no overlap at all. <strong>Mean IoU (mIoU)</strong> averages over all classes.</p>
+<div id="9240b630" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">"intermediate_solutions/solution_step2"</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> training.metrics <span class="im">import</span> IOU, positive_rate</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate model output and labels</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>B, num_classes, H, W <span class="op">=</span> <span class="dv">2</span>, <span class="dv">11</span>, <span class="dv">512</span>, <span class="dv">512</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>dummy_logits <span class="op">=</span> torch.randn(B, num_classes, H, W)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>dummy_labels <span class="op">=</span> torch.randint(<span class="dv">0</span>, num_classes, (B, H, W))</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>iou_mean, iou_building <span class="op">=</span> IOU(dummy_logits, dummy_labels, logits<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>building_rate <span class="op">=</span> positive_rate(dummy_logits, logits<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mean IoU:      </span><span class="sc">{</span>iou_mean<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Building IoU:  </span><span class="sc">{</span>iou_building<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Building rate: </span><span class="sc">{</span>building_rate<span class="sc">:.4f}</span><span class="ss">  (fraction of pixels predicted as building)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why track building rate?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>During early training, the model often collapses to predicting the majority class everywhere. Monitoring the fraction of pixels predicted as “building” helps detect this: if <code>building_rate ≈ 0</code> after a few epochs, the model is ignoring the minority class and something is wrong (learning rate too high, class imbalance, etc.).</p>
+</div>
+</div>
+</section>
+</section>
+<section id="the-full-training-pipeline" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> The Full Training Pipeline</h1>
+<p>The training script <code>intermediate_solutions/solution_step2/main.py</code> wires everything together:</p>
+<div id="2b2086d6" class="cell" data-execution_count="14">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pytorch_lightning <span class="im">as</span> pl</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pytorch_lightning.callbacks <span class="im">import</span> EarlyStopping, ModelCheckpoint</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>callbacks <span class="op">=</span> [</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    EarlyStopping(monitor<span class="op">=</span><span class="st">"val_loss"</span>, patience<span class="op">=</span><span class="dv">5</span>, mode<span class="op">=</span><span class="st">"min"</span>),</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    ModelCheckpoint(</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>        monitor<span class="op">=</span><span class="st">"val_loss"</span>,</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        mode<span class="op">=</span><span class="st">"min"</span>,</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        save_top_k<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        filename<span class="op">=</span><span class="st">"best-model"</span>,</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> pl.Trainer(</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    max_epochs<span class="op">=</span><span class="dv">20</span>,</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    accelerator<span class="op">=</span><span class="st">"auto"</span>,   <span class="co"># uses GPU if available, CPU otherwise</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    devices<span class="op">=</span><span class="st">"auto"</span>,</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>    callbacks<span class="op">=</span>callbacks,</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>    log_every_n_steps<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>trainer.fit(module, train_loader, val_loader)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Two callbacks are used:</p>
+<ul>
+<li><strong><code>EarlyStopping</code></strong>: halts training if the validation loss does not improve for 5 consecutive epochs, preventing over-fitting.</li>
+<li><strong><code>ModelCheckpoint</code></strong>: saves only the checkpoint with the best validation loss, keeping storage requirements low.</li>
+</ul>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 3 — Training a toy model
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>To avoid downloading the full pre-trained weights, we can build a small SegFormer from a minimal config and run a few training steps on random data.</p>
+<ol type="1">
+<li>Create a <code>SegformerConfig</code> with <code>num_channels=14</code>, <code>num_labels=3</code>, and <code>depths=[1, 1, 1, 1]</code> (one transformer block per stage instead of the usual <code>[3, 6, 40, 3]</code> for B5).</li>
+<li>Instantiate a <code>SemanticSegmentationSegformer</code> from this config (no pre-trained weights — just call the constructor directly).</li>
+<li>Wrap it in a <code>SegmentationModule</code> with <code>CrossEntropyLoss</code> and <code>AdamW</code>.</li>
+<li>Run 3 training steps manually (without a <code>Trainer</code>) by calling <code>module.training_step(batch, 0)</code> on a random batch.</li>
+</ol>
+<div id="35f14a1d" class="cell" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> SegformerConfig</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.module <span class="im">import</span> SegmentationModule</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn, optim</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Minimal config</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> SegformerConfig(</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    num_channels<span class="op">=</span>___,   <span class="co"># </span><span class="al">TODO</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    num_labels<span class="op">=</span>___,     <span class="co"># </span><span class="al">TODO</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    depths<span class="op">=</span>___,         <span class="co"># </span><span class="al">TODO</span><span class="co">: [1, 1, 1, 1]</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    id2label<span class="op">=</span>{<span class="dv">0</span>: <span class="st">"background"</span>, <span class="dv">1</span>: <span class="st">"building"</span>, <span class="dv">2</span>: <span class="st">"vegetation"</span>},</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    label2id<span class="op">=</span>{<span class="st">"background"</span>: <span class="dv">0</span>, <span class="st">"building"</span>: <span class="dv">1</span>, <span class="st">"vegetation"</span>: <span class="dv">2</span>},</span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Model without pre-trained weights</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>tiny_model <span class="op">=</span> SemanticSegmentationSegformer(config)</span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Lightning module</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>tiny_module <span class="op">=</span> SegmentationModule(</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>tiny_model,</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>    loss<span class="op">=</span>___,               <span class="co"># </span><span class="al">TODO</span><span class="co">: CrossEntropyLoss</span></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>    optimizer<span class="op">=</span>optim.AdamW,</span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>    optimizer_params<span class="op">=</span>{<span class="st">"lr"</span>: <span class="fl">1e-3</span>},</span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>    scheduler<span class="op">=</span>optim.lr_scheduler.ReduceLROnPlateau,</span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>    scheduler_params<span class="op">=</span>{<span class="st">"mode"</span>: <span class="st">"min"</span>, <span class="st">"patience"</span>: <span class="dv">3</span>, <span class="st">"monitor"</span>: <span class="st">"val_loss"</span>},</span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>    scheduler_interval<span class="op">=</span><span class="st">"epoch"</span>,</span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-10-contents" aria-controls="callout-10" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution — Exercise 3
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-10" class="callout-10-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="c973c282" class="cell" data-execution_count="16">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> SegformerConfig</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.module <span class="im">import</span> SegmentationModule</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn, optim</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> SegformerConfig(</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    num_channels<span class="op">=</span><span class="dv">14</span>,</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    num_labels<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    depths<span class="op">=</span>[<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>],</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    id2label<span class="op">=</span>{<span class="dv">0</span>: <span class="st">"background"</span>, <span class="dv">1</span>: <span class="st">"building"</span>, <span class="dv">2</span>: <span class="st">"vegetation"</span>},</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    label2id<span class="op">=</span>{<span class="st">"background"</span>: <span class="dv">0</span>, <span class="st">"building"</span>: <span class="dv">1</span>, <span class="st">"vegetation"</span>: <span class="dv">2</span>},</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>tiny_model <span class="op">=</span> SemanticSegmentationSegformer(config)</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>tiny_module <span class="op">=</span> SegmentationModule(</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>tiny_model,</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    loss<span class="op">=</span>nn.CrossEntropyLoss(ignore_index<span class="op">=</span><span class="dv">255</span>),</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    optimizer<span class="op">=</span>optim.AdamW,</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    optimizer_params<span class="op">=</span>{<span class="st">"lr"</span>: <span class="fl">1e-3</span>},</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    scheduler<span class="op">=</span>optim.lr_scheduler.ReduceLROnPlateau,</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>    scheduler_params<span class="op">=</span>{<span class="st">"mode"</span>: <span class="st">"min"</span>, <span class="st">"patience"</span>: <span class="dv">3</span>, <span class="st">"monitor"</span>: <span class="st">"val_loss"</span>},</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    scheduler_interval<span class="op">=</span><span class="st">"epoch"</span>,</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="summary" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Summary</h1>
+<p>In this section you have:</p>
+<ul>
+<li>Understood the two-component design of SegFormer: <strong>hierarchical MiT encoder</strong> (multi-scale features, efficient SR attention) and <strong>all-MLP decoder</strong> (lightweight fusion).</li>
+<li>Learned how to <strong>instantiate and inspect</strong> the model, count parameters, and see the encoder/decoder split.</li>
+<li>Traced a <strong>forward pass</strong> from a raw <code>(B, 14, H, W)</code> tensor through the four encoder stages to the final <code>(B, num_classes, H/4, W/4)</code> logits, and upsampled them to label resolution.</li>
+<li>Seen how <strong>freezing</strong> the encoder reduces trainable parameters from ~86 M to ~4 M, which is useful when fine-tuning with limited data.</li>
+<li>Wrapped the model in a <strong>PyTorch Lightning module</strong> with cross-entropy loss and IoU metrics, ready for a full training loop.</li>
+</ul>
+<p>The next section covers <strong>inference and statistics</strong>: using a pre-trained model checkpoint to produce land-cover maps over new regions and computing summary statistics with administrative boundaries.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/aiml4os\.github\.io\/funathon-project3\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/2-model.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="./LICENCE">
+<p>License</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

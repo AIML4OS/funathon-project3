@@ -1441,7 +1441,7 @@ The `{patch_id}` encodes `{xmin}_{ymin}_{idx}_{id}` in EPSG:3035 metres and is i
 Let's load a CLC+ label from S3 and display it next to its matching satellite image. The three-step pattern for loading a `.npy` file over HTTPS is: **open the URL → read into a bytes buffer → load with NumPy**.
 
 ```{python}
-#| eval: false
+#| eval: true
 
 import urllib.request
 import io
@@ -1465,7 +1465,7 @@ print(f"Classes:     {np.unique(label_array)}")
 We can visualise the label using a custom colormap that assigns a colour to each of the 10 land-cover classes:
 
 ```{python}
-#| eval: false
+#| eval: true
 
 import rasterio
 import matplotlib.pyplot as plt

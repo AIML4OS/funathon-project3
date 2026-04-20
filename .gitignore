@@ -2,6 +2,8 @@
 *.tif
 *.tiff
 *.npy
+*.parquet
+*.csv
 mlflow.db
 
 # Byte-compiled / optimized / DLL files

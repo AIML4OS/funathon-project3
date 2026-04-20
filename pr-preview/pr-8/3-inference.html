@@ -176,14 +176,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#from-mlflow" id="toc-from-mlflow" class="nav-link" data-scroll-target="#from-mlflow"><span class="header-section-number">1.1</span> From MLflow</a></li>
   <li><a href="#retrieve-model-metadata" id="toc-retrieve-model-metadata" class="nav-link" data-scroll-target="#retrieve-model-metadata"><span class="header-section-number">1.2</span> Retrieve model metadata</a></li>
   </ul></li>
-  <li><a href="#apply-the-model" id="toc-apply-the-model" class="nav-link" data-scroll-target="#apply-the-model"><span class="header-section-number">2</span> Apply the Model</a>
+  <li><a href="#apply-the-model-locally" id="toc-apply-the-model-locally" class="nav-link" data-scroll-target="#apply-the-model-locally"><span class="header-section-number">2</span> Apply the Model Locally</a>
   <ul class="collapse">
   <li><a href="#predict-on-a-single-sentinel-2-image" id="toc-predict-on-a-single-sentinel-2-image" class="nav-link" data-scroll-target="#predict-on-a-single-sentinel-2-image"><span class="header-section-number">2.1</span> Predict on a single Sentinel-2 image</a></li>
-  <li><a href="#produce-the-class-mask" id="toc-produce-the-class-mask" class="nav-link" data-scroll-target="#produce-the-class-mask"><span class="header-section-number">2.2</span> Produce the class mask</a></li>
-  <li><a href="#display-the-prediction" id="toc-display-the-prediction" class="nav-link" data-scroll-target="#display-the-prediction"><span class="header-section-number">2.3</span> Display the prediction</a></li>
-  <li><a href="#convert-predictions-to-polygons" id="toc-convert-predictions-to-polygons" class="nav-link" data-scroll-target="#convert-predictions-to-polygons"><span class="header-section-number">2.4</span> Convert predictions to polygons</a></li>
+  <li><a href="#display-the-prediction" id="toc-display-the-prediction" class="nav-link" data-scroll-target="#display-the-prediction"><span class="header-section-number">2.2</span> Display the prediction</a></li>
+  <li><a href="#convert-predictions-to-polygons" id="toc-convert-predictions-to-polygons" class="nav-link" data-scroll-target="#convert-predictions-to-polygons"><span class="header-section-number">2.3</span> Convert predictions to polygons</a></li>
+  <li><a href="#display-predictions-on-an-interactive-map" id="toc-display-predictions-on-an-interactive-map" class="nav-link" data-scroll-target="#display-predictions-on-an-interactive-map"><span class="header-section-number">2.4</span> Display predictions on an interactive map</a></li>
   </ul></li>
-  <li><a href="#api" id="toc-api" class="nav-link" data-scroll-target="#api"><span class="header-section-number">3</span> API</a></li>
+  <li><a href="#inference-via-api" id="toc-inference-via-api" class="nav-link" data-scroll-target="#inference-via-api"><span class="header-section-number">3</span> Inference via API</a>
+  <ul class="collapse">
+  <li><a href="#architecture" id="toc-architecture" class="nav-link" data-scroll-target="#architecture"><span class="header-section-number">3.1</span> Architecture</a></li>
+  <li><a href="#endpoints" id="toc-endpoints" class="nav-link" data-scroll-target="#endpoints"><span class="header-section-number">3.2</span> Endpoints</a>
+  <ul class="collapse">
+  <li><a href="#get-find_image" id="toc-get-find_image" class="nav-link" data-scroll-target="#get-find_image"><span class="header-section-number">3.2.1</span> <code>GET /find_image</code></a></li>
+  <li><a href="#get-predict_image" id="toc-get-predict_image" class="nav-link" data-scroll-target="#get-predict_image"><span class="header-section-number">3.2.2</span> <code>GET /predict_image</code></a></li>
+  <li><a href="#get-predict_nuts" id="toc-get-predict_nuts" class="nav-link" data-scroll-target="#get-predict_nuts"><span class="header-section-number">3.2.3</span> <code>GET /predict_nuts</code></a></li>
+  </ul></li>
+  <li><a href="#exercise-5-find-a-satellite-image-from-a-gps-point" id="toc-exercise-5-find-a-satellite-image-from-a-gps-point" class="nav-link" data-scroll-target="#exercise-5-find-a-satellite-image-from-a-gps-point"><span class="header-section-number">3.3</span> Exercise 5 — Find a satellite image from a GPS point</a></li>
+  <li><a href="#exercise-6-predict-a-single-image-via-the-api" id="toc-exercise-6-predict-a-single-image-via-the-api" class="nav-link" data-scroll-target="#exercise-6-predict-a-single-image-via-the-api"><span class="header-section-number">3.4</span> Exercise 6 — Predict a single image via the API</a></li>
+  <li><a href="#exercise-7-predict-an-entire-nuts3-region" id="toc-exercise-7-predict-an-entire-nuts3-region" class="nav-link" data-scroll-target="#exercise-7-predict-an-entire-nuts3-region"><span class="header-section-number">3.5</span> Exercise 7 — Predict an entire NUTS3 region</a></li>
+  </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/AIML4OS/funathon-project3/edit/main/3-inference.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/AIML4OS/funathon-project3/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -222,165 +234,754 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Click <strong>Register model</strong>, name it <code>"segmentation-sentinel2-model"</code>, and confirm.</li>
 <li>Verify it appears in the <strong>Model Registry</strong>.</li>
 </ol>
-<p>Create a .env file and fill this model :</p>
+<p>Create a <code>.env</code> file at the root of your project and fill in your MLflow credentials:</p>
 <pre><code>MLFLOW_TRACKING_URI=""
-MLFLOW_TRACKING_USERNAME""
-MLFLOW_TRACKING_PASSWORD""</code></pre>
+MLFLOW_TRACKING_USERNAME=""
+MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <p>Once registered, load the model using the <code>get_model()</code> utility:</p>
-<div id="2e30f9e0" class="cell" data-execution_count="1">
+<div id="771227c8" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> get_model</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dotenv <span class="im">import</span> load_dotenv</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>load_dotenv()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mlflow</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dotenv <span class="im">import</span> load_dotenv</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> get_model</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>model_name <span class="op">=</span> ___  <span class="co"># </span><span class="al">TODO</span><span class="co">: the model name registred</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>model_version <span class="op">=</span> ___  <span class="co"># </span><span class="al">TODO</span><span class="co">: the model name registred</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>mlflow_tracking_uri <span class="op">=</span> os.getenv(<span class="st">"MLFLOW_TRACKING_URI"</span>)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> get_model(model_name, model_version, mlflow_tracking_uri)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>load_dotenv()</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>model_name    <span class="op">=</span> <span class="st">"__"</span>  <span class="co"># </span><span class="al">TODO</span><span class="co">: the model name registered in MLflow</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>model_version <span class="op">=</span> <span class="st">"__"</span>  <span class="co"># </span><span class="al">TODO</span><span class="co">: the model version you want to load</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>mlflow_tracking_uri <span class="op">=</span> os.getenv(<span class="st">"MLFLOW_TRACKING_URI"</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> get_model(__, __, __)  <span class="co"># </span><span class="al">TODO</span><span class="co">: model_name, model_version, mlflow_tracking_uri</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>get_model()</code> wraps <code>mlflow.pyfunc.load_model</code> and raises a descriptive exception if the model or version cannot be found.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><code>model_name</code> and <code>model_version</code> are strings — check the MLflow UI to find the right values.</li>
+<li><code>get_model(model_name, model_version, mlflow_tracking_uri)</code> returns an <code>mlflow.pyfunc.PyFuncModel</code> object.</li>
+<li><code>MLFLOW_TRACKING_URI</code> is loaded from the <code>.env</code> file via <code>load_dotenv()</code> + <code>os.getenv()</code>.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="612d5abf" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>model_name    <span class="op">=</span> <span class="st">"segmentation-sentinel2-model"</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>model_version <span class="op">=</span> <span class="st">"2"</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>mlflow_tracking_uri <span class="op">=</span> os.getenv(<span class="st">"MLFLOW_TRACKING_URI"</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> get_model(model_name, model_version, mlflow_tracking_uri)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
 </section>
 <section id="retrieve-model-metadata" class="level2" data-number="1.2">
 <h2 data-number="1.2" class="anchored" data-anchor-id="retrieve-model-metadata"><span class="header-section-number">1.2</span> Retrieve model metadata</h2>
 <p>The training run stores key hyperparameters as MLflow params. Retrieve them to configure the inference pipeline consistently with how the model was trained:</p>
-<div id="4eb42c45" class="cell" data-execution_count="2">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mlflow</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> get_normalization_metrics</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>run <span class="op">=</span> mlflow.get_run(model.metadata.run_id)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>n_bands <span class="op">=</span> <span class="bu">int</span>(run.data.params[<span class="st">"n_bands"</span>])</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>tiles_size <span class="op">=</span> <span class="bu">int</span>(run.data.params[<span class="st">"tiles_size"</span>])</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>augment_size <span class="op">=</span> <span class="bu">int</span>(run.data.params[<span class="st">"augment_size"</span>])</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>module_name <span class="op">=</span> run.data.params[<span class="st">"module_name"</span>]</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>normalization_mean, normalization_std <span class="op">=</span> get_normalization_metrics(model, n_bands)</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"n_bands=</span><span class="sc">{</span>n_bands<span class="sc">}</span><span class="ss">, tiles_size=</span><span class="sc">{</span>tiles_size<span class="sc">}</span><span class="ss">, augment_size=</span><span class="sc">{</span>augment_size<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"mean=</span><span class="sc">{</span>normalization_mean<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"std=</span><span class="sc">{</span>normalization_std<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="15a4e6c3" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>run <span class="op">=</span> mlflow.get_run(model.metadata.run_id)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>n_bands      <span class="op">=</span> <span class="bu">int</span>(run.data.params[<span class="st">"n_bands"</span>])</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>tiles_size   <span class="op">=</span> <span class="bu">int</span>(run.data.params[<span class="st">"tiles_size"</span>])</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>augment_size <span class="op">=</span> <span class="bu">int</span>(run.data.params[<span class="st">"augment_size"</span>])</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>module_name  <span class="op">=</span> run.data.params[<span class="st">"module_name"</span>]</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>normalization_mean <span class="op">=</span> json.loads(</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    mlflow.get_run(model.metadata.run_id).data.params[<span class="st">"normalization_mean"</span>]</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>)[:n_bands]</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>normalization_std <span class="op">=</span> [</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">float</span>(v) <span class="cf">for</span> v <span class="kw">in</span> <span class="bu">eval</span>(</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        mlflow.get_run(model.metadata.run_id).data.params[<span class="st">"normalization_std"</span>]</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>][:n_bands]</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"n_bands=</span><span class="sc">{</span>n_bands<span class="sc">}</span><span class="ss">, tiles_size=</span><span class="sc">{</span>tiles_size<span class="sc">}</span><span class="ss">, augment_size=</span><span class="sc">{</span>augment_size<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"mean=</span><span class="sc">{</span>normalization_mean<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"std=</span><span class="sc">{</span>normalization_std<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <ul>
 <li><strong><code>tiles_size</code></strong>: the spatial resolution (in pixels) the model was trained on.</li>
 <li><strong><code>augment_size</code></strong>: if different from <code>tiles_size</code>, a resize is automatically inserted in the preprocessing pipeline.</li>
-<li><strong><code>normalization_mean</code> / <code>normalization_std</code></strong>: per-band statistics used to standardise the image before inference.</li>
+<li><strong><code>normalization_mean</code> / <code>normalization_std</code></strong>: per-band statistics used to standardise the image before inference. They are sliced to <code>[:n_bands]</code> to match the number of bands actually used by the model.</li>
 </ul>
 </section>
 </section>
-<section id="apply-the-model" class="level1" data-number="2">
-<h1 data-number="2"><span class="header-section-number">2</span> Apply the Model</h1>
+<section id="apply-the-model-locally" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Apply the Model Locally</h1>
+<p>This section shows how to run inference locally — loading the image directly from MinIO over HTTPS, running the model, and post-processing the output.</p>
 <section id="predict-on-a-single-sentinel-2-image" class="level2" data-number="2.1">
 <h2 data-number="2.1" class="anchored" data-anchor-id="predict-on-a-single-sentinel-2-image"><span class="header-section-number">2.1</span> Predict on a single Sentinel-2 image</h2>
-<p>The <code>predict()</code> utility handles the full pipeline — loading the image from S3, preprocessing, tiling if needed, and assembling the result back into a <code>SegmentationLabeledSatelliteImage</code>:</p>
-<div id="5f043d23" class="cell" data-execution_count="3">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> predict</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>image_path <span class="op">=</span> (</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"s3/projet-formation/diffusion/funathon/2026/project3/"</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"data/images/LU000/2024/3034500_2011690.tif"</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>labelled_satellite_img <span class="op">=</span> predict(</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    images<span class="op">=</span>image_path,</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>model,</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    tiles_size<span class="op">=</span>tiles_size,</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    augment_size<span class="op">=</span>augment_size,</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    n_bands<span class="op">=</span>n_bands,</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    normalization_mean<span class="op">=</span>normalization_mean,</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    normalization_std<span class="op">=</span>normalization_std,</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    module_name<span class="op">=</span>module_name,</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>predict()</code> utility handles the full pipeline — loading the image, preprocessing, tiling if needed, and assembling the result:</p>
+<div id="d8115823" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> predict</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>image_target <span class="op">=</span> <span class="st">"LU000/2024/4022000_2979190_0_354.tif"</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>image_path <span class="op">=</span> (</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://minio.lab.sspcloud.fr/projet-formation/"</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"diffusion/funathon/2026/project3/data/images/"</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> image_target</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>labeled_satellite_img <span class="op">=</span> predict(</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    images<span class="op">=</span>image_path,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>model,</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    tiles_size<span class="op">=</span>tiles_size,</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    augment_size<span class="op">=</span>augment_size,</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    n_bands<span class="op">=</span>n_bands,</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    normalization_mean<span class="op">=</span>normalization_mean,</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    normalization_std<span class="op">=</span>normalization_std,</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    module_name<span class="op">=</span>module_name,</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>labeled_satellite_img.label <span class="op">=</span> torch.from_numpy(labeled_satellite_img.label)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>labeled_satellite_img.label <span class="op">=</span> torch.argmax(labeled_satellite_img.label, dim<span class="op">=</span><span class="dv">0</span>).numpy()</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mask shape    : </span><span class="sc">{</span>labeled_satellite_img<span class="sc">.</span>label<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Classes found : </span><span class="sc">{</span><span class="bu">set</span>(labeled_satellite_img.label.flatten().tolist())<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Internally, <code>predict()</code>:</p>
 <ol type="1">
-<li>Opens the image from S3 via <code>/vsis3/</code> (no local download needed).</li>
-<li>Normalises and resizes with <code>albumentations</code>.</li>
-<li>Splits the image into tiles of <code>tiles_size × tiles_size</code> if the image is larger, then reassembles the predictions with <code>make_mosaic</code>.</li>
-<li>Returns a <code>SegmentationLabeledSatelliteImage</code> containing the raw logits.</li>
+<li>Opens the image from HTTPS via <code>/vsicurl/</code> (no local download needed).</li>
+<li>Normalises and resizes the array with <code>albumentations</code>.</li>
+<li>Splits the image into tiles of <code>tiles_size × tiles_size</code> if the image is larger, then reassembles predictions with <code>make_mosaic</code>.</li>
+<li>Returns a <code>SegmentationLabeledSatelliteImage</code> containing the raw logits (shape: <code>n_classes × H × W</code>).</li>
 </ol>
-</section>
-<section id="produce-the-class-mask" class="level2" data-number="2.2">
-<h2 data-number="2.2" class="anchored" data-anchor-id="produce-the-class-mask"><span class="header-section-number">2.2</span> Produce the class mask</h2>
-<p>Convert the raw logits to a 2D array of predicted class IDs with <code>produce_mask()</code>:</p>
-<div id="08ce091d" class="cell" data-execution_count="4">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> produce_mask</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>labelled_satellite_img.label <span class="op">=</span> produce_mask(labelled_satellite_img.label, module_name)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mask shape : </span><span class="sc">{</span>labelled_satellite_img<span class="sc">.</span>label<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Classes found : </span><span class="sc">{</span><span class="bu">set</span>(labelled_satellite_img.label.flatten().tolist())<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>torch.argmax(..., dim=0)</code> then collapses the class dimension by picking the class with the highest score at each pixel, producing a 2D integer array of shape <code>(H, W)</code> with values from 1 to 10 (CLC+ class IDs).</p>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<p><code>produce_mask()</code> applies <code>torch.argmax</code> along the class dimension, returning an integer array of shape <code>(H, W)</code> where each value is the predicted class ID (1–10 for CLC+ Backbone).</p>
-</section>
-<section id="display-the-prediction" class="level2" data-number="2.3">
-<h2 data-number="2.3" class="anchored" data-anchor-id="display-the-prediction"><span class="header-section-number">2.3</span> Display the prediction</h2>
-<div id="2672705d" class="cell" data-execution_count="5">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> ListedColormap</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.patches <span class="im">import</span> Patch</span>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 1 — Run inference on a single Sentinel-2 image
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Goal:</strong> Load a Sentinel-2 image from MinIO and run the segmentation model on it to produce a labelled mask.</p>
+<p><strong>Steps:</strong></p>
+<ol type="1">
+<li>Build the full image URL by concatenating the base URL with <code>image_target</code></li>
+<li>Call <code>predict()</code> with the model and all metadata parameters</li>
+<li>Convert the raw logits to a class mask using <code>torch.argmax()</code></li>
+<li>Print the mask shape and the set of predicted class IDs</li>
+</ol>
+</div>
+</div>
+<div id="ee95fb15" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> predict</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>image_target <span class="op">=</span> <span class="st">"LU000/2024/4022000_2979190_0_354.tif"</span></span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>classes <span class="op">=</span> [</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Sealed (1)"</span>,                              <span class="st">"#FF0100"</span>),</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Woody – needle leaved trees (2)"</span>,         <span class="st">"#238B23"</span>),</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Woody – broadleaved deciduous (3)"</span>,       <span class="st">"#80FF00"</span>),</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Woody – broadleaved evergreen (4)"</span>,       <span class="st">"#00FF00"</span>),</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Low-growing woody plants (5)"</span>,            <span class="st">"#804000"</span>),</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Permanent herbaceous (6)"</span>,                <span class="st">"#CCF24E"</span>),</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Periodically herbaceous (7)"</span>,             <span class="st">"#FEFF80"</span>),</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Lichens and mosses (8)"</span>,                  <span class="st">"#FF81FF"</span>),</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Non- and sparsely-vegetated (9)"</span>,         <span class="st">"#BFBFBF"</span>),</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Water (10)"</span>,                              <span class="st">"#0080FF"</span>),</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>cmap <span class="op">=</span> ListedColormap([color <span class="cf">for</span> _, color <span class="kw">in</span> classes])</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co"># RGB composite for visualisation (bands 4, 3, 2)</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.transpose(labelled_satellite_img.satellite_image.array[[<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>]], (<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>)).astype(np.float32)</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>p98 <span class="op">=</span> np.percentile(rgb, <span class="dv">98</span>)</span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.clip(rgb <span class="op">/</span> p98, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>image_path <span class="op">=</span> (</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://minio.lab.sspcloud.fr/projet-formation/"</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"diffusion/funathon/2026/project3/data/images/"</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> __  <span class="co"># </span><span class="al">TODO</span><span class="co">: relative path to the image (str), use image_target</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>labeled_satellite_img <span class="op">=</span> predict(</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    images<span class="op">=</span>__,             <span class="co"># </span><span class="al">TODO</span><span class="co">: full image URL</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>__,              <span class="co"># </span><span class="al">TODO</span><span class="co">: model loaded above</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    tiles_size<span class="op">=</span>__,         <span class="co"># </span><span class="al">TODO</span><span class="co">: tile size from model metadata</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    augment_size<span class="op">=</span>__,       <span class="co"># </span><span class="al">TODO</span><span class="co">: augmentation size from model metadata</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    n_bands<span class="op">=</span>__,            <span class="co"># </span><span class="al">TODO</span><span class="co">: number of bands</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    normalization_mean<span class="op">=</span>__, <span class="co"># </span><span class="al">TODO</span><span class="co">: normalisation mean</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    normalization_std<span class="op">=</span>__,  <span class="co"># </span><span class="al">TODO</span><span class="co">: normalisation std</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    module_name<span class="op">=</span>__,        <span class="co"># </span><span class="al">TODO</span><span class="co">: module name</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>labeled_satellite_img.label <span class="op">=</span> torch.from_numpy(labeled_satellite_img.label)</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>labeled_satellite_img.label <span class="op">=</span> torch.argmax(labeled_satellite_img.label, dim<span class="op">=</span><span class="dv">0</span>).numpy()</span>
 <span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">6</span>))</span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].imshow(rgb)</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Sentinel-2 RGB (B4, B3, B2)"</span>)</span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axis(<span class="st">"off"</span>)</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].imshow(labelled_satellite_img.label, cmap<span class="op">=</span>cmap, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">10</span>)</span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Predicted land cover"</span>)</span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axis(<span class="st">"off"</span>)</span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>legend_elements <span class="op">=</span> [</span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    Patch(facecolor<span class="op">=</span>color, edgecolor<span class="op">=</span><span class="st">"black"</span>, label<span class="op">=</span>label)</span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> label, color <span class="kw">in</span> classes</span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>fig.legend(</span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>    handles<span class="op">=</span>legend_elements,</span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>    loc<span class="op">=</span><span class="st">"center right"</span>,</span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>    bbox_to_anchor<span class="op">=</span>(<span class="fl">1.35</span>, <span class="fl">0.5</span>),</span>
-<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>    frameon<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mask shape    : </span><span class="sc">{</span>labeled_satellite_img<span class="sc">.</span>label<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Classes found : </span><span class="sc">{</span><span class="bu">set</span>(labeled_satellite_img.label.flatten().tolist())<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li>Concatenate the base URL string with <code>image_target</code> to form <code>image_path</code>.</li>
+<li><code>predict()</code> returns a <code>SegmentationLabeledSatelliteImage</code> whose <code>.label</code> attribute contains raw logits of shape <code>(n_classes, H, W)</code>.</li>
+<li><code>torch.argmax(tensor, dim=0)</code> picks the class with the highest score for each pixel — the resulting shape is <code>(H, W)</code>.</li>
+<li>All metadata variables (<code>tiles_size</code>, <code>augment_size</code>, etc.) were retrieved in the previous section.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="1f410a4b" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>image_path <span class="op">=</span> (</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://minio.lab.sspcloud.fr/projet-formation/"</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"diffusion/funathon/2026/project3/data/images/"</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">+</span> image_target</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>labeled_satellite_img <span class="op">=</span> predict(</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    images<span class="op">=</span>image_path,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>model,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    tiles_size<span class="op">=</span>tiles_size,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    augment_size<span class="op">=</span>augment_size,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    n_bands<span class="op">=</span>n_bands,</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    normalization_mean<span class="op">=</span>normalization_mean,</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    normalization_std<span class="op">=</span>normalization_std,</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    module_name<span class="op">=</span>module_name,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>labeled_satellite_img.label <span class="op">=</span> torch.from_numpy(labeled_satellite_img.label)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>labeled_satellite_img.label <span class="op">=</span> torch.argmax(labeled_satellite_img.label, dim<span class="op">=</span><span class="dv">0</span>).numpy()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
 </div>
 </section>
-<section id="convert-predictions-to-polygons" class="level2" data-number="2.4">
-<h2 data-number="2.4" class="anchored" data-anchor-id="convert-predictions-to-polygons"><span class="header-section-number">2.4</span> Convert predictions to polygons</h2>
-<p><code>create_geojson_from_mask()</code> vectorises the class mask into a GeoDataFrame of polygons, each carrying its <code>label</code> (class ID). It writes the mask to a temporary GeoTIFF to preserve the georeference, then calls <code>rasterio.features.shapes</code> to extract contiguous regions:</p>
-<div id="56f0854b" class="cell" data-execution_count="6">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> create_geojson_from_mask</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>gdf_pred <span class="op">=</span> create_geojson_from_mask(labelled_satellite_img)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(gdf_pred)<span class="sc">}</span><span class="ss"> polygons extracted"</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gdf_pred.head())</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>gdf_nuts.to_parquet(<span class="st">"predictions_LU000_3034500_2011690_2024.parquet"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="display-the-prediction" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="display-the-prediction"><span class="header-section-number">2.2</span> Display the prediction</h2>
+<p>The 10 CLC+ Backbone land-cover classes are mapped to specific colours. A <code>ListedColormap</code> built from these colours ensures the mask and the legend are always consistent:</p>
+<div id="792a3d72" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> ListedColormap</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.patches <span class="im">import</span> Patch</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>classes <span class="op">=</span> [</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Sealed (1)"</span>,                       <span class="st">"#FF0100"</span>),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Woody – needle leaved trees (2)"</span>,  <span class="st">"#238B23"</span>),</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Woody – broadleaved deciduous (3)"</span>,<span class="st">"#80FF00"</span>),</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Woody – broadleaved evergreen (4)"</span>,<span class="st">"#00FF00"</span>),</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Low-growing woody plants (5)"</span>,     <span class="st">"#804000"</span>),</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Permanent herbaceous (6)"</span>,         <span class="st">"#CCF24E"</span>),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Periodically herbaceous (7)"</span>,      <span class="st">"#FEFF80"</span>),</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Lichens and mosses (8)"</span>,           <span class="st">"#FF81FF"</span>),</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Non- and sparsely-vegetated (9)"</span>,  <span class="st">"#BFBFBF"</span>),</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"Water (10)"</span>,                       <span class="st">"#0080FF"</span>),</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>cmap          <span class="op">=</span> ListedColormap([color <span class="cf">for</span> _, color <span class="kw">in</span> classes])</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>label_to_color <span class="op">=</span> {i <span class="op">+</span> <span class="dv">1</span>: color <span class="cf">for</span> i, (_, color) <span class="kw">in</span> <span class="bu">enumerate</span>(classes)}</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>legend_elements <span class="op">=</span> [</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    Patch(facecolor<span class="op">=</span>color, edgecolor<span class="op">=</span><span class="st">"black"</span>, label<span class="op">=</span>label)</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> label, color <span class="kw">in</span> classes</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p>The RGB composite is built from bands 4, 3, 2 (Red, Green, Blue), which correspond to 0-based indices 3, 2, 1 in the array. A 98th-percentile normalisation avoids saturation from bright outliers:</p>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 2 — Display the prediction
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Goal:</strong> Build an RGB composite from the satellite image bands and display it side by side with the predicted land cover mask.</p>
+<p><strong>Steps:</strong></p>
+<ol type="1">
+<li>Extract bands 4, 3, 2 (indices 3, 2, 1) and transpose to <code>(H, W, 3)</code>, then normalise with the 98th percentile</li>
+<li>Create a figure with 2 subplots (RGB / predicted mask)</li>
+<li>Display <code>rgb</code> on <code>axes[0]</code> and the label on <code>axes[1]</code> using <code>cmap</code></li>
+<li>Add a shared legend and save the figure</li>
+</ol>
+</div>
+</div>
+<div id="06001b51" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># RGB composite — bands 4, 3, 2 → indices 3, 2, 1</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.transpose(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    labeled_satellite_img.satellite_image.array[[__, __, __]],  <span class="co"># </span><span class="al">TODO</span><span class="co">: band indices for R, G, B</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>).astype(np.float32)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>p98 <span class="op">=</span> np.percentile(rgb, <span class="dv">98</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.clip(rgb <span class="op">/</span> p98, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">6</span>))</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].imshow(__)                             <span class="co"># </span><span class="al">TODO</span><span class="co">: display the RGB composite</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Sentinel-2 RGB (B4, B3, B2)"</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].imshow(__, cmap<span class="op">=</span>__, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">10</span>)   <span class="co"># </span><span class="al">TODO</span><span class="co">: label array, colormap</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Predicted land cover"</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>fig.legend(</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    handles<span class="op">=</span>legend_elements,</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    loc<span class="op">=</span><span class="st">"center left"</span>,</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    bbox_to_anchor<span class="op">=</span>(<span class="fl">1.0</span>, <span class="fl">0.5</span>),</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    frameon<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"prediction.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>, dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><code>labeled_satellite_img.satellite_image.array</code> has shape <code>(n_bands, H, W)</code>; bands are 0-indexed so B4=3, B3=2, B2=1.</li>
+<li><code>np.transpose(..., (1, 2, 0))</code> reshapes from <code>(3, H, W)</code> to <code>(H, W, 3)</code>.</li>
+<li>Normalise: divide by <code>np.percentile(rgb, 98)</code> then <code>np.clip(..., 0, 1)</code>.</li>
+<li>Use <code>vmin=1, vmax=10</code> on <code>imshow</code> for the label so the colormap aligns with the 10 CLC+ classes.</li>
+<li><code>bbox_inches="tight"</code> in <code>savefig</code> ensures the legend is not cropped.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="377082b9" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.transpose(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    labeled_satellite_img.satellite_image.array[[<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>]], (<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>).astype(np.float32)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>p98 <span class="op">=</span> np.percentile(rgb, <span class="dv">98</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.clip(rgb <span class="op">/</span> p98, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].imshow(rgb)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].imshow(labeled_satellite_img.label, cmap<span class="op">=</span>cmap, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="convert-predictions-to-polygons" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="convert-predictions-to-polygons"><span class="header-section-number">2.3</span> Convert predictions to polygons</h2>
+<p><code>create_geojson_from_mask()</code> vectorises the class mask into a GeoDataFrame of polygons. Internally it writes the mask to a temporary GeoTIFF to preserve the georeference, then calls <code>rasterio.features.shapes</code> to extract contiguous regions of identical class. Each row in the output GeoDataFrame has a <code>geometry</code> (polygon) and a <code>label</code> (integer class ID from 1 to 10). Pixels with class value <code>0</code> (background / no-data) are automatically excluded.</p>
+<p>The polygons are saved to a Parquet file whose name is derived from the image path, making it easy to match predictions to their source tile later.</p>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 3 — Vectorise the mask and display the polygons
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Goal:</strong> Convert the predicted mask into a GeoDataFrame of polygons, display the three outputs side by side (RGB / mask / polygons), and save the result.</p>
+<p><strong>Steps:</strong></p>
+<ol type="1">
+<li>Call <code>create_geojson_from_mask()</code> on <code>labeled_satellite_img</code></li>
+<li>Create a 3-subplot figure: RGB on the left, mask in the centre, polygons on the right</li>
+<li>Use <code>gdf_pred.plot()</code> with <code>column="label"</code> and the CLC+ colormap</li>
+<li>Fix the axis limits of the polygon subplot with <code>total_bounds</code></li>
+<li>Save the GeoDataFrame to a Parquet file</li>
+</ol>
+</div>
+</div>
+<div id="4212ce38" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> create_geojson_from_mask</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>gdf_pred <span class="op">=</span> create_geojson_from_mask(__)  <span class="co"># </span><span class="al">TODO</span><span class="co">: labeled_satellite_img</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(gdf_pred)<span class="sc">}</span><span class="ss"> polygons extracted"</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gdf_pred.head())</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>parts <span class="op">=</span> image_target.split(<span class="st">"/"</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>parts[<span class="op">-</span><span class="dv">1</span>] <span class="op">=</span> parts[<span class="op">-</span><span class="dv">1</span>].rsplit(<span class="st">"."</span>, <span class="dv">1</span>)[<span class="dv">0</span>]</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>image_target_join <span class="op">=</span> <span class="st">"_"</span>.join(parts)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>gdf_pred.to_parquet(<span class="ss">f"predictions_</span><span class="sc">{</span>image_target_join<span class="sc">}</span><span class="ss">.parquet"</span>)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">20</span>, <span class="dv">6</span>))</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].imshow(rgb)</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Sentinel-2 RGB (B4, B3, B2)"</span>)</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].imshow(labeled_satellite_img.label, cmap<span class="op">=</span>cmap, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Predicted land cover"</span>)</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>gdf_pred.plot(</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    column<span class="op">=</span>__,  <span class="co"># </span><span class="al">TODO</span><span class="co">: column to use for colouring (str)</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>    cmap<span class="op">=</span>__,    <span class="co"># </span><span class="al">TODO</span><span class="co">: colormap</span></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>    vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span>axes[<span class="dv">2</span>],</span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>    legend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_title(<span class="st">"Predicted polygons"</span>)</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>xmin, ymin, xmax, ymax <span class="op">=</span> gdf_pred.total_bounds</span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_xlim(xmin, xmax)</span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_ylim(ymin, ymax)</span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>fig.legend(handles<span class="op">=</span>legend_elements, loc<span class="op">=</span><span class="st">"center left"</span>, bbox_to_anchor<span class="op">=</span>(<span class="fl">1.0</span>, <span class="fl">0.5</span>), frameon<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"prediction_polygons.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>, dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-10-contents" aria-controls="callout-10" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-10" class="callout-10-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><code>create_geojson_from_mask(lsi)</code> takes a <code>SegmentationLabeledSatelliteImage</code> and returns a GeoDataFrame with columns <code>"geometry"</code> and <code>"label"</code>.</li>
+<li>Use <code>column="label"</code> in <code>gdf_pred.plot()</code> to colour polygons by class.</li>
+<li>After <code>gdf_pred.plot()</code>, geopandas resets the axis limits to match the data extent — use <code>gdf_pred.total_bounds</code> to restore them manually if needed.</li>
+<li>The Parquet filename is built automatically from <code>image_target</code>.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="abbd4021" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>gdf_pred <span class="op">=</span> create_geojson_from_mask(labeled_satellite_img)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>gdf_pred.plot(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    column<span class="op">=</span><span class="st">"label"</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    cmap<span class="op">=</span>cmap,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">10</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span>axes[<span class="dv">2</span>],</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    legend<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="display-predictions-on-an-interactive-map" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="display-predictions-on-an-interactive-map"><span class="header-section-number">2.4</span> Display predictions on an interactive map</h2>
+<p><a href="https://python-visualization.github.io/folium/">Folium</a> renders interactive web maps directly in a Jupyter notebook. The satellite image is overlaid as a semi-transparent raster layer using <code>ImageOverlay</code>, while the predicted polygons are added as a <code>GeoJson</code> layer with per-class colouring.</p>
+<p>Both layers must be in <strong>EPSG:4326</strong> (WGS84, latitude/longitude) for Folium to place them correctly. <code>transform_bounds()</code> reprojects the raster bounding box, and <code>gdf_pred.to_crs("EPSG:4326")</code> reprojects the vector polygons.</p>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 4 — Display predictions on an interactive Folium map
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Goal:</strong> Overlay the RGB image and the predicted polygons on an interactive Folium map with per-class colours.</p>
+<p><strong>Steps:</strong></p>
+<ol type="1">
+<li>Reproject the image bounds to EPSG:4326 with <code>transform_bounds()</code></li>
+<li>Create a <code>folium.Map</code> centred on the tile</li>
+<li>Add an <code>ImageOverlay</code> with the normalised RGB array</li>
+<li>Reproject <code>gdf_pred</code> to EPSG:4326 and add a <code>GeoJson</code> layer coloured by label using <code>label_to_color</code></li>
+</ol>
+</div>
+</div>
+<div id="730cc261" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> folium</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> folium.raster_layers <span class="im">import</span> ImageOverlay</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> rasterio.warp <span class="im">import</span> transform_bounds</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>west, south, east, north <span class="op">=</span> transform_bounds(</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    labeled_satellite_img.satellite_image.crs,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"EPSG:4326"</span>,</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>labeled_satellite_img.satellite_image.bounds,</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>center_lat <span class="op">=</span> (south <span class="op">+</span> north) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>center_lon <span class="op">=</span> (west <span class="op">+</span> east) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> folium.Map(location<span class="op">=</span>[center_lat, center_lon], zoom_start<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>ImageOverlay(</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    image<span class="op">=</span>__,                              <span class="co"># </span><span class="al">TODO</span><span class="co">: normalised RGB array</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    bounds<span class="op">=</span>[[south, west], [north, east]],</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    opacity<span class="op">=</span><span class="fl">0.7</span>,</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>).add_to(m)</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>gdf_pred_wgs84 <span class="op">=</span> gdf_pred.to_crs(<span class="st">"__"</span>)  <span class="co"># </span><span class="al">TODO</span><span class="co">: target EPSG code for Folium (str)</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>folium.GeoJson(</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    gdf_pred_wgs84,</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>    style_function<span class="op">=</span><span class="kw">lambda</span> feature: {</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillColor"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: use label_to_color to colour by label</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">"color"</span>: <span class="st">"black"</span>,</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>        <span class="st">"weight"</span>: <span class="fl">0.5</span>,</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillOpacity"</span>: <span class="fl">0.6</span>,</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>    tooltip<span class="op">=</span>folium.GeoJsonTooltip(fields<span class="op">=</span>[<span class="st">"label"</span>], aliases<span class="op">=</span>[<span class="st">"Class:"</span>]),</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>).add_to(m)</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>m</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-13" class="callout-13-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li><code>transform_bounds(src_crs, "EPSG:4326", *bounds)</code> returns <code>(west, south, east, north)</code> in decimal degrees.</li>
+<li>Folium always expects coordinates in EPSG:4326.</li>
+<li>Pass <code>rgb</code> (the normalised <code>float32</code> array) to <code>ImageOverlay</code>.</li>
+<li><code>feature["properties"]["label"]</code> gives the integer class ID of a polygon; use <code>label_to_color.get(..., "#808080")</code> for a safe fallback colour.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-14-contents" aria-controls="callout-14" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-14" class="callout-14-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="7cfae01a" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>ImageOverlay(image<span class="op">=</span>rgb, bounds<span class="op">=</span>[[south, west], [north, east]], opacity<span class="op">=</span><span class="fl">0.7</span>).add_to(m)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>gdf_pred_wgs84 <span class="op">=</span> gdf_pred.to_crs(<span class="st">"EPSG:4326"</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>folium.GeoJson(</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    gdf_pred_wgs84,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    style_function<span class="op">=</span><span class="kw">lambda</span> feature: {</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillColor"</span>: label_to_color.get(feature[<span class="st">"properties"</span>][<span class="st">"label"</span>], <span class="st">"#808080"</span>),</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"color"</span>: <span class="st">"black"</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"weight"</span>: <span class="fl">0.5</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillOpacity"</span>: <span class="fl">0.6</span>,</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    tooltip<span class="op">=</span>folium.GeoJsonTooltip(fields<span class="op">=</span>[<span class="st">"label"</span>], aliases<span class="op">=</span>[<span class="st">"Class:"</span>]),</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>).add_to(m)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="inference-via-api" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Inference via API</h1>
+<p>Running inference locally works well for a single tile, but scaling to an entire NUTS3 region (which may contain dozens of tiles) requires more infrastructure. A <strong>REST API</strong> has been deployed for this purpose.</p>
+<section id="architecture" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="architecture"><span class="header-section-number">3.1</span> Architecture</h2>
+<p>The API is built with <a href="https://fastapi.tiangolo.com/">FastAPI</a> and deployed on the SSP Cloud Kubernetes cluster. It wraps the same <code>predict()</code> / <code>create_geojson_from_mask()</code> pipeline used locally, but adds two important features:</p>
+<ul>
+<li><strong>S3 cache layer</strong>: predictions are stored in S3 as <code>.npy</code> files after the first inference call. Subsequent requests for the same image load the cached result instead of re-running the model, which drastically reduces latency for repeated or batched queries.</li>
+<li><strong>Batch processing</strong>: the <code>/predict_nuts</code> endpoint automatically discovers all <code>.tif</code> tiles for a given NUTS3/year pair in S3, runs (or loads from cache) predictions for each one in parallel, and merges the results into a single GeoJSON response.</li>
+</ul>
+</section>
+<section id="endpoints" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="endpoints"><span class="header-section-number">3.2</span> Endpoints</h2>
+<p>The API exposes three endpoints:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>GET /find_image</code></td>
+<td>Returns the filename of the Sentinel-2 tile that contains a given GPS point</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>GET /predict_image</code></td>
+<td>Runs inference on a single image; optionally returns vectorised polygons</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td><code>GET /predict_nuts</code></td>
+<td>Runs inference on all tiles for a NUTS3/year pair and returns merged polygons</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<section id="get-find_image" class="level3" data-number="3.2.1">
+<h3 data-number="3.2.1" class="anchored" data-anchor-id="get-find_image"><span class="header-section-number">3.2.1</span> <code>GET /find_image</code></h3>
+<p>This endpoint takes a GPS point (longitude, latitude in WGS84) and a NUTS3 identifier + year. It loads a pre-computed <code>filename2bbox.parquet</code> index from MinIO — a table that maps each tile filename to its bounding box in EPSG:3035 — then performs a spatial query to find which tile contains the point.</p>
+<p><strong>Parameters:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>lon_gps</code></td>
+<td><code>float</code></td>
+<td>Longitude in WGS84 (EPSG:4326)</td>
+</tr>
+<tr class="even">
+<td><code>lat_gps</code></td>
+<td><code>float</code></td>
+<td>Latitude in WGS84 (EPSG:4326)</td>
+</tr>
+<tr class="odd">
+<td><code>nuts_id</code></td>
+<td><code>str</code></td>
+<td>NUTS3 region identifier, e.g.&nbsp;<code>"LU000"</code></td>
+</tr>
+<tr class="even">
+<td><code>year</code></td>
+<td><code>int</code></td>
+<td>Year of the satellite images (2018–2024)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> a JSON array of matching filenames (usually one element).</p>
+</section>
+<section id="get-predict_image" class="level3" data-number="3.2.2">
+<h3 data-number="3.2.2" class="anchored" data-anchor-id="get-predict_image"><span class="header-section-number">3.2.2</span> <code>GET /predict_image</code></h3>
+<p>This endpoint runs the full segmentation pipeline on a single Sentinel-2 tile identified by its path in S3. If a cached prediction exists for this image, it is loaded directly without running the model again.</p>
+<p><strong>Parameters:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>image</code></td>
+<td><code>str</code></td>
+<td>S3 path to the <code>.tif</code> file</td>
+</tr>
+<tr class="even">
+<td><code>polygons</code></td>
+<td><code>bool</code></td>
+<td>If <code>True</code>, also vectorise the mask and return polygons</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> a JSON object with:</p>
+<ul>
+<li><code>"mask"</code>: the 2D class mask as a nested list <code>(H × W)</code></li>
+<li><code>"polygons"</code> <em>(optional)</em>: a GeoJSON string containing the vectorised polygons</li>
+</ul>
+</section>
+<section id="get-predict_nuts" class="level3" data-number="3.2.3">
+<h3 data-number="3.2.3" class="anchored" data-anchor-id="get-predict_nuts"><span class="header-section-number">3.2.3</span> <code>GET /predict_nuts</code></h3>
+<p>This endpoint discovers all <code>.tif</code> tiles for a NUTS3/year pair in S3, runs (or loads from cache) predictions for each one, applies <code>produce_mask()</code> to convert logits to class IDs, then concatenates the GeoDataFrames from <code>create_geojson_from_mask()</code> into a single response. This is the main entry point for region-level analysis.</p>
+<p><strong>Parameters:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>nuts_id</code></td>
+<td><code>str</code></td>
+<td>NUTS3 region identifier</td>
+</tr>
+<tr class="even">
+<td><code>year</code></td>
+<td><code>int</code></td>
+<td>Year of the satellite images (2018–2024)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> a JSON object with:</p>
+<ul>
+<li><code>"predictions"</code>: a GeoJSON string (FeatureCollection) containing all predicted polygons for the NUTS3 region, in EPSG:3035</li>
+</ul>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -391,87 +992,412 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Pixels with class value <code>0</code> (no-data / background) are automatically excluded from the output GeoDataFrame.</p>
+<p>The first call to <code>/predict_nuts</code> for a new NUTS3/year combination can take several minutes, as it needs to run inference on each tile. Subsequent calls are fast thanks to the S3 cache.</p>
 </div>
-</div>
-<p>Plot the polygons coloured by class on top of the satellite image:</p>
-<div id="8c1a558f" class="cell" data-execution_count="7">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> geopandas <span class="im">as</span> gpd</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">8</span>))</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>ax.imshow(rgb)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>gdf_pred.plot(</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    column<span class="op">=</span><span class="st">"label"</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    cmap<span class="op">=</span>cmap,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    vmin<span class="op">=</span><span class="dv">1</span>,</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    vmax<span class="op">=</span><span class="dv">10</span>,</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.5</span>,</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span>ax,</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    legend<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Predicted polygons overlay"</span>)</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>ax.axis(<span class="st">"off"</span>)</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 </section>
-<section id="api" class="level1" data-number="3">
-<h1 data-number="3"><span class="header-section-number">3</span> API</h1>
-<p>A REST API has been deployed to run inference at scale for a given NUTS3/year pair. It wraps the same <code>predict()</code> / <code>create_geojson_from_mask()</code> pipeline with an S3 cache layer, and exposes three endpoints:</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Endpoint</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>GET /find_image</code></td>
-<td>Returns the image filename that contains a GPS point</td>
-</tr>
-<tr class="even">
-<td><code>GET /predict_image</code></td>
-<td>Predicts a single image by path; optionally returns polygons</td>
-</tr>
-<tr class="odd">
-<td><code>GET /predict_nuts</code></td>
-<td>Predicts all images for a NUTS3/year pair</td>
-</tr>
-</tbody>
-</table>
-<p>Call the NUTS-level endpoint and load the result as a GeoDataFrame:</p>
-<div id="2cd5ec2a" class="cell" data-execution_count="8">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> geopandas <span class="im">as</span> gpd</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>api_url <span class="op">=</span> <span class="st">"https://projet-formation-api.user.lab.sspcloud.fr"</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> requests.get(</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/predict_nuts"</span>,</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{<span class="st">"nuts_id"</span>: <span class="st">"LU000"</span>, <span class="st">"year"</span>: <span class="dv">2024</span>},</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>response.raise_for_status()</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>gdf_nuts <span class="op">=</span> gpd.GeoDataFrame.from_features(</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    response.json()[<span class="st">"predictions"</span>], crs<span class="op">=</span><span class="st">"EPSG:3035"</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(gdf_nuts)<span class="sc">}</span><span class="ss"> polygons received"</span>)</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>gdf_nuts.head()</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>gdf_nuts.to_parquet(<span class="st">"predictions_LU000_2024.parquet"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="exercise-5-find-a-satellite-image-from-a-gps-point" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="exercise-5-find-a-satellite-image-from-a-gps-point"><span class="header-section-number">3.3</span> Exercise 5 — Find a satellite image from a GPS point</h2>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<p>The response is a <strong>GeoJSON FeatureCollection</strong> serialised as a JSON string inside the <code>"predictions"</code> key.</p>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 5
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Goal:</strong> Use the <code>/find_image</code> endpoint to find the Sentinel-2 tile that contains a GPS point in Luxembourg.</p>
+<p><strong>Steps:</strong></p>
+<ol type="1">
+<li>Choose a GPS point in Luxembourg (e.g.&nbsp;Luxembourg City)</li>
+<li>Call <code>GET /find_image</code> with the correct parameters</li>
+<li>Print the filename returned by the API</li>
+</ol>
+</div>
+</div>
+<div id="a3e50da1" class="cell" data-execution_count="14">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>api_url <span class="op">=</span> <span class="st">"https://funathon-2026-project3.lab.sspcloud.fr"</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>lon_gps <span class="op">=</span> __    <span class="co"># </span><span class="al">TODO</span><span class="co">: longitude in WGS84 (float), e.g. 6.13 for Luxembourg City</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>lat_gps <span class="op">=</span> __    <span class="co"># </span><span class="al">TODO</span><span class="co">: latitude in WGS84 (float), e.g. 49.61 for Luxembourg City</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>nuts_id <span class="op">=</span> <span class="st">"__"</span>  <span class="co"># </span><span class="al">TODO</span><span class="co">: NUTS3 identifier (str), e.g. "LU000" for Luxembourg</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>year    <span class="op">=</span> __    <span class="co"># </span><span class="al">TODO</span><span class="co">: year of the satellite images (int, between 2018 and 2024)</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>response_find <span class="op">=</span> requests.get(</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/__"</span>,  <span class="co"># </span><span class="al">TODO</span><span class="co">: endpoint name (str), e.g. "find_image"</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lon_gps"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: longitude defined above</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lat_gps"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: latitude defined above</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"nuts_id"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: NUTS3 identifier defined above</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"year"</span>:    __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: year defined above</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>response_find.raise_for_status()</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>image_filename <span class="op">=</span> response_find.json()[<span class="dv">0</span>]</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Image found: </span><span class="sc">{</span>image_filename<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-17-contents" aria-controls="callout-17" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-17" class="callout-17-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li>Luxembourg City is around <code>longitude=6.13</code>, <code>latitude=49.61</code>.</li>
+<li>The NUTS3 identifier for Luxembourg is <code>"LU000"</code>.</li>
+<li>The endpoint name is <code>"find_image"</code>.</li>
+<li>The response is a JSON array — take the first element with <code>[0]</code>.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-18-contents" aria-controls="callout-18" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-18" class="callout-18-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="901c6030" class="cell" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>lon_gps <span class="op">=</span> <span class="fl">6.13</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>lat_gps <span class="op">=</span> <span class="fl">49.61</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>nuts_id <span class="op">=</span> <span class="st">"LU000"</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>year    <span class="op">=</span> <span class="dv">2024</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>response_find <span class="op">=</span> requests.get(</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/find_image"</span>,</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lon_gps"</span>: lon_gps,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lat_gps"</span>: lat_gps,</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"nuts_id"</span>: nuts_id,</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"year"</span>:    year,</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>response_find.raise_for_status()</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>image_filename <span class="op">=</span> response_find.json()[<span class="dv">0</span>]</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Image found: </span><span class="sc">{</span>image_filename<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="exercise-6-predict-a-single-image-via-the-api" class="level2" data-number="3.4">
+<h2 data-number="3.4" class="anchored" data-anchor-id="exercise-6-predict-a-single-image-via-the-api"><span class="header-section-number">3.4</span> Exercise 6 — Predict a single image via the API</h2>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 6
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Goal:</strong> Call <code>/predict_image</code> with the filename found in Exercise 5 to retrieve the segmentation mask and predicted polygons, then visualise them.</p>
+<p><strong>Steps:</strong></p>
+<ol type="1">
+<li>Call <code>GET /predict_image</code> with <code>polygons=True</code></li>
+<li>Parse the mask as a NumPy array (key <code>"mask"</code>)</li>
+<li>Parse the polygons as a GeoDataFrame (key <code>"polygons"</code>)</li>
+<li>Load the RGB composite with <code>get_satellite_image()</code> and display 3 subplots</li>
+<li>Display the results on an interactive Folium map</li>
+</ol>
+</div>
+</div>
+<div id="f084bc29" class="cell" data-execution_count="16">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> geopandas <span class="im">as</span> gpd</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> get_satellite_image</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>response_pred <span class="op">=</span> requests.get(</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/__"</span>,  <span class="co"># </span><span class="al">TODO</span><span class="co">: endpoint name (str), e.g. "predict_image"</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"image"</span>:    __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: filename returned by /find_image</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"polygons"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: set to True to also receive polygons</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>response_pred.raise_for_status()</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>mask <span class="op">=</span> np.array(response_pred.json()[<span class="st">"__"</span>])  <span class="co"># </span><span class="al">TODO</span><span class="co">: response key for the mask (str)</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>gdf_pred <span class="op">=</span> gpd.GeoDataFrame.from_features(</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    json.loads(response_pred.json()[<span class="st">"__"</span>])[<span class="st">"features"</span>],  <span class="co"># </span><span class="al">TODO</span><span class="co">: response key for polygons (str)</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    crs<span class="op">=</span><span class="st">"EPSG:3035"</span>,</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mask shape    : </span><span class="sc">{</span>mask<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Classes found : </span><span class="sc">{</span><span class="bu">set</span>(mask.flatten().tolist())<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(gdf_pred)<span class="sc">}</span><span class="ss"> polygons extracted"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="c56d6b6e" class="cell" data-execution_count="17">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>N_BANDS  <span class="op">=</span> <span class="dv">14</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>base_url <span class="op">=</span> (</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://minio.lab.sspcloud.fr/projet-formation/"</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"diffusion/funathon/2026/project3/data/images/"</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>image_url <span class="op">=</span> base_url <span class="op">+</span> __  <span class="co"># </span><span class="al">TODO</span><span class="co">: image filename returned by /find_image</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>si  <span class="op">=</span> get_satellite_image(__, n_bands<span class="op">=</span>__)  <span class="co"># </span><span class="al">TODO</span><span class="co">: full image URL, number of bands</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.transpose(si[<span class="st">"array"</span>][[<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>]], (<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>)).astype(np.float32)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>p98 <span class="op">=</span> np.percentile(rgb, <span class="dv">98</span>)</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.clip(rgb <span class="op">/</span> p98, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">20</span>, <span class="dv">6</span>))</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].imshow(rgb)</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Sentinel-2 RGB (B4, B3, B2)"</span>)</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].imshow(mask, cmap<span class="op">=</span>cmap, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Predicted land cover"</span>)</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>gdf_pred.plot(column<span class="op">=</span><span class="st">"label"</span>, cmap<span class="op">=</span>cmap, vmin<span class="op">=</span><span class="dv">1</span>, vmax<span class="op">=</span><span class="dv">10</span>, ax<span class="op">=</span>axes[<span class="dv">2</span>], legend<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_title(<span class="st">"Predicted polygons"</span>)</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>xmin, ymin, xmax, ymax <span class="op">=</span> gdf_pred.total_bounds</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_xlim(xmin, xmax)</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_ylim(ymin, ymax)</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].axis(<span class="st">"off"</span>)</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>fig.legend(handles<span class="op">=</span>legend_elements, loc<span class="op">=</span><span class="st">"center left"</span>, bbox_to_anchor<span class="op">=</span>(<span class="fl">1.0</span>, <span class="fl">0.5</span>), frameon<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"prediction_api_image.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>, dpi<span class="op">=</span><span class="dv">150</span>)</span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="1a9a41f4" class="cell" data-execution_count="18">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> folium.raster_layers <span class="im">import</span> ImageOverlay</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> rasterio.warp <span class="im">import</span> transform_bounds</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>west, south, east, north <span class="op">=</span> transform_bounds(si[<span class="st">"crs"</span>], <span class="st">"EPSG:4326"</span>, <span class="op">*</span>si[<span class="st">"bounds"</span>])</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>center_lat <span class="op">=</span> (south <span class="op">+</span> north) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>center_lon <span class="op">=</span> (west <span class="op">+</span> east) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> folium.Map(location<span class="op">=</span>[center_lat, center_lon], zoom_start<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>ImageOverlay(image<span class="op">=</span>rgb, bounds<span class="op">=</span>[[south, west], [north, east]], opacity<span class="op">=</span><span class="fl">0.7</span>).add_to(m)</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>gdf_pred_wgs84 <span class="op">=</span> gdf_pred.to_crs(<span class="st">"EPSG:4326"</span>)</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>folium.GeoJson(</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    gdf_pred_wgs84,</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    style_function<span class="op">=</span><span class="kw">lambda</span> feature: {</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillColor"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: use label_to_color to colour by label</span></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"color"</span>: <span class="st">"black"</span>,</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"weight"</span>: <span class="fl">0.5</span>,</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillOpacity"</span>: <span class="fl">0.6</span>,</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>    tooltip<span class="op">=</span>folium.GeoJsonTooltip(fields<span class="op">=</span>[<span class="st">"label"</span>], aliases<span class="op">=</span>[<span class="st">"Class:"</span>]),</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>).add_to(m)</span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>m</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-20-contents" aria-controls="callout-20" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-20" class="callout-20-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li>The endpoint name is <code>"predict_image"</code>.</li>
+<li>Pass <code>image_filename</code> (from Exercise 5) as the <code>"image"</code> parameter.</li>
+<li>Set <code>polygons=True</code> to include GeoJSON polygons in the response.</li>
+<li>The response keys are <code>"mask"</code> (the pixel grid) and <code>"polygons"</code> (GeoJSON string).</li>
+<li><code>json.loads()</code> parses the GeoJSON string before passing it to <code>from_features()</code>.</li>
+<li><code>get_satellite_image(url, n_bands=14)</code> returns a dict with key <code>"array"</code> of shape <code>(n_bands, H, W)</code>.</li>
+<li><code>feature["properties"]["label"]</code> gives the integer class ID; use <code>label_to_color.get(..., "#808080")</code> as a safe fallback.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-21-contents" aria-controls="callout-21" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-21" class="callout-21-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="84b38d89" class="cell" data-execution_count="19">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>response_pred <span class="op">=</span> requests.get(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/predict_image"</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{<span class="st">"image"</span>: image_filename, <span class="st">"polygons"</span>: <span class="va">True</span>},</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>response_pred.raise_for_status()</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>mask     <span class="op">=</span> np.array(response_pred.json()[<span class="st">"mask"</span>])</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>gdf_pred <span class="op">=</span> gpd.GeoDataFrame.from_features(</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    json.loads(response_pred.json()[<span class="st">"polygons"</span>])[<span class="st">"features"</span>],</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    crs<span class="op">=</span><span class="st">"EPSG:3035"</span>,</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>image_url <span class="op">=</span> base_url <span class="op">+</span> image_filename</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>si        <span class="op">=</span> get_satellite_image(image_url, n_bands<span class="op">=</span>N_BANDS)</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Folium style_function:</span></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a><span class="co"># "fillColor": label_to_color.get(feature["properties"]["label"], "#808080")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="exercise-7-predict-an-entire-nuts3-region" class="level2" data-number="3.5">
+<h2 data-number="3.5" class="anchored" data-anchor-id="exercise-7-predict-an-entire-nuts3-region"><span class="header-section-number">3.5</span> Exercise 7 — Predict an entire NUTS3 region</h2>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Caution</span>Exercise 7
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Goal:</strong> Use <code>/predict_nuts</code> to retrieve predictions for all Sentinel-2 tiles covering Luxembourg (<code>LU000</code>) in 2024, visualise the result on a Folium map, and save it to a Parquet file.</p>
+<p><strong>Steps:</strong></p>
+<ol type="1">
+<li>Call <code>GET /predict_nuts</code> with <code>nuts_id="LU000"</code> and <code>year=2024</code></li>
+<li>Parse the response as a GeoDataFrame (key <code>"predictions"</code>)</li>
+<li>Print the number of polygons and the first rows</li>
+<li>Display on a Folium map with per-class colouring</li>
+<li>Save the GeoDataFrame to a Parquet file</li>
+</ol>
+</div>
+</div>
+<div id="21fb1aa9" class="cell" data-execution_count="20">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>response_nuts <span class="op">=</span> requests.get(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/__"</span>,  <span class="co"># </span><span class="al">TODO</span><span class="co">: endpoint name (str), e.g. "predict_nuts"</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"nuts_id"</span>: <span class="st">"__"</span>,  <span class="co"># </span><span class="al">TODO</span><span class="co">: NUTS3 identifier (str), e.g. "LU000"</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"year"</span>:    __,    <span class="co"># </span><span class="al">TODO</span><span class="co">: year (int, between 2018 and 2024)</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>response_nuts.raise_for_status()</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>gdf_nuts <span class="op">=</span> gpd.GeoDataFrame.from_features(</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    json.loads(response_nuts.json()[<span class="st">"__"</span>])[<span class="st">"features"</span>],  <span class="co"># </span><span class="al">TODO</span><span class="co">: response key (str)</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    crs<span class="op">=</span><span class="st">"EPSG:3035"</span>,</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(gdf_nuts)<span class="sc">}</span><span class="ss"> polygons received"</span>)</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gdf_nuts.head())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="6f2bbbeb" class="cell" data-execution_count="21">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>gdf_nuts_wgs84 <span class="op">=</span> gdf_nuts.to_crs(<span class="st">"EPSG:4326"</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>nuts_center    <span class="op">=</span> gdf_nuts_wgs84.geometry.centroid.unary_union.centroid</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>m_nuts <span class="op">=</span> folium.Map(location<span class="op">=</span>[nuts_center.y, nuts_center.x], zoom_start<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>folium.GeoJson(</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: reprojected NUTS3 GeoDataFrame</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    style_function<span class="op">=</span><span class="kw">lambda</span> feature: {</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillColor"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: use label_to_color to colour by label</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"color"</span>: <span class="st">"black"</span>,</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"weight"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillOpacity"</span>: <span class="fl">0.6</span>,</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>    tooltip<span class="op">=</span>folium.GeoJsonTooltip(fields<span class="op">=</span>[<span class="st">"label"</span>], aliases<span class="op">=</span>[<span class="st">"Class:"</span>]),</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>).add_to(m_nuts)</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>gdf_nuts.to_parquet(<span class="st">"__"</span>)  <span class="co"># </span><span class="al">TODO</span><span class="co">: output Parquet filename (str)</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>m_nuts</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-23-contents" aria-controls="callout-23" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Hint
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-23" class="callout-23-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<ul>
+<li>The endpoint name is <code>"predict_nuts"</code>.</li>
+<li>The response key is <code>"predictions"</code> — a GeoJSON string that must be parsed with <code>json.loads(...)</code> before calling <code>from_features()</code>.</li>
+<li>The first call for a new NUTS3/year combination may take several minutes; subsequent calls are fast thanks to the S3 cache.</li>
+<li>Pass <code>gdf_nuts_wgs84</code> (already reprojected to EPSG:4326) to <code>folium.GeoJson()</code>.</li>
+<li>Choose a meaningful Parquet filename, e.g.&nbsp;<code>"predictions_LU000_2024.parquet"</code>.</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-24-contents" aria-controls="callout-24" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Solution
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-24" class="callout-24-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div id="c9b115c3" class="cell" data-execution_count="22">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>response_nuts <span class="op">=</span> requests.get(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/predict_nuts"</span>,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{<span class="st">"nuts_id"</span>: <span class="st">"LU000"</span>, <span class="st">"year"</span>: <span class="dv">2024</span>},</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>response_nuts.raise_for_status()</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>gdf_nuts <span class="op">=</span> gpd.GeoDataFrame.from_features(</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    json.loads(response_nuts.json()[<span class="st">"predictions"</span>])[<span class="st">"features"</span>],</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    crs<span class="op">=</span><span class="st">"EPSG:3035"</span>,</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>folium.GeoJson(</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    gdf_nuts_wgs84,</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    style_function<span class="op">=</span><span class="kw">lambda</span> feature: {</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillColor"</span>: label_to_color.get(feature[<span class="st">"properties"</span>][<span class="st">"label"</span>], <span class="st">"#808080"</span>),</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"color"</span>: <span class="st">"black"</span>,</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"weight"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillOpacity"</span>: <span class="fl">0.6</span>,</span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>    tooltip<span class="op">=</span>folium.GeoJsonTooltip(fields<span class="op">=</span>[<span class="st">"label"</span>], aliases<span class="op">=</span>[<span class="st">"Class:"</span>]),</span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>).add_to(m_nuts)</span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>gdf_nuts.to_parquet(<span class="st">"predictions_LU000_2024.parquet"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

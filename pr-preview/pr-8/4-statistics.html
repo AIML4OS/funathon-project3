@@ -218,7 +218,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Once a single tile has been predicted and saved locally, you can compute land-cover statistics at the image level. This is useful for quickly inspecting the composition of a specific area before scaling up to the full NUTS3 region.</p>
 <section id="load-the-predictions" class="level2" data-number="1.1">
 <h2 data-number="1.1" class="anchored" data-anchor-id="load-the-predictions"><span class="header-section-number">1.1</span> Load the predictions</h2>
-<div id="c323d0bf" class="cell" data-execution_count="1">
+<div id="ec73f321" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> geopandas <span class="im">as</span> gpd</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>class_names <span class="op">=</span> {</span>
@@ -242,7 +242,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="compute-area-statistics-per-class" class="level2" data-number="1.2">
 <h2 data-number="1.2" class="anchored" data-anchor-id="compute-area-statistics-per-class"><span class="header-section-number">1.2</span> Compute area statistics per class</h2>
-<div id="d0f23756" class="cell" data-execution_count="2">
+<div id="f5466eea" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>stats_tile <span class="op">=</span> (</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    gdf_tile.groupby([<span class="st">"label"</span>, <span class="st">"class_name"</span>])</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    .agg(</span>
@@ -263,7 +263,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="highlight-key-land-cover-categories" class="level2" data-number="1.3">
 <h2 data-number="1.3" class="anchored" data-anchor-id="highlight-key-land-cover-categories"><span class="header-section-number">1.3</span> Highlight key land-cover categories</h2>
-<div id="a809c88e" class="cell" data-execution_count="3">
+<div id="3449f653" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sealed_km2 <span class="op">=</span> stats_tile.loc[stats_tile[<span class="st">"label"</span>] <span class="op">==</span> <span class="dv">1</span>,  <span class="st">"total_area_km2"</span>].<span class="bu">sum</span>()</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>forest_km2 <span class="op">=</span> stats_tile.loc[stats_tile[<span class="st">"label"</span>].isin([<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]), <span class="st">"total_area_km2"</span>].<span class="bu">sum</span>()</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>agri_km2   <span class="op">=</span> stats_tile.loc[stats_tile[<span class="st">"label"</span>].isin([<span class="dv">6</span>, <span class="dv">7</span>]),    <span class="st">"total_area_km2"</span>].<span class="bu">sum</span>()</span>
@@ -277,7 +277,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="visualise-the-distribution" class="level2" data-number="1.4">
 <h2 data-number="1.4" class="anchored" data-anchor-id="visualise-the-distribution"><span class="header-section-number">1.4</span> Visualise the distribution</h2>
-<div id="4165636d" class="cell" data-execution_count="4">
+<div id="f85700a1" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
@@ -298,7 +298,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Scaling up to the full NUTS3 region gives a comprehensive picture of land-cover composition, and allows comparison with the individual tile.</p>
 <section id="load-the-predictions-1" class="level2" data-number="2.1">
 <h2 data-number="2.1" class="anchored" data-anchor-id="load-the-predictions-1"><span class="header-section-number">2.1</span> Load the predictions</h2>
-<div id="25cb20e6" class="cell" data-execution_count="5">
+<div id="9701944a" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>gdf_nuts <span class="op">=</span> gpd.read_parquet(<span class="st">"predictions_LU000_2024.parquet"</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>gdf_nuts[<span class="st">"area_m2"</span>] <span class="op">=</span> gdf_nuts.geometry.area</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>gdf_nuts[<span class="st">"area_km2"</span>] <span class="op">=</span> gdf_nuts[<span class="st">"area_m2"</span>] <span class="op">/</span> <span class="fl">1e6</span></span>
@@ -307,7 +307,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="compute-area-statistics-per-class-1" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="compute-area-statistics-per-class-1"><span class="header-section-number">2.2</span> Compute area statistics per class</h2>
-<div id="154d750f" class="cell" data-execution_count="6">
+<div id="29405168" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>stats_nuts <span class="op">=</span> (</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    gdf_nuts.groupby([<span class="st">"label"</span>, <span class="st">"class_name"</span>])</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    .agg(</span>
@@ -328,7 +328,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="highlight-key-land-cover-categories-1" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="highlight-key-land-cover-categories-1"><span class="header-section-number">2.3</span> Highlight key land-cover categories</h2>
-<div id="3285c936" class="cell" data-execution_count="7">
+<div id="90d078bc" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sealed_km2 <span class="op">=</span> stats_nuts.loc[stats_nuts[<span class="st">"label"</span>] <span class="op">==</span> <span class="dv">1</span>,           <span class="st">"total_area_km2"</span>].<span class="bu">sum</span>()</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>forest_km2 <span class="op">=</span> stats_nuts.loc[stats_nuts[<span class="st">"label"</span>].isin([<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]),<span class="st">"total_area_km2"</span>].<span class="bu">sum</span>()</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>agri_km2 <span class="op">=</span> stats_nuts.loc[stats_nuts[<span class="st">"label"</span>].isin([<span class="dv">6</span>, <span class="dv">7</span>]),   <span class="st">"total_area_km2"</span>].<span class="bu">sum</span>()</span>
@@ -342,7 +342,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="compare-tile-vs.-nuts3" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="compare-tile-vs.-nuts3"><span class="header-section-number">2.4</span> Compare tile vs.&nbsp;NUTS3</h2>
-<div id="59646b36" class="cell" data-execution_count="8">
+<div id="109091d4" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>tile_shares <span class="op">=</span> (</span>
@@ -358,7 +358,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="visualise-the-nuts3-distribution" class="level2" data-number="2.5">
 <h2 data-number="2.5" class="anchored" data-anchor-id="visualise-the-nuts3-distribution"><span class="header-section-number">2.5</span> Visualise the NUTS3 distribution</h2>
-<div id="322b0a0d" class="cell" data-execution_count="9">
+<div id="0dc89cb6" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">5</span>))</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>stats_nuts.set_index(<span class="st">"class_name"</span>)[<span class="st">"total_area_km2"</span>].sort_values().plot(</span>
@@ -379,7 +379,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="interactive-map-sealed-area-per-polygon" class="level2" data-number="2.6">
 <h2 data-number="2.6" class="anchored" data-anchor-id="interactive-map-sealed-area-per-polygon"><span class="header-section-number">2.6</span> Interactive map — sealed area per polygon</h2>
-<div id="f69c4cd2" class="cell" data-execution_count="10">
+<div id="373e6552" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> folium</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> branca.colormap <span class="im">as</span> cm</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>

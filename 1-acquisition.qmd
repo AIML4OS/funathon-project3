@@ -293,60 +293,8 @@ A **band composite** is an image formed by mapping three spectral bands to the R
 - **False-colour** (B8, B4, B3) — near-infrared mapped to red. Healthy vegetation appears bright red because it strongly reflects NIR light. Useful for spotting vegetation stress, urban areas, and water bodies.
 - **NDVI** (Normalised Difference Vegetation Index) — not a composite, but a single-band index computed from NIR and Red: $\text{NDVI} = \frac{B8 - B4}{B8 + B4}$. Values near +1 indicate dense vegetation; near 0 indicate bare soil; negative values indicate water.
 
-```{mermaid}
-%%| label: fig-band-combinations
-%%| fig-cap: "Three ways to combine Sentinel-2 bands for different analyses."
-%%| eval: true
-graph LR
-    subgraph BANDS["🛰️ Sentinel-2 Bands"]
-        B2["🔵 B2 Blue"]
-        B3["🟢 B3 Green"]
-        B4["🔴 B4 Red"]
-        B8["⬜ B8 NIR"]
-    end
+![Sentinel2 bands composition](assets/sentinel2_band_composite_clean.svg)
 
-    subgraph TRUE["🌍 True Colour"]
-        direction TB
-        TC_R["R ← B4"]
-        TC_G["G ← B3"]
-        TC_B["B ← B2"]
-        TC_USE["Human eye view<br/>General orientation"]
-    end
-
-    subgraph FALSE["🌿 False Colour"]
-        direction TB
-        FC_R["R ← B8"]
-        FC_G["G ← B4"]
-        FC_B["B ← B3"]
-        FC_USE["Vegetation = bright red<br/>Urban & water detection"]
-    end
-
-    subgraph NDVI["📊 NDVI Index"]
-        direction TB
-        FORMULA["(B8 − B4) / (B8 + B4)"]
-        SCALE["-1 ← water · soil → 0 → vegetation · +1"]
-    end
-
-    B4 --> TC_R
-    B3 --> TC_G
-    B2 --> TC_B
-
-    B8 --> FC_R
-    B4 --> FC_G
-    B3 --> FC_B
-
-    B8 --> FORMULA
-    B4 --> FORMULA
-
-    style BANDS fill:#1a1a2e,stroke:#e94560,color:#eee
-    style TRUE fill:#2d6a4f,stroke:#40916c,color:#eee
-    style FALSE fill:#9d0208,stroke:#d00000,color:#eee
-    style NDVI fill:#0f3460,stroke:#533483,color:#eee
-    style B2 fill:#0077b6,color:#fff,stroke:#023e8a
-    style B3 fill:#2d6a4f,color:#fff,stroke:#1b4332
-    style B4 fill:#d00000,color:#fff,stroke:#9d0208
-    style B8 fill:#4a4e69,color:#fff,stroke:#22223b
-```
 
 ::: {.callout-tip}
 **Learn more:** [Wikipedia — NDVI](https://en.wikipedia.org/wiki/Normalized_difference_vegetation_index) · [Sentinel Hub custom scripts gallery](https://custom-scripts.sentinel-hub.com/custom-scripts/sentinel/sentinel-2/#popular-rgb-composites)
@@ -825,7 +773,7 @@ print(base_url)
 
 ## Retrieving a tile for a specific city
 
-After finding the NUTS3 code, you know which region directory to look in — but there may be hundreds of tiles in that directory (e.g. LU000/2024 has 351 tiles). To find the **specific tile** that covers your city, use the `filename2bbox.parquet` index file described earlier.
+After finding the NUTS3 code, you know which region directory to look in — but there may be hundreds of tiles in that directory (e.g. LU000/2024 has 351 tiles). To find the **specific tile** that covers your city, use the `filename2bbox.parquet` index file. Each region/year directory contains one such file with two columns: `filename` (the `.tif` name) and `bbox` (a list `[xmin, ymin, xmax, ymax]` in EPSG:3035). It lets you check which tile's bounding box contains your city's coordinates without listing the full directory.
 
 The workflow is straightforward: read the parquet file, extract the city's EPSG:3035 coordinates, and check which tile's bounding box contains those coordinates.
 

@@ -11,7 +11,7 @@ format:
 This section covers how to load a trained segmentation model from the MLflow
 Model Registry and apply it to a Sentinel-2 image to produce land-cover predictions.
 
-## From MLflow
+## From MLflow (optional)
 
 MLflow lets you version and compare training runs, then promote the best model
 to a **Model Registry**. Follow these steps to register your model:
@@ -39,7 +39,6 @@ import os
 import json
 import mlflow
 from dotenv import load_dotenv
-from utils import get_model
 
 load_dotenv()
 
@@ -47,7 +46,8 @@ model_name    = "__"  # TODO: the model name registered in MLflow
 model_version = "__"  # TODO: the model version you want to load
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 
-model = get_model(__, __, __)  # TODO: model_name, model_version, mlflow_tracking_uri
+mlflow.set_tracking_uri(mlflow_tracking_uri)
+model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version}")
 ```
 
 `get_model()` wraps `mlflow.pyfunc.load_model` and raises a descriptive
@@ -128,7 +128,7 @@ preprocessing, tiling if needed, and assembling the result:
 import torch
 from utils import predict
 
-image_target = "LU000/2024/4022000_2979190_0_354.tif"
+image_target = "LU000/2024/4042000_2951690_0_637.tif"
 
 image_path = (
     "https://minio.lab.sspcloud.fr/projet-formation/"
@@ -186,7 +186,7 @@ it to produce a labelled mask.
 import torch
 from utils import predict
 
-image_target = "LU000/2024/4022000_2979190_0_354.tif"
+image_target = "LU000/2024/4042000_2951690_0_637.tif"
 
 image_path = (
     "https://minio.lab.sspcloud.fr/projet-formation/"
@@ -592,7 +592,7 @@ The API exposes three endpoints:
 
 ### `GET /find_image`
 
-This endpoint takes a GPS point (longitude, latitude in WGS84) and a NUTS3
+This endpoint takes a GPS point (latitude, longitude in WGS84) and a NUTS3
 identifier + year. It loads a pre-computed `filename2bbox.parquet` index from
 MinIO — a table that maps each tile filename to its bounding box in EPSG:3035 —
 then performs a spatial query to find which tile contains the point.
@@ -601,12 +601,11 @@ then performs a spatial query to find which tile contains the point.
 
 | Name | Type | Description |
 |---|---|---|
-| `lon_gps` | `float` | Longitude in WGS84 (EPSG:4326) |
-| `lat_gps` | `float` | Latitude in WGS84 (EPSG:4326) |
+| `point_gps` | List[`float`, `float`] | Latitude, Longitude in WGS84 (EPSG:4326) |
 | `nuts_id` | `str` | NUTS3 region identifier, e.g. `"LU000"` |
 | `year` | `int` | Year of the satellite images (2018–2024) |
 
-**Response:** a JSON array of matching filenames (usually one element).
+**Response:** a string of the image filename containing the point.
 
 ### `GET /predict_image`
 
@@ -662,7 +661,7 @@ contains a GPS point in Luxembourg.
 
 **Steps:**
 
-1. Choose a GPS point in Luxembourg (e.g. Luxembourg City)
+1. Choose a GPS point in Luxembourg (e.g. Eurostat)
 2. Call `GET /find_image` with the correct parameters
 3. Print the filename returned by the API
 :::
@@ -673,30 +672,28 @@ import requests
 
 api_url = "https://funathon-2026-project3.lab.sspcloud.fr"
 
-lon_gps = __    # TODO: longitude in WGS84 (float), e.g. 6.13 for Luxembourg City
-lat_gps = __    # TODO: latitude in WGS84 (float), e.g. 49.61 for Luxembourg City
+point_gps = __    # TODO: latitude, longitude in WGS84 (List[float, float]), e.g. [49.63, 6.16] for Eurostat
 nuts_id = "__"  # TODO: NUTS3 identifier (str), e.g. "LU000" for Luxembourg
 year    = __    # TODO: year of the satellite images (int, between 2018 and 2024)
 
 response_find = requests.get(
     f"{api_url}/__",  # TODO: endpoint name (str), e.g. "find_image"
     params={
-        "lon_gps": __,  # TODO: longitude defined above
-        "lat_gps": __,  # TODO: latitude defined above
+        "point_gps": __,  # TODO: latitude, longitude defined above
         "nuts_id": __,  # TODO: NUTS3 identifier defined above
         "year":    __,  # TODO: year defined above
     },
 )
 response_find.raise_for_status()
 
-image_filename = response_find.json()[0]
+image_filename = response_find.json()
 print(f"Image found: {image_filename}")
 ```
 
 ::: {.callout-tip collapse="true"}
 ## Hint
 
-- Luxembourg City is around `longitude=6.13`, `latitude=49.61`.
+- Eurostat is around `latitude=49.63`, `longitude=6.16`.
 - The NUTS3 identifier for Luxembourg is `"LU000"`.
 - The endpoint name is `"find_image"`.
 - The response is a JSON array — take the first element with `[0]`.
@@ -707,23 +704,21 @@ print(f"Image found: {image_filename}")
 
 ```{python}
 #| eval: false
-lon_gps = 6.13
-lat_gps = 49.61
+point_gps = [49.63339525016761, 6.1689982433356025]  # [lat, lon]
 nuts_id = "LU000"
 year    = 2024
 
 response_find = requests.get(
     f"{api_url}/find_image",
     params={
-        "lon_gps": lon_gps,
-        "lat_gps": lat_gps,
+        "point_gps": point_gps,
         "nuts_id": nuts_id,
         "year":    year,
     },
 )
 response_find.raise_for_status()
 
-image_filename = response_find.json()[0]
+image_filename = response_find.json()
 print(f"Image found: {image_filename}")
 ```
 :::
@@ -958,9 +953,12 @@ m_nuts
 
 ```{python}
 #| eval: false
+nuts_id = "LU000"
+year = 2024
+
 response_nuts = requests.get(
     f"{api_url}/predict_nuts",
-    params={"nuts_id": "LU000", "year": 2024},
+    params={"nuts_id": nuts_id, "year": year},
 )
 response_nuts.raise_for_status()
 
@@ -980,6 +978,6 @@ folium.GeoJson(
     tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
 ).add_to(m_nuts)
 
-gdf_nuts.to_parquet("predictions_LU000_2024.parquet")
+gdf_nuts.to_parquet(f"predictions_{nuts_id}_{str(year)}.parquet")
 ```
 :::

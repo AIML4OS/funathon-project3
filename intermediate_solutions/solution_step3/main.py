@@ -25,7 +25,6 @@ from rasterio.warp import transform_bounds
 
 from utils import (
     create_geojson_from_mask,
-    get_model,
     get_satellite_image,
     predict,
 )
@@ -44,7 +43,7 @@ load_dotenv()
 #
 # Steps:
 #   1. Set model_name and model_version
-#   2. Call get_model() to load the model from the registry
+#   2. Load the model from the registry
 #   3. Read the run parameters from mlflow.get_run()
 #   4. Print the metadata to verify
 # ============================================================
@@ -53,14 +52,15 @@ model_name = "__"  # TODO: nom du modèle enregistré dans MLflow (str)
 model_version = "__"  # TODO: version du modèle souhaitée (str)
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 
-model = get_model(__, __, __)  # TODO: model_name, model_version, mlflow_tracking_uri
+mlflow.set_tracking_uri(mlflow_tracking_uri)
+model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version}")
 
 run = mlflow.get_run(model.metadata.run_id)
 
-n_bands      = int(run.data.params["n_bands"])
-tiles_size   = int(run.data.params["tiles_size"])
+n_bands = int(run.data.params["n_bands"])
+tiles_size = int(run.data.params["tiles_size"])
 augment_size = int(run.data.params["augment_size"])
-module_name  = run.data.params["module_name"]
+module_name = run.data.params["module_name"]
 
 normalization_mean = json.loads(
     mlflow.get_run(model.metadata.run_id).data.params["normalization_mean"]
@@ -81,7 +81,7 @@ print(f"std={normalization_std}")
 # ------------------------------------------------------------
 # - model_name and model_version are strings — check with your
 #   team or the MLflow UI which model and version to use
-# - get_model(model_name, model_version, mlflow_tracking_uri)
+# - mlflow.pyfunc.load_model(model_name, model_version, mlflow_tracking_uri)
 #   returns an mlflow.pyfunc.PyFuncModel object
 # - All parameters are stored in run.data.params as strings;
 #   cast them to int/float as needed
@@ -96,7 +96,8 @@ print(f"std={normalization_std}")
 # model_version = "2"
 # mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 #
-# model = get_model(model_name, model_version, mlflow_tracking_uri)
+# mlflow.set_tracking_uri(mlflow_tracking_uri)
+# model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version}")
 # ------------------------------------------------------------
 
 
@@ -443,14 +444,13 @@ api_url = "https://funathon-2026-project3.lab.sspcloud.fr"
 # EXERCISE 1 — Find a satellite image from a GPS point
 # ============================================================
 #
-# Goal: Given a GPS point (longitude, latitude), use the API
+# Goal: Given a GPS point (latitude, longitude), use the API
 # endpoint /find_image to retrieve the filename of the
 # Sentinel-2 tile that contains this point.
 #
 # API endpoint : GET /find_image
 # Parameters   :
-#   - lon_gps (float) : longitude in WGS84 (EPSG:4326)
-#   - lat_gps (float) : latitude  in WGS84 (EPSG:4326)
+#   - point_gps (List[float, float]) : latitude, longitude in WGS84 (EPSG:4326)
 #   - nuts_id (str)   : NUTS3 region identifier
 #   - year    (int)   : year of the satellite images (2018-2024)
 #
@@ -460,29 +460,27 @@ api_url = "https://funathon-2026-project3.lab.sspcloud.fr"
 #   3. Print the filename returned by the API
 # ============================================================
 
-lon_gps = __  # TODO: longitude en WGS84 (float), ex: 6.13 pour Luxembourg City
-lat_gps = __  # TODO: latitude en WGS84 (float), ex: 49.61 pour Luxembourg City
-nuts_id = "__"  # TODO: identifiant NUTS3 (str), ex: "LU000" pour le Luxembourg
-year    = __  # TODO: année des images satellites (int, entre 2018 et 2024)
+point_gps = __  # TODO: latitude, longitude en WGS84 (List[float, float]), ex: [49.63, 6.16] pour Eurostat
+nuts_id = __  # TODO: identifiant NUTS3 (str), ex: "LU000" pour le Luxembourg
+year = __  # TODO: année des images satellites (int, entre 2018 et 2024)
 
 response_find = requests.get(
     f"{api_url}/__",  # TODO: nom de l'endpoint à appeler (str), ex: "find_image"
     params={
-        "lon_gps": __,  # TODO: longitude définie plus haut
-        "lat_gps": __,  # TODO: latitude définie plus haut
+        "point_gps": __,  # TODO: latitude, longitude définie plus haut
         "nuts_id": __,  # TODO: identifiant NUTS3 défini plus haut
         "year":    __,  # TODO: année définie plus haut
     },
 )
 response_find.raise_for_status()
 
-image_filename = response_find.json()[0]
+image_filename = response_find.json()
 print(f"Image found: {image_filename}")
 
 # ------------------------------------------------------------
 # HINT — Exercise 1
 # ------------------------------------------------------------
-# - Luxembourg City is around longitude=6.13, latitude=49.61
+# - Eurostat is around latitude=49.63, longitude=6.16.
 # - The NUTS3 identifier for Luxembourg is "LU000"
 # - The endpoint name is "find_image"
 # - The response is a JSON list — take the first element [0]
@@ -491,23 +489,21 @@ print(f"Image found: {image_filename}")
 # ------------------------------------------------------------
 # SOLUTION — Exercise 1
 # ------------------------------------------------------------
-# lon_gps = 6.13
-# lat_gps = 49.61
+# point_gps = [49.63339525016761, 6.1689982433356025]  # [lat, lon]
 # nuts_id = "LU000"
 # year    = 2024
 #
 # response_find = requests.get(
 #     f"{api_url}/find_image",
 #     params={
-#         "lon_gps": lon_gps,
-#         "lat_gps": lat_gps,
+#         "point_gps": point_gps,
 #         "nuts_id": nuts_id,
 #         "year":    year,
 #     },
 # )
 # response_find.raise_for_status()
 #
-# image_filename = response_find.json()[0]
+# image_filename = response_find.json()
 # print(f"Image found: {image_filename}")
 # ------------------------------------------------------------
 

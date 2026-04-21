@@ -334,7 +334,7 @@ Stage 4 features  ──┘             Concat → Linear → logits (H/4 × W/4
 <li><strong><code>SemanticSegmentationSegformer</code></strong>: a thin subclass of HuggingFace’s <code>SegformerPreTrainedModel</code> that adds freeze/unfreeze helpers and a cleaner forward method.</li>
 <li><strong><code>SegformerB5</code></strong>: a factory that fetches the label mapping from an S3 bucket, builds a <code>SegformerConfig</code>, and downloads the pre-trained <code>nvidia/mit-b5</code> weights.</li>
 </ul>
-<div id="ba8440fc" class="cell" data-execution_count="1">
+<div id="e344416a" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">"intermediate_solutions/solution_step2"</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -373,7 +373,7 @@ Stage 4 features  ──┘             Concat → Linear → logits (H/4 × W/4
 <section id="printing-the-architecture" class="level2" data-number="3.1">
 <h2 data-number="3.1" class="anchored" data-anchor-id="printing-the-architecture"><span class="header-section-number">3.1</span> Printing the architecture</h2>
 <p>The model object is a standard <code>torch.nn.Module</code>. You can print it to see every sub-module:</p>
-<div id="79a18b36" class="cell" data-execution_count="2">
+<div id="13bdc7c4" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The output is long, but the top-level structure is clear:</p>
@@ -396,7 +396,7 @@ Stage 4 features  ──┘             Concat → Linear → logits (H/4 × W/4
 <section id="counting-parameters" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="counting-parameters"><span class="header-section-number">3.2</span> Counting parameters</h2>
 <p>A quick way to understand a model’s capacity is to count how many parameters it has, and how many are currently trainable (i.e.&nbsp;not frozen).</p>
-<div id="f8bba060" class="cell" data-execution_count="3">
+<div id="f9bb7933" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> count_params(module):</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> module.parameters())</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    trainable <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> module.parameters() <span class="cf">if</span> p.requires_grad)</span>
@@ -423,7 +423,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <section id="freezing-the-encoder" class="level2" data-number="3.3">
 <h2 data-number="3.3" class="anchored" data-anchor-id="freezing-the-encoder"><span class="header-section-number">3.3</span> Freezing the encoder</h2>
 <p>When fine-tuning on a new domain (e.g.&nbsp;switching from RGB natural images to 14-band satellite imagery), a common strategy is to <strong>freeze the encoder</strong> at first and only train the decoder. This is much faster and prevents overfitting when labelled data is scarce.</p>
-<div id="a9c8e3f3" class="cell" data-execution_count="4">
+<div id="cbb372f0" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Freeze all encoder parameters</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>model.freeze()</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -451,7 +451,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <li>Which stage has the most parameters? Does this match your intuition about deeper stages being wider?</li>
 <li>Count the parameters in the decoder’s <strong>four projection layers</strong> (<code>model.decode_head.linear_c</code>) and in the final <strong>classifier</strong> (<code>model.decode_head.classifier</code>). What fraction of decoder parameters does the classifier represent?</li>
 </ol>
-<div id="7f846991" class="cell" data-execution_count="5">
+<div id="d6c285fd" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Parameters per encoder stage</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, stage <span class="kw">in</span> <span class="bu">enumerate</span>(model.segformer.encoder.block):</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> ___  <span class="co"># </span><span class="al">TODO</span><span class="co">: count parameters in this stage</span></span>
@@ -495,7 +495,7 @@ Full model             86,247,968         86,247,968</code></pre>
 </div>
 <div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="d551560b" class="cell" data-execution_count="6">
+<div id="b30c7a6f" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Parameters per encoder stage</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, stage <span class="kw">in</span> <span class="bu">enumerate</span>(model.segformer.encoder.block):</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> stage.parameters())</span>
@@ -522,7 +522,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <section id="input-shape" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="input-shape"><span class="header-section-number">4.1</span> Input shape</h2>
 <p>Our dataset produces patches of shape <code>(14, H, W)</code> — 14 spectral bands. The DataLoader stacks them into batches <code>(B, 14, H, W)</code>. Let us create a random dummy batch:</p>
-<div id="8cf1a899" class="cell" data-execution_count="7">
+<div id="e0787ae9" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>B, C, H, W <span class="op">=</span> <span class="dv">2</span>, <span class="dv">14</span>, <span class="dv">512</span>, <span class="dv">512</span>   <span class="co"># batch size, channels, height, width</span></span>
@@ -536,7 +536,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <section id="output-shapes" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="output-shapes"><span class="header-section-number">4.2</span> Output shapes</h2>
 <p>The model has two calling modes depending on whether you pass <code>labels</code>:</p>
-<div id="c659eee2" class="cell" data-execution_count="8">
+<div id="74480ea6" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">eval</span>()</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad():</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Without labels → raw logits at H/4 × W/4</span></span>
@@ -566,7 +566,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <section id="inspecting-intermediate-hidden-states" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="inspecting-intermediate-hidden-states"><span class="header-section-number">4.3</span> Inspecting intermediate hidden states</h2>
 <p>The encoder returns all four intermediate feature maps when <code>output_hidden_states=True</code>. This is exactly how the <code>forward</code> method feeds the decoder:</p>
-<div id="18cd5f42" class="cell" data-execution_count="9">
+<div id="87186b72" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>outputs <span class="op">=</span> model.segformer(</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    dummy_input,</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    output_hidden_states<span class="op">=</span><span class="va">True</span>,</span>
@@ -596,7 +596,7 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 <li>Apply <code>torch.softmax(logits, dim=1)</code> to the upsampled logits and call <code>torch.argmax(..., dim=1)</code> to obtain a predicted class map. What shape does it have? What do its values represent?</li>
 <li><em>(Bonus)</em> For each of the 4 hidden states, compute the ratio of spatial area to the original image: <code>(H_stage * W_stage) / (H * W)</code>. Does the pattern match the quarter-resolution rule?</li>
 </ol>
-<div id="79cd8bfb" class="cell" data-execution_count="10">
+<div id="d7048a16" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn.functional <span class="im">as</span> F</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Manual upsampling</span></span>
@@ -633,7 +633,7 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 </div>
 <div id="callout-7" class="callout-7-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="1f84c14e" class="cell" data-execution_count="11">
+<div id="b225803b" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn.functional <span class="im">as</span> F</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">eval</span>()</span>
@@ -673,7 +673,7 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 <p>PyTorch Lightning separates the model definition from the training logic. The <code>SegmentationModule</code> class in <code>intermediate_solutions/solution_step2/models/module.py</code> wraps <code>SemanticSegmentationSegformer</code> and implements the standard Lightning hooks.</p>
 <section id="structure-of-segmentationmodule" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="structure-of-segmentationmodule"><span class="header-section-number">5.1</span> Structure of <code>SegmentationModule</code></h2>
-<div id="a68b6f63" class="cell" data-execution_count="12">
+<div id="e34168e8" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.module <span class="im">import</span> SegmentationModule</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn, optim</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -738,7 +738,7 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 \text{IoU}_c = \frac{|\hat{M}_c \cap M_c|}{|\hat{M}_c \cup M_c|}
 \]</span></p>
 <p>where <span class="math inline">\(\hat{M}_c\)</span> is the set of pixels predicted as class <span class="math inline">\(c\)</span> and <span class="math inline">\(M_c\)</span> is the set of true pixels of class <span class="math inline">\(c\)</span>. An IoU of 1.0 means perfect overlap; 0.0 means no overlap at all. <strong>Mean IoU (mIoU)</strong> averages over all classes.</p>
-<div id="63bc976a" class="cell" data-execution_count="13">
+<div id="fe33d89f" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">"intermediate_solutions/solution_step2"</span>)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -774,7 +774,7 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 <section id="the-full-training-pipeline" class="level1" data-number="6">
 <h1 data-number="6"><span class="header-section-number">6</span> The Full Training Pipeline</h1>
 <p>The training script <code>intermediate_solutions/solution_step2/main.py</code> wires everything together:</p>
-<div id="bd535125" class="cell" data-execution_count="14">
+<div id="2fffa048" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pytorch_lightning <span class="im">as</span> pl</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pytorch_lightning.callbacks <span class="im">import</span> EarlyStopping, ModelCheckpoint</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -820,7 +820,7 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 <li>Wrap it in a <code>SegmentationModule</code> with <code>CrossEntropyLoss</code> and <code>AdamW</code>.</li>
 <li>Run 3 training steps manually (without a <code>Trainer</code>) by calling <code>module.training_step(batch, 0)</code> on a random batch.</li>
 </ol>
-<div id="0c2b6e9b" class="cell" data-execution_count="15">
+<div id="196b2272" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> SegformerConfig</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.module <span class="im">import</span> SegmentationModule</span>
@@ -863,7 +863,7 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 </div>
 <div id="callout-10" class="callout-10-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="ee80c3f5" class="cell" data-execution_count="16">
+<div id="a4bdfebe" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> SegformerConfig</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SemanticSegmentationSegformer</span>

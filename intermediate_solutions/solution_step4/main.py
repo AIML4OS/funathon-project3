@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import folium
 import branca.colormap as cm
 import pandas as pd
+import json
+import requests
 
 class_names = {
     1:  "Sealed",
@@ -26,10 +28,35 @@ class_names = {
     10: "Water",
 }
 
+api_url = "https://funathon-2026-project3.lab.sspcloud.fr"
+
 # %%
 # =========================
-# Load the predictions
+# Predictions for an image
 # =========================
+
+base_url = (
+    "projet-formation/diffusion/funathon/"
+    "2026/project3/data/images/LU000/2024/"
+)
+
+image_filepath = base_url + "4042000_2951690_0_637.tif"
+
+response_pred = requests.get(
+    f"{api_url}/predict_image",
+    params={
+        "image": image_filepath,
+        "polygons": True,
+    },
+)
+response_pred.raise_for_status()
+
+mask = json.loads(response_pred.json())["features"]
+
+gdf_tile = gpd.GeoDataFrame.from_features(
+    mask,
+    crs="EPSG:3035",
+)
 
 gdf_tile = gpd.read_parquet("predictions_LU000_3034500_2011690_2024.parquet")
 gdf_tile["area_m2"] = gdf_tile.geometry.area
@@ -99,8 +126,17 @@ plt.show()
 # =========================
 # Load the predictions
 # =========================
+response_nuts = requests.get(
+    f"{api_url}/predict_nuts",
+    params={"nuts_id": "LU000", "year": 2024},
+)
+response_nuts.raise_for_status()
 
-gdf_nuts = gpd.read_parquet("predictions_LU000_2024.parquet")
+gdf_nuts = gpd.GeoDataFrame.from_features(
+    json.loads(response_nuts.json()["predictions"])["features"],
+    crs="EPSG:3035",
+)
+
 gdf_nuts["area_m2"] = gdf_nuts.geometry.area
 gdf_nuts["area_km2"] = gdf_nuts["area_m2"] / 1e6
 gdf_nuts["class_name"] = gdf_nuts["label"].map(class_names)
@@ -214,4 +250,4 @@ for _, row in gdf_nuts_wgs84.iterrows():
     ).add_to(m)
 
 colormap.add_to(m)
-m.save("map_sealed_LU000_2024.html")
+m

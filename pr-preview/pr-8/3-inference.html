@@ -173,7 +173,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#load-the-trained-model" id="toc-load-the-trained-model" class="nav-link active" data-scroll-target="#load-the-trained-model"><span class="header-section-number">1</span> Load the Trained Model</a>
   <ul class="collapse">
-  <li><a href="#from-mlflow" id="toc-from-mlflow" class="nav-link" data-scroll-target="#from-mlflow"><span class="header-section-number">1.1</span> From MLflow</a></li>
+  <li><a href="#from-mlflow-optional" id="toc-from-mlflow-optional" class="nav-link" data-scroll-target="#from-mlflow-optional"><span class="header-section-number">1.1</span> From MLflow (optional)</a></li>
   <li><a href="#retrieve-model-metadata" id="toc-retrieve-model-metadata" class="nav-link" data-scroll-target="#retrieve-model-metadata"><span class="header-section-number">1.2</span> Retrieve model metadata</a></li>
   </ul></li>
   <li><a href="#apply-the-model-locally" id="toc-apply-the-model-locally" class="nav-link" data-scroll-target="#apply-the-model-locally"><span class="header-section-number">2</span> Apply the Model Locally</a>
@@ -224,8 +224,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="load-the-trained-model" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Load the Trained Model</h1>
 <p>This section covers how to load a trained segmentation model from the MLflow Model Registry and apply it to a Sentinel-2 image to produce land-cover predictions.</p>
-<section id="from-mlflow" class="level2" data-number="1.1">
-<h2 data-number="1.1" class="anchored" data-anchor-id="from-mlflow"><span class="header-section-number">1.1</span> From MLflow</h2>
+<section id="from-mlflow-optional" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="from-mlflow-optional"><span class="header-section-number">1.1</span> From MLflow (optional)</h2>
 <p>MLflow lets you version and compare training runs, then promote the best model to a <strong>Model Registry</strong>. Follow these steps to register your model:</p>
 <ol type="1">
 <li>In the top left, select <strong>Model Training</strong>.</li>
@@ -239,20 +239,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 MLFLOW_TRACKING_USERNAME=""
 MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <p>Once registered, load the model using the <code>get_model()</code> utility:</p>
-<div id="771227c8" class="cell" data-execution_count="1">
+<div id="24c1f289" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mlflow</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dotenv <span class="im">import</span> load_dotenv</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> get_model</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>load_dotenv()</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>model_name    <span class="op">=</span> <span class="st">"__"</span>  <span class="co"># </span><span class="al">TODO</span><span class="co">: the model name registered in MLflow</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>model_version <span class="op">=</span> <span class="st">"__"</span>  <span class="co"># </span><span class="al">TODO</span><span class="co">: the model version you want to load</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>mlflow_tracking_uri <span class="op">=</span> os.getenv(<span class="st">"MLFLOW_TRACKING_URI"</span>)</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> get_model(__, __, __)  <span class="co"># </span><span class="al">TODO</span><span class="co">: model_name, model_version, mlflow_tracking_uri</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>load_dotenv()</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>model_name    <span class="op">=</span> <span class="st">"__"</span>  <span class="co"># </span><span class="al">TODO</span><span class="co">: the model name registered in MLflow</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>model_version <span class="op">=</span> <span class="st">"__"</span>  <span class="co"># </span><span class="al">TODO</span><span class="co">: the model version you want to load</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>mlflow_tracking_uri <span class="op">=</span> os.getenv(<span class="st">"MLFLOW_TRACKING_URI"</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>mlflow.set_tracking_uri(mlflow_tracking_uri)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> mlflow.pyfunc.load_model(model_uri<span class="op">=</span><span class="ss">f"models:/</span><span class="sc">{</span>model_name<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>model_version<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>get_model()</code> wraps <code>mlflow.pyfunc.load_model</code> and raises a descriptive exception if the model or version cannot be found.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -287,7 +287,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </div>
 <div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="612d5abf" class="cell" data-execution_count="2">
+<div id="a3b7d491" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>model_name    <span class="op">=</span> <span class="st">"segmentation-sentinel2-model"</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>model_version <span class="op">=</span> <span class="st">"2"</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>mlflow_tracking_uri <span class="op">=</span> os.getenv(<span class="st">"MLFLOW_TRACKING_URI"</span>)</span>
@@ -301,7 +301,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <section id="retrieve-model-metadata" class="level2" data-number="1.2">
 <h2 data-number="1.2" class="anchored" data-anchor-id="retrieve-model-metadata"><span class="header-section-number">1.2</span> Retrieve model metadata</h2>
 <p>The training run stores key hyperparameters as MLflow params. Retrieve them to configure the inference pipeline consistently with how the model was trained:</p>
-<div id="15a4e6c3" class="cell" data-execution_count="3">
+<div id="9bc2ba89" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>run <span class="op">=</span> mlflow.get_run(model.metadata.run_id)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>n_bands      <span class="op">=</span> <span class="bu">int</span>(run.data.params[<span class="st">"n_bands"</span>])</span>
@@ -336,11 +336,11 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <section id="predict-on-a-single-sentinel-2-image" class="level2" data-number="2.1">
 <h2 data-number="2.1" class="anchored" data-anchor-id="predict-on-a-single-sentinel-2-image"><span class="header-section-number">2.1</span> Predict on a single Sentinel-2 image</h2>
 <p>The <code>predict()</code> utility handles the full pipeline — loading the image, preprocessing, tiling if needed, and assembling the result:</p>
-<div id="d8115823" class="cell" data-execution_count="4">
+<div id="66ea9e3f" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> predict</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>image_target <span class="op">=</span> <span class="st">"LU000/2024/4022000_2979190_0_354.tif"</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>image_target <span class="op">=</span> <span class="st">"LU000/2024/4042000_2951690_0_637.tif"</span></span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>image_path <span class="op">=</span> (</span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://minio.lab.sspcloud.fr/projet-formation/"</span></span>
@@ -393,11 +393,11 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </ol>
 </div>
 </div>
-<div id="ee95fb15" class="cell" data-execution_count="5">
+<div id="ac70a92e" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> predict</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>image_target <span class="op">=</span> <span class="st">"LU000/2024/4022000_2979190_0_354.tif"</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>image_target <span class="op">=</span> <span class="st">"LU000/2024/4042000_2951690_0_637.tif"</span></span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>image_path <span class="op">=</span> (</span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://minio.lab.sspcloud.fr/projet-formation/"</span></span>
@@ -455,7 +455,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </div>
 <div id="callout-5" class="callout-5-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="1f410a4b" class="cell" data-execution_count="6">
+<div id="eb4ae64a" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>image_path <span class="op">=</span> (</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://minio.lab.sspcloud.fr/projet-formation/"</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"diffusion/funathon/2026/project3/data/images/"</span></span>
@@ -483,7 +483,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <section id="display-the-prediction" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="display-the-prediction"><span class="header-section-number">2.2</span> Display the prediction</h2>
 <p>The 10 CLC+ Backbone land-cover classes are mapped to specific colours. A <code>ListedColormap</code> built from these colours ensures the mask and the legend are always consistent:</p>
-<div id="792a3d72" class="cell" data-execution_count="7">
+<div id="a03b3af6" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.colors <span class="im">import</span> ListedColormap</span>
@@ -530,7 +530,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </ol>
 </div>
 </div>
-<div id="06001b51" class="cell" data-execution_count="8">
+<div id="1844f77d" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># RGB composite — bands 4, 3, 2 → indices 3, 2, 1</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.transpose(</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    labeled_satellite_img.satellite_image.array[[__, __, __]],  <span class="co"># </span><span class="al">TODO</span><span class="co">: band indices for R, G, B</span></span>
@@ -593,7 +593,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </div>
 <div id="callout-8" class="callout-8-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="377082b9" class="cell" data-execution_count="9">
+<div id="d1f94938" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>rgb <span class="op">=</span> np.transpose(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    labeled_satellite_img.satellite_image.array[[<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>]], (<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>).astype(np.float32)</span>
@@ -632,7 +632,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </ol>
 </div>
 </div>
-<div id="4212ce38" class="cell" data-execution_count="10">
+<div id="ee34fb67" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> utils <span class="im">import</span> create_geojson_from_mask</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>gdf_pred <span class="op">=</span> create_geojson_from_mask(__)  <span class="co"># </span><span class="al">TODO</span><span class="co">: labeled_satellite_img</span></span>
@@ -706,7 +706,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </div>
 <div id="callout-11" class="callout-11-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="abbd4021" class="cell" data-execution_count="11">
+<div id="88c919c6" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>gdf_pred <span class="op">=</span> create_geojson_from_mask(labeled_satellite_img)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>gdf_pred.plot(</span>
@@ -745,7 +745,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </ol>
 </div>
 </div>
-<div id="730cc261" class="cell" data-execution_count="12">
+<div id="ad5b7243" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> folium</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> folium.raster_layers <span class="im">import</span> ImageOverlay</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> rasterio.warp <span class="im">import</span> transform_bounds</span>
@@ -814,7 +814,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </div>
 <div id="callout-14" class="callout-14-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="7cfae01a" class="cell" data-execution_count="13">
+<div id="19396a7d" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>ImageOverlay(image<span class="op">=</span>rgb, bounds<span class="op">=</span>[[south, west], [north, east]], opacity<span class="op">=</span><span class="fl">0.7</span>).add_to(m)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>gdf_pred_wgs84 <span class="op">=</span> gdf_pred.to_crs(<span class="st">"EPSG:4326"</span>)</span>
@@ -882,9 +882,14 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </table>
 <section id="get-find_image" class="level3" data-number="3.2.1">
 <h3 data-number="3.2.1" class="anchored" data-anchor-id="get-find_image"><span class="header-section-number">3.2.1</span> <code>GET /find_image</code></h3>
-<p>This endpoint takes a GPS point (longitude, latitude in WGS84) and a NUTS3 identifier + year. It loads a pre-computed <code>filename2bbox.parquet</code> index from MinIO — a table that maps each tile filename to its bounding box in EPSG:3035 — then performs a spatial query to find which tile contains the point.</p>
+<p>This endpoint takes a GPS point (latitude, longitude in WGS84) and a NUTS3 identifier + year. It loads a pre-computed <code>filename2bbox.parquet</code> index from MinIO — a table that maps each tile filename to its bounding box in EPSG:3035 — then performs a spatial query to find which tile contains the point.</p>
 <p><strong>Parameters:</strong></p>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Name</th>
@@ -894,28 +899,23 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>lon_gps</code></td>
-<td><code>float</code></td>
-<td>Longitude in WGS84 (EPSG:4326)</td>
+<td><code>point_gps</code></td>
+<td>List[<code>float</code>, <code>float</code>]</td>
+<td>Latitude, Longitude in WGS84 (EPSG:4326)</td>
 </tr>
 <tr class="even">
-<td><code>lat_gps</code></td>
-<td><code>float</code></td>
-<td>Latitude in WGS84 (EPSG:4326)</td>
-</tr>
-<tr class="odd">
 <td><code>nuts_id</code></td>
 <td><code>str</code></td>
 <td>NUTS3 region identifier, e.g.&nbsp;<code>"LU000"</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>year</code></td>
 <td><code>int</code></td>
 <td>Year of the satellite images (2018–2024)</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Response:</strong> a JSON array of matching filenames (usually one element).</p>
+<p><strong>Response:</strong> a string of the image filename containing the point.</p>
 </section>
 <section id="get-predict_image" class="level3" data-number="3.2.2">
 <h3 data-number="3.2.2" class="anchored" data-anchor-id="get-predict_image"><span class="header-section-number">3.2.2</span> <code>GET /predict_image</code></h3>
@@ -1012,35 +1012,33 @@ Note
 <p><strong>Goal:</strong> Use the <code>/find_image</code> endpoint to find the Sentinel-2 tile that contains a GPS point in Luxembourg.</p>
 <p><strong>Steps:</strong></p>
 <ol type="1">
-<li>Choose a GPS point in Luxembourg (e.g.&nbsp;Luxembourg City)</li>
+<li>Choose a GPS point in Luxembourg (e.g.&nbsp;Eurostat)</li>
 <li>Call <code>GET /find_image</code> with the correct parameters</li>
 <li>Print the filename returned by the API</li>
 </ol>
 </div>
 </div>
-<div id="a3e50da1" class="cell" data-execution_count="14">
+<div id="7b32e6df" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> requests</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>api_url <span class="op">=</span> <span class="st">"https://funathon-2026-project3.lab.sspcloud.fr"</span></span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>lon_gps <span class="op">=</span> __    <span class="co"># </span><span class="al">TODO</span><span class="co">: longitude in WGS84 (float), e.g. 6.13 for Luxembourg City</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>lat_gps <span class="op">=</span> __    <span class="co"># </span><span class="al">TODO</span><span class="co">: latitude in WGS84 (float), e.g. 49.61 for Luxembourg City</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>nuts_id <span class="op">=</span> <span class="st">"__"</span>  <span class="co"># </span><span class="al">TODO</span><span class="co">: NUTS3 identifier (str), e.g. "LU000" for Luxembourg</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>year    <span class="op">=</span> __    <span class="co"># </span><span class="al">TODO</span><span class="co">: year of the satellite images (int, between 2018 and 2024)</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>response_find <span class="op">=</span> requests.get(</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/__"</span>,  <span class="co"># </span><span class="al">TODO</span><span class="co">: endpoint name (str), e.g. "find_image"</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lon_gps"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: longitude defined above</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lat_gps"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: latitude defined above</span></span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"nuts_id"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: NUTS3 identifier defined above</span></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"year"</span>:    __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: year defined above</span></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    },</span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>response_find.raise_for_status()</span>
-<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>image_filename <span class="op">=</span> response_find.json()[<span class="dv">0</span>]</span>
-<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Image found: </span><span class="sc">{</span>image_filename<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>point_gps <span class="op">=</span> __    <span class="co"># </span><span class="al">TODO</span><span class="co">: latitude, longitude in WGS84 (List[float, float]), e.g. [49.63, 6.16] for Eurostat</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>nuts_id <span class="op">=</span> <span class="st">"__"</span>  <span class="co"># </span><span class="al">TODO</span><span class="co">: NUTS3 identifier (str), e.g. "LU000" for Luxembourg</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>year    <span class="op">=</span> __    <span class="co"># </span><span class="al">TODO</span><span class="co">: year of the satellite images (int, between 2018 and 2024)</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>response_find <span class="op">=</span> requests.get(</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/__"</span>,  <span class="co"># </span><span class="al">TODO</span><span class="co">: endpoint name (str), e.g. "find_image"</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"point_gps"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: latitude, longitude defined above</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        <span class="st">"nuts_id"</span>: __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: NUTS3 identifier defined above</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"year"</span>:    __,  <span class="co"># </span><span class="al">TODO</span><span class="co">: year defined above</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>response_find.raise_for_status()</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>image_filename <span class="op">=</span> response_find.json()</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Image found: </span><span class="sc">{</span>image_filename<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-17-contents" aria-controls="callout-17" aria-expanded="false" aria-label="Toggle callout">
@@ -1055,7 +1053,7 @@ Note
 <div id="callout-17" class="callout-17-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <ul>
-<li>Luxembourg City is around <code>longitude=6.13</code>, <code>latitude=49.61</code>.</li>
+<li>Eurostat is around <code>latitude=49.63</code>, <code>longitude=6.16</code>.</li>
 <li>The NUTS3 identifier for Luxembourg is <code>"LU000"</code>.</li>
 <li>The endpoint name is <code>"find_image"</code>.</li>
 <li>The response is a JSON array — take the first element with <code>[0]</code>.</li>
@@ -1075,25 +1073,23 @@ Note
 </div>
 <div id="callout-18" class="callout-18-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="901c6030" class="cell" data-execution_count="15">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>lon_gps <span class="op">=</span> <span class="fl">6.13</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>lat_gps <span class="op">=</span> <span class="fl">49.61</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>nuts_id <span class="op">=</span> <span class="st">"LU000"</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>year    <span class="op">=</span> <span class="dv">2024</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>response_find <span class="op">=</span> requests.get(</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/find_image"</span>,</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lon_gps"</span>: lon_gps,</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"lat_gps"</span>: lat_gps,</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>        <span class="st">"nuts_id"</span>: nuts_id,</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>        <span class="st">"year"</span>:    year,</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    },</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>response_find.raise_for_status()</span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>image_filename <span class="op">=</span> response_find.json()[<span class="dv">0</span>]</span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Image found: </span><span class="sc">{</span>image_filename<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="f7f6dfbb" class="cell" data-execution_count="15">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>point_gps <span class="op">=</span> [<span class="fl">49.63339525016761</span>, <span class="fl">6.1689982433356025</span>]  <span class="co"># [lat, lon]</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>nuts_id <span class="op">=</span> <span class="st">"LU000"</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>year    <span class="op">=</span> <span class="dv">2024</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>response_find <span class="op">=</span> requests.get(</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/find_image"</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>        <span class="st">"point_gps"</span>: point_gps,</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">"nuts_id"</span>: nuts_id,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"year"</span>:    year,</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>response_find.raise_for_status()</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>image_filename <span class="op">=</span> response_find.json()</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Image found: </span><span class="sc">{</span>image_filename<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -1122,7 +1118,7 @@ Note
 </ol>
 </div>
 </div>
-<div id="f084bc29" class="cell" data-execution_count="16">
+<div id="be1f3df6" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> geopandas <span class="im">as</span> gpd</span>
@@ -1148,7 +1144,7 @@ Note
 <span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Classes found : </span><span class="sc">{</span><span class="bu">set</span>(mask.flatten().tolist())<span class="sc">}</span><span class="ss">"</span>)</span>
 <span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(gdf_pred)<span class="sc">}</span><span class="ss"> polygons extracted"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div id="c56d6b6e" class="cell" data-execution_count="17">
+<div id="a8b2db05" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>N_BANDS  <span class="op">=</span> <span class="dv">14</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>base_url <span class="op">=</span> (</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"https://minio.lab.sspcloud.fr/projet-formation/"</span></span>
@@ -1185,7 +1181,7 @@ Note
 <span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>fig.savefig(<span class="st">"prediction_api_image.png"</span>, bbox_inches<span class="op">=</span><span class="st">"tight"</span>, dpi<span class="op">=</span><span class="dv">150</span>)</span>
 <span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div id="1a9a41f4" class="cell" data-execution_count="18">
+<div id="310d8906" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> folium.raster_layers <span class="im">import</span> ImageOverlay</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> rasterio.warp <span class="im">import</span> transform_bounds</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1248,7 +1244,7 @@ Note
 </div>
 <div id="callout-21" class="callout-21-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="84b38d89" class="cell" data-execution_count="19">
+<div id="433571df" class="cell" data-execution_count="19">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>response_pred <span class="op">=</span> requests.get(</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/predict_image"</span>,</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{<span class="st">"image"</span>: image_filename, <span class="st">"polygons"</span>: <span class="va">True</span>},</span>
@@ -1294,7 +1290,7 @@ Note
 </ol>
 </div>
 </div>
-<div id="21fb1aa9" class="cell" data-execution_count="20">
+<div id="ec5c8c4d" class="cell" data-execution_count="20">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>response_nuts <span class="op">=</span> requests.get(</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/__"</span>,  <span class="co"># </span><span class="al">TODO</span><span class="co">: endpoint name (str), e.g. "predict_nuts"</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{</span>
@@ -1312,7 +1308,7 @@ Note
 <span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(gdf_nuts)<span class="sc">}</span><span class="ss"> polygons received"</span>)</span>
 <span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gdf_nuts.head())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div id="6f2bbbeb" class="cell" data-execution_count="21">
+<div id="35c45300" class="cell" data-execution_count="21">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>gdf_nuts_wgs84 <span class="op">=</span> gdf_nuts.to_crs(<span class="st">"EPSG:4326"</span>)</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>nuts_center    <span class="op">=</span> gdf_nuts_wgs84.geometry.centroid.unary_union.centroid</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1367,30 +1363,33 @@ Note
 </div>
 <div id="callout-24" class="callout-24-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="c9b115c3" class="cell" data-execution_count="22">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>response_nuts <span class="op">=</span> requests.get(</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/predict_nuts"</span>,</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{<span class="st">"nuts_id"</span>: <span class="st">"LU000"</span>, <span class="st">"year"</span>: <span class="dv">2024</span>},</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>response_nuts.raise_for_status()</span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>gdf_nuts <span class="op">=</span> gpd.GeoDataFrame.from_features(</span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    json.loads(response_nuts.json()[<span class="st">"predictions"</span>])[<span class="st">"features"</span>],</span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    crs<span class="op">=</span><span class="st">"EPSG:3035"</span>,</span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>folium.GeoJson(</span>
-<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>    gdf_nuts_wgs84,</span>
-<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>    style_function<span class="op">=</span><span class="kw">lambda</span> feature: {</span>
-<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillColor"</span>: label_to_color.get(feature[<span class="st">"properties"</span>][<span class="st">"label"</span>], <span class="st">"#808080"</span>),</span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"color"</span>: <span class="st">"black"</span>,</span>
-<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"weight"</span>: <span class="fl">0.3</span>,</span>
-<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillOpacity"</span>: <span class="fl">0.6</span>,</span>
-<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>    },</span>
-<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>    tooltip<span class="op">=</span>folium.GeoJsonTooltip(fields<span class="op">=</span>[<span class="st">"label"</span>], aliases<span class="op">=</span>[<span class="st">"Class:"</span>]),</span>
-<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>).add_to(m_nuts)</span>
-<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>gdf_nuts.to_parquet(<span class="st">"predictions_LU000_2024.parquet"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="d9850824" class="cell" data-execution_count="22">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>nuts_id <span class="op">=</span> <span class="st">"LU000"</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>year <span class="op">=</span> <span class="dv">2024</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>response_nuts <span class="op">=</span> requests.get(</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"</span><span class="sc">{</span>api_url<span class="sc">}</span><span class="ss">/predict_nuts"</span>,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    params<span class="op">=</span>{<span class="st">"nuts_id"</span>: nuts_id, <span class="st">"year"</span>: year},</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>response_nuts.raise_for_status()</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>gdf_nuts <span class="op">=</span> gpd.GeoDataFrame.from_features(</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>    json.loads(response_nuts.json()[<span class="st">"predictions"</span>])[<span class="st">"features"</span>],</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>    crs<span class="op">=</span><span class="st">"EPSG:3035"</span>,</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>folium.GeoJson(</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>    gdf_nuts_wgs84,</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>    style_function<span class="op">=</span><span class="kw">lambda</span> feature: {</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillColor"</span>: label_to_color.get(feature[<span class="st">"properties"</span>][<span class="st">"label"</span>], <span class="st">"#808080"</span>),</span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"color"</span>: <span class="st">"black"</span>,</span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>        <span class="st">"weight"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>        <span class="st">"fillOpacity"</span>: <span class="fl">0.6</span>,</span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>    tooltip<span class="op">=</span>folium.GeoJsonTooltip(fields<span class="op">=</span>[<span class="st">"label"</span>], aliases<span class="op">=</span>[<span class="st">"Class:"</span>]),</span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>).add_to(m_nuts)</span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>gdf_nuts.to_parquet(<span class="ss">f"predictions_</span><span class="sc">{</span>nuts_id<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span><span class="bu">str</span>(year)<span class="sc">}</span><span class="ss">.parquet"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>

@@ -489,12 +489,12 @@ Now that you know how to read and display a single satellite image, the next que
 
 **NUTS** (Nomenclature of Territorial Units for Statistics) is a hierarchical classification of administrative regions used by [Eurostat](https://ec.europa.eu/eurostat) for statistical purposes across Europe. The hierarchy has four levels:
 
-| Level | Granularity | Example (Luxembourg) | Example name |
-|-------|-------------|----------------------|--------------|
-| NUTS 0 | Country | `LU` | Luxembourg |
-| NUTS 1 | Major region | `LU0` | Luxembourg |
-| NUTS 2 | Region | `LU00` | Luxembourg |
-| NUTS 3 | Province / department | `LU000` | Luxembourg |
+| Level | Granularity | Example (France / Paris) | Example name |
+|-------|-------------|--------------------------|--------------|
+| NUTS 0 | Country | `FR` | France |
+| NUTS 1 | Major region | `FR1` | Île-de-France |
+| NUTS 2 | Region | `FR10` | Île-de-France |
+| NUTS 3 | Province / department | `FR101` | Paris |
 
 In this project, **data is organized at the NUTS 3 level** — each satellite tile belongs to a specific NUTS3 region. The NUTS3 code appears in the file path and URL.
 

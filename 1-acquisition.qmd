@@ -44,7 +44,7 @@ These properties make Sentinel-2 a reference dataset for land-cover mapping, agr
 ### Spectral bands
 
 ::: {.callout-tip}
-**Official reference:** [Sentinel-2 MSI — Band Characteristics](https://sentinels.copernicus.eu/web/sentinel/technical-guides/sentinel-2-msi/msi-instrument)
+**Official reference:** [Sentinel-2 MSI — Band Characteristics](https://sentiwiki.copernicus.eu/web/s2-mission)
 :::
 
 | Band | Central wavelength (nm) | Resolution (m) | Description | Use / Application |

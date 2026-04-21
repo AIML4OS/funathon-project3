@@ -79,8 +79,7 @@ Key concepts:
 - `src.crs` — the coordinate reference system attached to the raster.
 - `src.bounds` — the geographic extent as `(left, bottom, right, top)`.
 - `src.profile` / `src.meta` — full metadata dictionary (driver, dtype, nodata value, affine transform, etc.).
-
-**Why band indexing matters:** Sentinel-2 images have 13 spectral bands (see the table above). Reading specific band combinations reveals different features:
+**Why band indexing matters:** Sentinel-2 has 13 spectral bands, reading specific band combinations reveals different features:
 
 - `src.read([4, 3, 2])` → **true-colour RGB** (Red, Green, Blue)
 - `src.read([8, 4, 3])` → **false-colour composite** (NIR, Red, Green) — vegetation appears bright red
@@ -132,6 +131,11 @@ print(f"CRS:    {tile_crs}")
 print(f"Bounds: {tile_bounds}")
 print(f"Shape:  {tile_count} bands x {tile_height} x {tile_width} px")
 ```
+
+::: {.callout-note}
+ The pre-processed GeoTIFF files used here contain **14 bands**: the 13 spectral bands from Sentinel2 plus a **Scene Classification Layer (SCL)** stored as band 14. The SCL is a derived quality mask that classifies each pixel as cloud, shadow, vegetation, water, etc. — it is not a spectral band and we will not use it.
+:::
+
 
 Now let's display the tile as an **RGB composite** (true-colour: Red, Green, Blue):
 

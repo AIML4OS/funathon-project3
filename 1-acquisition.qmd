@@ -18,11 +18,11 @@ format:
 
 # Sentinel-2 — Understanding and Visualizing Satellite Imagery
 
-This section introduces [Sentinel-2](https://sentinels.copernicus.eu/web/sentinel/missions/sentinel-2) satellite imagery and teaches you how to load, explore, and display multispectral raster data in Python. We start with a single local file — no cloud storage or URL patterns yet — so you can focus entirely on understanding how satellite images work.
+This section introduces [Sentinel-2](https://sentiwiki.copernicus.eu/web/s2-mission) satellite imagery and teaches you how to load, explore, and display multispectral raster data in Python. We start with a single local file — no cloud storage or URL patterns yet — so you can focus entirely on understanding how satellite images work.
 
 ## What is Sentinel-2?
 
-[Sentinel-2](https://sentinels.copernicus.eu/web/sentinel/missions/sentinel-2) is an Earth observation mission from the European Space Agency (ESA), part of the [Copernicus programme](https://www.copernicus.eu/). It consists of two twin satellites — **Sentinel-2A** and **Sentinel-2B** — placed in the same sun-synchronous orbit but phased 180 degrees apart, giving a **5-day revisit time** at the equator.
+[[Sentinel-2 Mission information](https://sentiwiki.copernicus.eu/web/s2-mission) is an Earth observation mission from the European Space Agency (ESA), part of the [Copernicus programme](https://www.copernicus.eu/). It consists of two twin satellites — **Sentinel-2A** and **Sentinel-2B** — placed in the same sun-synchronous orbit but phased 180 degrees apart, giving a **5-day revisit time** at the equator.
 
 Key characteristics:
 
@@ -38,16 +38,16 @@ These properties make Sentinel-2 a reference dataset for land-cover mapping, agr
 ![The Twin-Satellite Sentinel-2 Orbital Configuration (Credits: Astrium GmbH)](https://sentiwiki.copernicus.eu/__attachments/1687033/image-20230605-102800.png?inst-v=7382be46-c982-4c77-bf23-f3ed1f2e446f)
 
 ::: {.callout-tip}
-**Learn more:** [ESA Sentinel-2 User Guide](https://sentinels.copernicus.eu/web/sentinel/user-guides/sentinel-2-msi) · [Sentinel Hub custom scripts gallery](https://custom-scripts.sentinel-hub.com/)
+**Learn more:** [Sentinel-2 Mission information](https://sentiwiki.copernicus.eu/web/s2-mission) · [Sentinel Hub custom scripts gallery](https://custom-scripts.sentinel-hub.com/)
 :::
 
 ### Spectral bands
 
 ::: {.callout-tip}
-**Official reference:** [Sentinel-2 MSI — Band Characteristics](https://sentiwiki.copernicus.eu/web/s2-mission)
+**Official reference:** [Sentinel-2 Mission information](https://sentiwiki.copernicus.eu/web/s2-mission), specifically [Sentinel-2 Spectral Response Functions (S2-SRF) document](https://sentiwiki.copernicus.eu/__attachments/1692737/COPE-GSEG-EOPG-TN-15-0007%20-%20Sentinel-2%20Spectral%20Response%20Functions%202024%20-%204.0.xlsx?inst-v=29a9468e-c82d-4e65-9e31-d654700543f9)
 :::
 
-| Band | Central wavelength (nm) | Resolution (m) | Description | Use / Application |
+| Band | Central <br> wavelength (nm) | Resolution (m) | Description | Use / Application |
 |------|------------------------|----------------|-------------|-------------------|
 | B1   | 443                    | 60             | Coastal aerosol | Detects aerosols and haze; used for atmospheric correction over coastal waters. |
 | B2   | 490                    | 10             | Blue | Visible blue channel; useful for bathymetry and distinguishing soil from vegetation. |

@@ -1,0 +1,23 @@
+1-acquisition.qmd
+  2e10bc617f1b22ef 1813,1815,1820-1823,1825-1829,1831-1855,1859,1861,1865-1869,1875-1878,1880-1881,1883-1909,1915-1919,1928-1931,1933,1935-1959,1961
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2",
+  "base_commit_sha": "a94708e24f6b64971ed660d1c820c37667d48548",
+  "prompts": {
+    "2e10bc617f1b22ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea56736c-c3f1-455c-b71e-e22b3f6ef5c5",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "h4njlg",
+      "messages": [],
+      "total_additions": 112,
+      "total_deletions": 31,
+      "accepted_lines": 112,
+      "overriden_lines": 0
+    }
+  }
+}

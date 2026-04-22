@@ -270,7 +270,7 @@
     "href": "1-acquisition.html#whats-next",
     "title": "Data acquisition",
     "section": "8.1 What’s next?",
-    "text": "8.1 What’s next?\nYou now have aligned image / label pairs — the raw material for supervised learning.\n\nModel Training (optional) — train a SegFormer segmentation model on the Sentinel-2 / CLC+ pairs you assembled here.\nInference and Statistics — run a pre-trained model on new tiles, aggregate predictions to regional statistics, and map land-cover change."
+    "text": "8.1 What’s next?\nYou now have aligned image / label pairs — the raw material for supervised learning. You can continue with either:\n\nModel Training (optional) — train a SegFormer segmentation model on the Sentinel-2 / CLC+ pairs you assembled here.\nInference — run a pre-trained model on new tiles, to map land cover predictions on newer images."
   },
   {
     "objectID": "doc_projet.html",

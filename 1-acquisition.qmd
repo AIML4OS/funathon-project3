@@ -2168,62 +2168,123 @@ with open("output.tif", "wb") as f:
 - **`filter`**: CQL2 expression for metadata filtering, e.g. `"eo:cloud_cover < 20"` keeps only scenes with under 20 % cloud cover.
 
 ::: {.callout-caution}
-## Exercise 13 (optional) — Query the Sentinel Hub Catalog API
+## Exercise 13 (optional) — Geocode a city and download a Sentinel-2 image
 
-**Goal:** Use the Sentinel Hub Catalog API to search for Sentinel-2 L2A products over **Bulgaria** during **June 2021** with less than 10 % cloud cover.
+**Goal:** Geocode a city of your choice using the Nominatim API, build a bounding box around it, and use the Sentinel Hub Processing API to download and display a true-colour Sentinel-2 image centred on that city.
 
 **Steps:**
 
-1. Authenticate with OAuth2 using `OAuth2Session` + `BackendApplicationClient` against the CDSE token endpoint
-2. Build a Catalog API request body with `collections: ["sentinel-2-l2a"]`, `datetime`, `bbox` covering Bulgaria, and a cloud-cover filter
-3. POST to the Catalog API endpoint and parse the JSON response
-4. Print the number of features found
+1. Geocode your city with the Nominatim API (as in Exercise 4) — extract `(lon, lat)`
+2. Build a small bounding box around the city centre: `[lon - delta, lat - delta, lon + delta, lat + delta]` with `delta = 0.05`
+3. Authenticate with OAuth2 using `OAuth2Session` + `BackendApplicationClient` against the CDSE token endpoint
+4. Build a Processing API request with the bbox, a summer 2024 date range, `maxCloudCoverage`, and the true-colour evalscript
+5. POST to the Processing API, load the response bytes as a TIFF with `MemoryFile`, and display the RGB composite
 :::
 
 ```{python}
 #| eval: false
 
+import requests
+import numpy as np
+import matplotlib.pyplot as plt
+import rasterio
+from rasterio.io import MemoryFile
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
-# Step 1: Authenticate with OAuth2
+# Step 1: Geocode the city
+city_name = ___  # TODO: e.g. "Paris, France"
+geo_response = requests.get(
+    "https://nominatim.openstreetmap.org/search",
+    params={"q": city_name, "format": "json", "limit": 1},
+    headers={"User-Agent": "funathon-project3"},
+)
+result = geo_response.json()[0]
+lon, lat = ___, ___  # TODO: float(result["lon"]), float(result["lat"])
+print(f"{city_name}: lon={lon:.4f}, lat={lat:.4f}")
+
+# Step 2: Build a bounding box around the city (±delta degrees)
+delta = 0.05
+bbox = ___  # TODO: [lon - delta, lat - delta, lon + delta, lat + delta]
+
+# Step 3: Authenticate with OAuth2
 client_id = ___      # TODO: your CDSE OAuth client ID
 client_secret = ___  # TODO: your CDSE OAuth client secret
 
 client = BackendApplicationClient(client_id=client_id)
 oauth = OAuth2Session(client=client)
-token = oauth.fetch_token(
-    token_url=___,  # TODO: CDSE token URL
+oauth.fetch_token(
+    token_url=___,  # TODO: "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"
     client_secret=client_secret,
     include_client_id=True,
 )
 
-# Step 2: Build the Catalog API request body
-catalog_url = "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search"
-search_body = {
-    "collections": ___,  # TODO: ["sentinel-2-l2a"]
-    "datetime": ___,     # TODO: "2021-06-01T00:00:00Z/2021-06-30T23:59:59Z"
-    "bbox": ___,         # TODO: Bulgaria bounding box [west, south, east, north]
-    "limit": 50,
-    "filter": ___,       # TODO: CQL2 cloud cover filter
-    "filter-lang": "cql2-text",
+# Step 4: Build the Processing API request
+process_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
+
+evalscript = """
+//VERSION=3
+function setup() {
+  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "UINT16" } };
+}
+function evaluatePixel(sample) {
+  return [sample.B04, sample.B03, sample.B02];
+}
+"""
+
+request_body = {
+    "input": {
+        "bounds": {
+            "bbox": bbox,
+            "properties": {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"},
+        },
+        "data": [{
+            "type": "sentinel-2-l2a",
+            "dataFilter": {
+                "timeRange": {
+                    "from": ___,  # TODO: "2024-06-01T00:00:00Z"
+                    "to": ___,    # TODO: "2024-08-31T23:59:59Z"
+                },
+                "maxCloudCoverage": ___,  # TODO: 20
+            },
+        }],
+    },
+    "output": {
+        "width": 512,
+        "height": 512,
+        "responses": [{"identifier": "default", "format": {"type": "image/tiff"}}],
+    },
+    "evalscript": evalscript,
 }
 
-# Step 3: POST to the Catalog API
-response = ___  # TODO: oauth.post(catalog_url, json=search_body)
-results = response.json()
+# Step 5: POST, load TIFF from memory, and display
+response = ___  # TODO: oauth.post(process_url, json=request_body)
+response.raise_for_status()
 
-# Step 4: Print the number of features
-print(f"Found {len(results['features'])} products")
+with MemoryFile(response.content) as memfile:
+    with memfile.open() as src:
+        rgb_data = ___  # TODO: src.read([1, 2, 3])
+
+rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+rgb = np.clip(rgb / np.percentile(rgb, 98), 0, 1)
+
+fig, ax = plt.subplots(figsize=(6, 6))
+ax.imshow(rgb)
+ax.set_title(f"Sentinel-2 true colour — {city_name}")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
 ```
 
 ::: {.callout-tip collapse="true"}
 ## Hint — Exercise 13
 
-- The CDSE token URL is `"https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"`.
-- Bulgaria's approximate bounding box in WGS84 is `[22.0, 41.0, 29.0, 44.5]`.
-- Use `"eo:cloud_cover < 10"` as the CQL2 filter for cloud cover under 10 %.
-- The `datetime` range format is `"start/end"` in ISO 8601, e.g. `"2021-06-01T00:00:00Z/2021-06-30T23:59:59Z"`.
+- Nominatim: same call as Exercise 4 — `params={"q": city_name, "format": "json", "limit": 1}` with a `User-Agent` header.
+- Bbox: `[lon - delta, lat - delta, lon + delta, lat + delta]` with `delta = 0.05` gives a ~11 km × 11 km area (at mid-latitudes).
+- CDSE token URL: `"https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"`.
+- `maxCloudCoverage` is an integer (e.g. `20` for 20 %).
+- `MemoryFile(response.content)` wraps the raw TIFF bytes so `rasterio` can open them without writing to disk.
+- Bands 1, 2, 3 in the output correspond to B04, B03, B02 as declared in the evalscript — normalize the same way as in Exercise 1.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -2232,37 +2293,100 @@ print(f"Found {len(results['features'])} products")
 ```{python}
 #| eval: false
 
+import requests
+import numpy as np
+import matplotlib.pyplot as plt
+import rasterio
+from rasterio.io import MemoryFile
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
+# Step 1: Geocode the city
+city_name = "Paris, France"
+geo_response = requests.get(
+    "https://nominatim.openstreetmap.org/search",
+    params={"q": city_name, "format": "json", "limit": 1},
+    headers={"User-Agent": "funathon-project3"},
+)
+result = geo_response.json()[0]
+lon, lat = float(result["lon"]), float(result["lat"])
+print(f"{city_name}: lon={lon:.4f}, lat={lat:.4f}")
+
+# Step 2: Build bounding box
+delta = 0.05
+bbox = [lon - delta, lat - delta, lon + delta, lat + delta]
+
+# Step 3: Authenticate
 client_id = "your-client-id"
 client_secret = "your-client-secret"
 
 client = BackendApplicationClient(client_id=client_id)
 oauth = OAuth2Session(client=client)
-token = oauth.fetch_token(
+oauth.fetch_token(
     token_url="https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
     client_secret=client_secret,
     include_client_id=True,
 )
 
-catalog_url = "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search"
-search_body = {
-    "collections": ["sentinel-2-l2a"],
-    "datetime": "2021-06-01T00:00:00Z/2021-06-30T23:59:59Z",
-    "bbox": [22.0, 41.0, 29.0, 44.5],
-    "limit": 50,
-    "filter": "eo:cloud_cover < 10",
-    "filter-lang": "cql2-text",
+# Step 4: Processing API request
+process_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
+
+evalscript = """
+//VERSION=3
+function setup() {
+  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "UINT16" } };
+}
+function evaluatePixel(sample) {
+  return [sample.B04, sample.B03, sample.B02];
+}
+"""
+
+request_body = {
+    "input": {
+        "bounds": {
+            "bbox": bbox,
+            "properties": {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"},
+        },
+        "data": [{
+            "type": "sentinel-2-l2a",
+            "dataFilter": {
+                "timeRange": {
+                    "from": "2024-06-01T00:00:00Z",
+                    "to": "2024-08-31T23:59:59Z",
+                },
+                "maxCloudCoverage": 20,
+            },
+        }],
+    },
+    "output": {
+        "width": 512,
+        "height": 512,
+        "responses": [{"identifier": "default", "format": {"type": "image/tiff"}}],
+    },
+    "evalscript": evalscript,
 }
 
-response = oauth.post(catalog_url, json=search_body)
-results = response.json()
-print(f"Found {len(results['features'])} products")
+# Step 5: Download and display
+response = oauth.post(process_url, json=request_body)
+response.raise_for_status()
+
+with MemoryFile(response.content) as memfile:
+    with memfile.open() as src:
+        rgb_data = src.read([1, 2, 3])
+
+rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+rgb = np.clip(rgb / np.percentile(rgb, 98), 0, 1)
+
+fig, ax = plt.subplots(figsize=(6, 6))
+ax.imshow(rgb)
+ax.set_title(f"Sentinel-2 true colour — {city_name}")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
 ```
 :::
 
-Once you have searched the catalogue, you can use the **Processing API** to download imagery directly, then **upload it to S3** so it can be shared with your team. The SSP Cloud provides an S3-compatible object store accessible via `s3fs`. Here is how to initialise an `S3FileSystem` and upload a file:
+Once you have downloaded a tile, you can **upload it to S3** to share it with your team. The SSP Cloud provides an S3-compatible object store accessible via `s3fs`. Here is how to initialise an `S3FileSystem` and upload a file:
 
 ```{python}
 #| eval: false
@@ -2276,16 +2400,16 @@ fs.put("./output.tif", "s3://my-bucket/sentinel2/output.tif")
 ```
 
 ::: {.callout-caution}
-## Exercise 14 (optional) — Download a Sentinel-2 image with the Processing API and upload to S3
+## Exercise 14 (optional) — Save the downloaded tile to disk and upload to S3
 
-**Goal:** Use the Sentinel Hub Processing API to download a true-colour Sentinel-2 image for Bulgaria (June 2021) and upload it to your personal S3 bucket.
+**Goal:** Save the Sentinel-2 TIFF bytes from Exercise 13 to a local file and upload it to your personal S3 bucket so it can be shared with your team.
 
 **Steps:**
 
-1. Authenticate with OAuth2 (reuse the session from Exercise 13)
-2. Build a Processing API request with bbox, time range, evalscript for true-colour RGB, and output as `image/tiff`
-3. POST to the Processing API endpoint and save the response content locally
-4. Initialise an `S3FileSystem` with `get_file_system()` and upload the file with `fs.put()`
+1. Save `response.content` to a local `.tif` file using binary write
+2. Initialise an `S3FileSystem` with `get_file_system()` (from `utils`)
+3. Build an S3 destination path for the file
+4. Upload with `fs.put()` and verify with `fs.ls()`
 :::
 
 ```{python}
@@ -2293,68 +2417,29 @@ fs.put("./output.tif", "s3://my-bucket/sentinel2/output.tif")
 
 from utils import get_file_system
 
-# Step 1: Reuse the authenticated OAuth2 session from Exercise 13
-
-# Step 2: Build the Processing API request
-process_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
-
-evalscript = """
-//VERSION=3
-function setup() {
-  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "UINT16" } };
-}
-function evaluatePixel(sample) {
-  return [sample.B04, sample.B03, sample.B02];
-}
-"""
-
-request_body = {
-    "input": {
-        "bounds": {
-            "bbox": ___,  # TODO: Bulgaria bounding box [west, south, east, north]
-            "properties": {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"},
-        },
-        "data": [
-            {
-                "type": ___,  # TODO: "sentinel-2-l2a"
-                "dataFilter": {
-                    "timeRange": {
-                        "from": ___,  # TODO: start date ISO 8601
-                        "to": ___,    # TODO: end date ISO 8601
-                    },
-                    "maxCloudCoverage": ___,  # TODO: max cloud cover percentage
-                },
-            }
-        ],
-    },
-    "output": {
-        "width": 512,
-        "height": 512,
-        "responses": [{"identifier": "default", "format": {"type": ___}}],  # TODO: "image/tiff"
-    },
-    "evalscript": evalscript,
-}
-
-# Step 3: POST and save locally
-response = ___  # TODO: oauth.post(process_url, json=request_body)
-local_path = "bulgaria_rgb.tif"
+# Step 1: Save the TIFF bytes from Exercise 13 to disk
+local_path = ___  # TODO: e.g. "paris_rgb.tif"
 with open(local_path, "wb") as f:
     f.write(___)  # TODO: response.content
 
-# Step 4: Upload to S3
+# Step 2: Initialise the S3 filesystem
 fs = ___  # TODO: get_file_system()
-fs.put(___, ___)  # TODO: local_path, S3 destination path
+
+# Step 3: Build the S3 destination path
+s3_path = ___  # TODO: e.g. "my-bucket/sentinel2/paris_rgb.tif"
+
+# Step 4: Upload and verify
+___  # TODO: fs.put(local_path, s3_path)
+print(fs.ls(___))  # TODO: S3 directory (without filename)
 ```
 
 ::: {.callout-tip collapse="true"}
 ## Hint — Exercise 14
 
-- The Processing API URL is `"https://sh.dataspace.copernicus.eu/api/v1/process"`.
-- Use `[22.0, 41.0, 29.0, 44.5]` for the Bulgaria bounding box.
-- Time range uses ISO 8601: `"2021-06-01T00:00:00Z"` to `"2021-06-30T23:59:59Z"`.
-- Set `maxCloudCoverage` to `10` (integer, not a string range).
-- The response content (`response.content`) is the raw TIFF bytes — write them to a file in binary mode.
-- `get_file_system()` reads SSP Cloud credentials from environment variables.
+- `response.content` from Exercise 13 holds the raw TIFF bytes — open the file in binary mode (`"wb"`).
+- `get_file_system()` returns an `s3fs.S3FileSystem` configured with the SSP Cloud credentials from environment variables.
+- The S3 path must **not** include the `s3://` prefix when using `fs.put()` and `fs.ls()`.
+- `fs.ls("my-bucket/sentinel2")` lists all files in that S3 directory.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -2365,52 +2450,14 @@ fs.put(___, ___)  # TODO: local_path, S3 destination path
 
 from utils import get_file_system
 
-process_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
-
-evalscript = """
-//VERSION=3
-function setup() {
-  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "UINT16" } };
-}
-function evaluatePixel(sample) {
-  return [sample.B04, sample.B03, sample.B02];
-}
-"""
-
-request_body = {
-    "input": {
-        "bounds": {
-            "bbox": [22.0, 41.0, 29.0, 44.5],
-            "properties": {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"},
-        },
-        "data": [
-            {
-                "type": "sentinel-2-l2a",
-                "dataFilter": {
-                    "timeRange": {
-                        "from": "2021-06-01T00:00:00Z",
-                        "to": "2021-06-30T23:59:59Z",
-                    },
-                    "maxCloudCoverage": 10,
-                },
-            }
-        ],
-    },
-    "output": {
-        "width": 512,
-        "height": 512,
-        "responses": [{"identifier": "default", "format": {"type": "image/tiff"}}],
-    },
-    "evalscript": evalscript,
-}
-
-response = oauth.post(process_url, json=request_body)
-local_path = "bulgaria_rgb.tif"
+local_path = "paris_rgb.tif"
 with open(local_path, "wb") as f:
     f.write(response.content)
 
 fs = get_file_system()
-fs.put(local_path, "s3://my-bucket/sentinel2/bulgaria_rgb.tif")
+s3_path = "my-bucket/sentinel2/paris_rgb.tif"
+fs.put(local_path, s3_path)
+print(fs.ls("my-bucket/sentinel2"))
 ```
 :::
 

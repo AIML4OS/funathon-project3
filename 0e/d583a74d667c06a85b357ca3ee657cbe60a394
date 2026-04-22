@@ -1,0 +1,23 @@
+1-acquisition.qmd
+  2e10bc617f1b22ef 2712-2731
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2",
+  "base_commit_sha": "0ed583a74d667c06a85b357ca3ee657cbe60a394",
+  "prompts": {
+    "2e10bc617f1b22ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea56736c-c3f1-455c-b71e-e22b3f6ef5c5",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "h4njlg",
+      "messages": [],
+      "total_additions": 20,
+      "total_deletions": 0,
+      "accepted_lines": 20,
+      "overriden_lines": 0
+    }
+  }
+}

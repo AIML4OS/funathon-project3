@@ -2708,7 +2708,65 @@ print(f"Downloaded {products[0]['Name']}")
 ```
 :::
 
-::::
+# Downloading an Entire NUTS Region
+
+The exercises above worked with individual tiles — one image, one label at a time.
+Building a production-ready training dataset means repeating this process for every
+tile that covers a NUTS3 region: hundreds of image/label pairs, aligned pixel-for-pixel.
+
+The tile index you already know — `filename2bbox.parquet` — maps every patch filename to
+its EPSG:3035 bounding box. For a NUTS3 region and a given year, the index file lives at:
+
+```
+https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/
+images/{NUTS}/{year}/filename2bbox.parquet
+```
+
+Rather than making one Sentinel Hub Processing API request per patch (which would mean
+thousands of individual HTTP calls for a single region), a more efficient approach is to:
+
+1. **Discover products** — use the [OData catalogue API](https://documentation.dataspace.copernicus.eu/APIs/OData.html)
+   to find the Sentinel-2 L2A product tiles (roughly 100 km × 100 km each) that cover the region.
+2. **Stream band data from EO S3** — the [CDSE EO S3 bucket](https://documentation.dataspace.copernicus.eu/APIs/S3.html)
+   (`eodata.dataspace.copernicus.eu`) stores the raw `.SAFE` archives. Individual JP2 band files can
+   be window-read via GDAL's `/vsis3/` virtual filesystem: only the bytes covering each patch are
+   transferred, with automatic resampling across the 10 m / 20 m / 60 m band resolutions.
+3. **Download labels** — for each patch, query the CLC+ ImageServer as shown in the exercises above.
+4. **Upload to personal S3** — store images as 14-band GeoTIFFs and labels as `.npy` files,
+   mirroring the folder layout of the pre-processed training data.
+
+::: {.callout-note}
+## Something to think about — before looking at the solution
+
+1. **Unit of download** — should you request data patch by patch, or download a full Sentinel-2
+   product tile (100 km × 100 km) and cut patches from it? What are the bandwidth trade-offs?
+2. **Multi-resolution bands** — the 14 bands live in different JP2 files at 10 m, 20 m, and 60 m.
+   How do you bring them all to the same 10 m grid when extracting a patch?
+3. **Multiple product tiles** — a NUTS3 region can span several Sentinel-2 product tiles.
+   How do you determine which product covers which patch?
+4. **Two S3 accounts** — EO S3 (`eodata.dataspace.copernicus.eu`) and your personal SSP Cloud
+   bucket use different endpoints and different credentials. How can the script handle both
+   simultaneously without them interfering?
+5. **Resumability** — if the script is interrupted after 300 of 600 tiles, how do you avoid
+   re-downloading everything from scratch on the next run?
+:::
+
+The complete solution is provided in `final_solution/download_region.py` — a self-contained
+`uv` script that requires no virtual environment setup. EO S3 credentials are separate from your
+CDSE API credentials and are generated at
+<https://eodata-s3keysmanager.dataspace.copernicus.eu/>.
+
+```bash
+uv run final_solution/download_region.py \
+    --nuts FR101 \
+    --year 2021 \
+    --s3-bucket my-bucket \
+    --eo-s3-key  <EO_S3_ACCESS_KEY_ID> \
+    --eo-s3-secret <EO_S3_SECRET_ACCESS_KEY>
+```
+
+Required environment variables for personal S3: `AWS_S3_ENDPOINT`, `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`.
 
 # Summary
 

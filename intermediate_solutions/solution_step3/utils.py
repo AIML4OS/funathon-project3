@@ -6,7 +6,6 @@ import json
 import os
 import tempfile
 from contextlib import contextmanager
-from dataclasses import dataclass
 from typing import List, Tuple
 
 import albumentations as A
@@ -17,22 +16,12 @@ import rasterio
 import torch
 from albumentations.pytorch.transforms import ToTensorV2
 from rasterio.features import shapes
-from s3fs import S3FileSystem
 from tqdm import tqdm
 
 
 # ---------------------------------------------------------------------------
 # Fonctions utilitaires
 # ---------------------------------------------------------------------------
-
-def get_file_system() -> S3FileSystem:
-    """Return the s3 file system."""
-    return S3FileSystem(
-        client_kwargs={"endpoint_url": f"https://{os.environ['AWS_S3_ENDPOINT']}"},
-        key=os.environ["AWS_ACCESS_KEY_ID"],
-        secret=os.environ["AWS_SECRET_ACCESS_KEY"],
-        token="",
-    )
 
 
 def get_normalization_metrics(

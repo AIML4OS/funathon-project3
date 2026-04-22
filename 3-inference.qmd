@@ -31,27 +31,10 @@ MLFLOW_TRACKING_USERNAME=""
 MLFLOW_TRACKING_PASSWORD=""
 ```
 
-Once registered, load the model using `mlflow.pyfunc.load_model`:
-
-```{python}
-#| eval: false
-import os
-import json
-import mlflow
-from dotenv import load_dotenv
-
-load_dotenv()
-
-model_name          = "__"  # TODO: the model name registered in MLflow
-model_version       = "__"  # TODO: the model version you want to load
-mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
-
-mlflow.set_tracking_uri(mlflow_tracking_uri)
-model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version}")
-```
+Once registered, load the model using `mlflow.pyfunc.load_model`.
 
 ::: {.callout-caution}
-## Exercise 1 — Load a model from MLflow
+## Exercise 1 — Load a model from MLflow (optional)
 
 **Goal:** Load a trained segmentation model from the MLflow model registry and
 retrieve its metadata (`n_bands`, `tiles_size`, `augment_size`, normalization
@@ -67,8 +50,16 @@ parameters).
 
 ```{python}
 #| eval: false
-model_name    = "__"  # TODO: name of the model registered in MLflow (str)
-model_version = "__"  # TODO: version of the model to load (str)
+import json
+import os
+import mlflow
+import numpy as np
+from dotenv import load_dotenv
+
+load_dotenv()
+
+model_name = __  # TODO: name of the model registered in MLflow (str)
+model_version = __  # TODO: version of the model to load (str)
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 
 mlflow.set_tracking_uri(mlflow_tracking_uri)
@@ -76,18 +67,18 @@ model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version
 
 run = mlflow.get_run(model.metadata.run_id)
 
-n_bands      = "__"  # TODO: read "n_bands" from run.data.params and cast to int
-tiles_size   = "__"  # TODO: read "tiles_size" from run.data.params and cast to int
-augment_size = "__"  # TODO: read "augment_size" from run.data.params and cast to int
-module_name  = "__"  # TODO: read "module_name" from run.data.params (str)
+n_bands = __  # TODO: read "n_bands" from run.data.params and cast to int
+tiles_size = __  # TODO: read "tiles_size" from run.data.params and cast to int
+augment_size = __  # TODO: read "augment_size" from run.data.params and cast to int
+module_name = __  # TODO: read "module_name" from run.data.params (str)
 
 normalization_mean = json.loads(
-    "__"  # TODO: read "normalization_mean" from run.data.params
+    __  # TODO: read "normalization_mean" from run.data.params
 )[:n_bands]
 
 normalization_std = [
     float(v) for v in eval(
-        "__"  # TODO: read "normalization_std" from run.data.params
+        __  # TODO: read "normalization_std" from run.data.params
     )
 ][:n_bands]
 
@@ -113,7 +104,15 @@ print(f"std={normalization_std}")
 
 ```{python}
 #| eval: false
-model_name    = "segmentation-sentinel2-model"
+import json
+import os
+import mlflow
+import numpy as np
+from dotenv import load_dotenv
+
+load_dotenv()
+
+model_name = "segmentation-sentinel2-model"
 model_version = "2"
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 
@@ -122,10 +121,10 @@ model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version
 
 run = mlflow.get_run(model.metadata.run_id)
 
-n_bands      = int(run.data.params["n_bands"])
-tiles_size   = int(run.data.params["tiles_size"])
+n_bands = int(run.data.params["n_bands"])
+tiles_size = int(run.data.params["tiles_size"])
 augment_size = int(run.data.params["augment_size"])
-module_name  = run.data.params["module_name"]
+module_name = run.data.params["module_name"]
 
 normalization_mean = json.loads(
     run.data.params["normalization_mean"]
@@ -136,6 +135,136 @@ normalization_std = [
         run.data.params["normalization_std"]
     )
 ][:n_bands]
+```
+:::
+
+## Load a model from public S3
+
+For this funathon, a pre-trained segmentation model is publicly available on
+MinIO — no MLflow credentials or account required. The model artifacts are
+stored at:
+
+```
+https://minio.lab.sspcloud.fr/projet-formation/mlflow-artifacts/
+4/cf04bf4c53e84f6baf1d15f928100fb2/artifacts/
+```
+
+Two artifacts are needed:
+
+- **`model/`** — the full MLflow model directory (weights, code, environment)
+- **`params.json`** — a JSON file containing the training hyperparameters
+  (`n_bands`, `tiles_size`, `augment_size`, `normalization_mean`, etc.)
+
+The loading strategy is:
+
+1. Use `s3fs` with `anon=True` to connect to MinIO without credentials
+2. Download the `model/` directory recursively to a local temporary folder
+3. Load the model from that local folder with `mlflow.pyfunc.load_model()`
+4. Fetch `params.json` over HTTPS with `requests` and parse the hyperparameters
+
+::: {.callout-caution}
+## Exercise 1 — Load a pre-trained model from public S3
+
+**Goal:** Download the pre-trained segmentation model from MinIO and load it
+locally, along with all the hyperparameters needed to run inference.
+
+**Steps:**
+
+1. Connect to MinIO anonymously with `s3fs.S3FileSystem(anon=True)`
+2. Download the `model/` directory recursively to a local temp folder
+3. Load the model with `mlflow.pyfunc.load_model()`
+4. Fetch `params.json` over HTTPS and parse `n_bands`, `tiles_size`,
+   `augment_size`, `module_name`, `normalization_mean`, `normalization_std`
+:::
+
+```{python}
+#| eval: false
+import s3fs
+import mlflow
+import requests
+import tempfile
+from pathlib import Path
+
+fs = s3fs.S3FileSystem(
+    anon=__,          # TODO: boolean — public access requires no credentials
+    endpoint_url=__,  # TODO: MinIO endpoint URL (str)
+)
+
+s3_model_path   = __  # TODO: S3 path to the model directory (without s3://)
+local_model_dir = Path(tempfile.mkdtemp()) / "model"
+
+fs.get(__, __, recursive=__)  # TODO: download the model directory recursively
+
+model = mlflow.pyfunc.load_model(__)  # TODO: local model directory path (str)
+
+params_url = __  # TODO: public HTTPS URL to params.json
+run_params = requests.get(__).json()  # TODO: fetch and parse params.json
+
+n_bands            = __(run_params[__])  # TODO: cast to int
+tiles_size         = __(run_params[__])  # TODO: cast to int
+augment_size       = __(run_params[__])  # TODO: cast to int
+module_name        = run_params[__]      # TODO: read as str
+normalization_mean = run_params[__][:n_bands]  # TODO: key name
+normalization_std  = run_params[__][:n_bands]  # TODO: key name
+
+print(f"n_bands={n_bands}, tiles_size={tiles_size}, augment_size={augment_size}")
+print(f"mean={normalization_mean}")
+print(f"std={normalization_std}")
+```
+
+::: {.callout-tip collapse="true"}
+## Hint
+
+- Pass `anon=True` to `s3fs.S3FileSystem()` for anonymous public access.
+- The MinIO endpoint URL is `"https://minio.lab.sspcloud.fr"`.
+- The S3 path does **not** include `s3://` — just the bucket and key:
+  `"projet-formation/mlflow-artifacts/4/<run_id>/artifacts/model"`.
+- `fs.get(src, dst, recursive=True)` downloads the full directory tree.
+- `mlflow.pyfunc.load_model()` accepts a local directory path as a string.
+- The `params.json` URL follows the same structure as the model URL,
+  replacing `model` with `params.json`.
+- All numeric parameters are stored as strings in JSON — cast with `int()`.
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution
+
+```{python}
+#| eval: false
+import s3fs
+import mlflow
+import requests
+import tempfile
+from pathlib import Path
+
+fs = s3fs.S3FileSystem(
+    anon=True,
+    endpoint_url="https://minio.lab.sspcloud.fr",
+)
+
+s3_model_path   = "projet-formation/mlflow-artifacts/4/cf04bf4c53e84f6baf1d15f928100fb2/artifacts/model"
+local_model_dir = Path(tempfile.mkdtemp()) / "model"
+
+fs.get(s3_model_path, str(local_model_dir), recursive=True)
+
+model = mlflow.pyfunc.load_model(str(local_model_dir))
+
+params_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/mlflow-artifacts/"
+    "4/cf04bf4c53e84f6baf1d15f928100fb2/artifacts/params.json"
+)
+run_params = requests.get(params_url).json()
+
+n_bands            = int(run_params["n_bands"])
+tiles_size         = int(run_params["tiles_size"])
+augment_size       = int(run_params["augment_size"])
+module_name        = run_params["module_name"]
+normalization_mean = run_params["normalization_mean"][:n_bands]
+normalization_std  = run_params["normalization_std"][:n_bands]
+
+print(f"n_bands={n_bands}, tiles_size={tiles_size}, augment_size={augment_size}")
+print(f"mean={normalization_mean}")
+print(f"std={normalization_std}")
 ```
 :::
 
@@ -173,7 +302,7 @@ it to produce a labelled mask.
 
 ```{python}
 #| eval: false
-from utils import predict
+from utils import predict, get_satellite_image
 
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
@@ -194,7 +323,7 @@ satellite_img, predictions = predict(
     module_name=__,        # TODO: module name
 )
 
-print(f"Mask shape    : {predictions.shape}")
+print(f"Mask shape : {predictions.shape}")
 print(f"Classes found : {set(predictions.flatten().tolist())}")
 ```
 
@@ -212,6 +341,10 @@ print(f"Classes found : {set(predictions.flatten().tolist())}")
 
 ```{python}
 #| eval: false
+from utils import predict, get_satellite_image
+
+image_target = "LU000/2024/4022000_2979190_0_354.tif"
+
 image_path = (
     "https://minio.lab.sspcloud.fr/projet-formation/"
     "diffusion/funathon/2026/project3/data/images/"
@@ -228,6 +361,9 @@ satellite_img, predictions = predict(
     normalization_std=normalization_std,
     module_name=module_name,
 )
+
+print(f"Mask shape : {predictions.shape}")
+print(f"Classes found : {set(predictions.flatten().tolist())}")
 ```
 :::
 
@@ -257,8 +393,7 @@ side by side with the predicted land cover mask.
 :::
 
 ```{python}
-#| eval: false
-import numpy as np
+#| eval: true
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
@@ -276,16 +411,20 @@ classes = [
     ("Water (10)",                        "#0080FF"),
 ]
 
-cmap           = ListedColormap([color for _, color in classes])
+cmap = ListedColormap([color for _, color in classes])
 label_to_color = {i + 1: color for i, (_, color) in enumerate(classes)}
 legend_elements = [
     Patch(facecolor=color, edgecolor="black", label=label)
     for label, color in classes
 ]
+```
 
+```{python}
+#| eval: false
 # RGB composite — bands 4, 3, 2 → indices 3, 2, 1
+satellite_img_array = satellite_img[__]  # TODO: array of the satellite image
 rgb = np.transpose(
-    satellite_img["array"][[__, __, __]],  # TODO: band indices for R, G, B
+    satellite_img_array[[__, __, __]],  # TODO: band indices for R, G, B
     (1, 2, 0)
 ).astype(np.float32)
 p98 = np.percentile(rgb, 98)
@@ -326,14 +465,32 @@ plt.show()
 
 ```{python}
 #| eval: false
+satellite_img_array = satellite_img["array"] 
 rgb = np.transpose(
-    satellite_img["array"][[3, 2, 1]], (1, 2, 0)
+    satellite_img_array[[3, 2, 1]], (1, 2, 0)
 ).astype(np.float32)
 p98 = np.percentile(rgb, 98)
 rgb = np.clip(rgb / p98, 0, 1)
 
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
 axes[0].imshow(rgb)
+axes[0].set_title("Sentinel-2 RGB (B4, B3, B2)")
+axes[0].axis("off")
+
 axes[1].imshow(predictions, cmap=cmap, vmin=1, vmax=10)
+
+axes[1].set_title("Predicted land cover")
+axes[1].axis("off")
+
+fig.legend(
+    handles=legend_elements,
+    loc="center left",
+    bbox_to_anchor=(1.0, 0.5),
+    frameon=True,
+)
+plt.tight_layout()
+plt.show()
 ```
 :::
 
@@ -412,7 +569,22 @@ plt.show()
 
 ```{python}
 #| eval: false
+from utils import create_geojson_from_mask
+
 gdf_pred = create_geojson_from_mask(satellite_img, predictions)
+
+print(f"{len(gdf_pred)} polygons extracted")
+print(gdf_pred.head())
+
+fig, axes = plt.subplots(1, 3, figsize=(20, 6))
+
+axes[0].imshow(rgb)
+axes[0].set_title("Sentinel-2 RGB (B4, B3, B2)")
+axes[0].axis("off")
+
+axes[1].imshow(predictions, cmap=cmap, vmin=1, vmax=10)
+axes[1].set_title("Predicted land cover")
+axes[1].axis("off")
 
 gdf_pred.plot(
     column="label",
@@ -421,6 +593,15 @@ gdf_pred.plot(
     ax=axes[2],
     legend=False,
 )
+axes[2].set_title("Predicted polygons")
+axes[2].set_aspect("equal")
+xmin, ymin, xmax, ymax = gdf_pred.total_bounds
+axes[2].set_xlim(xmin, xmax)
+axes[2].set_ylim(ymin, ymax)
+axes[2].axis("off")
+
+fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5), frameon=True)
+plt.show()
 ```
 :::
 
@@ -456,7 +637,7 @@ import folium
 from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds
 
-west, south, east, north = transform_bounds(si["crs"], "EPSG:4326", *si["bounds"])
+west, south, east, north = transform_bounds(satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"])
 center_lat = (south + north) / 2
 center_lon = (west + east) / 2
 
@@ -468,7 +649,7 @@ ImageOverlay(
     opacity=0.7,
 ).add_to(m)
 
-gdf_pred_wgs84 = gdf_pred.to_crs("__")  # TODO: target EPSG code for Folium (str)
+gdf_pred_wgs84 = gdf_pred.to_crs(__)  # TODO: target EPSG code for Folium (str)
 
 folium.GeoJson(
     gdf_pred_wgs84,
@@ -493,11 +674,6 @@ m
 - Pass `rgb` (the normalised `float32` array) to `ImageOverlay`.
 - `feature["properties"]["label"]` gives the integer class ID;
   use `label_to_color.get(..., "#808080")` for a safe fallback.
-
-::: {.callout-note}
-In Exercise 5, `si` refers to `satellite_img` loaded from local inference.
-In Exercise 8 (API section), `si` will be loaded via `get_satellite_image()`.
-:::
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -505,24 +681,42 @@ In Exercise 8 (API section), `si` will be loaded via `get_satellite_image()`.
 
 ```{python}
 #| eval: false
+import folium
+from folium.raster_layers import ImageOverlay
+from rasterio.warp import transform_bounds
+
 west, south, east, north = transform_bounds(
     satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"]
 )
 
-ImageOverlay(image=rgb, bounds=[[south, west], [north, east]], opacity=0.7).add_to(m)
+west, south, east, north = transform_bounds(satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"])
+center_lat = (south + north) / 2
+center_lon = (west + east) / 2
+
+m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
+
+ImageOverlay(
+    image=rgb,
+    bounds=[[south, west], [north, east]],
+    opacity=0.7,
+).add_to(m)
 
 gdf_pred_wgs84 = gdf_pred.to_crs("EPSG:4326")
 
 folium.GeoJson(
     gdf_pred_wgs84,
     style_function=lambda feature: {
-        "fillColor": label_to_color.get(feature["properties"]["label"], "#808080"),
+        "fillColor": label_to_color.get(
+            feature["properties"]["label"], "#808080"
+        ),
         "color": "black",
         "weight": 0.5,
         "fillOpacity": 0.6,
     },
     tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
 ).add_to(m)
+
+m
 ```
 :::
 
@@ -530,7 +724,10 @@ folium.GeoJson(
 
 Running inference locally works well for a single tile, but scaling to an
 entire NUTS3 region (which may contain dozens of tiles) requires more
-infrastructure. A **REST API** has been deployed for this purpose.
+infrastructure. A **REST API** has been deployed for this purpose.  
+The API's interactive documentation is available at
+[https://funathon-2026-project3.lab.sspcloud.fr/docs](https://funathon-2026-project3.lab.sspcloud.fr/docs).
+It lists all available endpoints and lets you test them directly from your browser.
 
 ## Architecture
 
@@ -617,40 +814,14 @@ are fast thanks to the S3 cache.
 
 ```{python}
 #| eval: true
-#| echo: false
-import json
-import requests
-import geopandas as gpd
+# This block runs silently to set up shared variables for exercises 6, 7 and 8.
 import numpy as np
 import matplotlib.pyplot as plt
 import folium
 from folium.raster_layers import ImageOverlay
-from matplotlib.colors import ListedColormap
-from matplotlib.patches import Patch
 from rasterio.warp import transform_bounds
+from intermediate_solutions.solution_step3.utils import get_satellite_image
 
-# This block runs silently to set up shared variables for exercises 6, 7 and 8.
-
-api_url = "https://funathon-2026-project3.lab.sspcloud.fr"
-
-classes = [
-    ("Sealed (1)",                        "#FF0100"),
-    ("Woody – needle leaved trees (2)",   "#238B23"),
-    ("Woody – broadleaved deciduous (3)", "#80FF00"),
-    ("Woody – broadleaved evergreen (4)", "#00FF00"),
-    ("Low-growing woody plants (5)",      "#804000"),
-    ("Permanent herbaceous (6)",          "#CCF24E"),
-    ("Periodically herbaceous (7)",       "#FEFF80"),
-    ("Lichens and mosses (8)",            "#FF81FF"),
-    ("Non- and sparsely-vegetated (9)",   "#BFBFBF"),
-    ("Water (10)",                        "#0080FF"),
-]
-cmap           = ListedColormap([color for _, color in classes])
-label_to_color = {i + 1: color for i, (_, color) in enumerate(classes)}
-legend_elements = [
-    Patch(facecolor=color, edgecolor="black", label=label)
-    for label, color in classes
-]
 ```
 
 ::: {.callout-caution}
@@ -668,16 +839,21 @@ contains a GPS point in Luxembourg.
 
 ```{python}
 #| eval: false
+import json
+import requests
+
+api_url = "https://funathon-2026-project3.lab.sspcloud.fr"
+
 gps_point = __    # TODO: [latitude, longitude] in WGS84 (List[float]), e.g. [49.63, 6.16] for Eurostat
-nuts_id   = "__"  # TODO: NUTS3 identifier (str), e.g. "LU000" for Luxembourg
-year      = __    # TODO: year of the satellite images (int, between 2018 and 2024)
+nuts_id = __  # TODO: NUTS3 identifier (str), e.g. "LU000" for Luxembourg
+year = __    # TODO: year of the satellite images (int, between 2018 and 2024)
 
 response_find = requests.get(
     f"{api_url}/__",  # TODO: endpoint name (str), e.g. "find_image"
     params={
         "gps_point": __,  # TODO: [latitude, longitude] defined above
-        "nuts_id":   __,  # TODO: NUTS3 identifier defined above
-        "year":      __,  # TODO: year defined above
+        "nuts_id": __,  # TODO: NUTS3 identifier defined above
+        "year": __,  # TODO: year defined above
     },
 )
 response_find.raise_for_status()
@@ -701,7 +877,11 @@ print(f"Image found: {image_filename}")
 
 ```{python}
 #| eval: true
-#| echo: false
+import json
+import requests
+
+api_url = "https://funathon-2026-project3.lab.sspcloud.fr"
+
 gps_point = [49.63339525016761, 6.1689982433356025]  # [lat, lon]
 nuts_id   = "LU000"
 year      = 2024
@@ -710,8 +890,8 @@ response_find = requests.get(
     f"{api_url}/find_image",
     params={
         "gps_point": gps_point,
-        "nuts_id":   nuts_id,
-        "year":      year,
+        "nuts_id": nuts_id,
+        "year": year,
     },
 )
 response_find.raise_for_status()
@@ -727,8 +907,7 @@ print(f"Image found: {image_filename}")
 ## Exercise 7
 
 **Goal:** Call `/predict_image` with the filename found in Exercise 6 to
-retrieve the predicted polygons, then visualise them on a static plot and an
-interactive Folium map.
+retrieve the predicted polygons, then visualise them on a static plot.
 
 **Steps:**
 
@@ -736,15 +915,10 @@ interactive Folium map.
 2. Call `GET /predict_image` with `polygons=True`
 3. Parse the response as a GeoDataFrame
 4. Load the RGB composite with `get_satellite_image()` and display 2 subplots
-5. Display the results on an interactive Folium map
 :::
 
 ```{python}
 #| eval: false
-import json
-import geopandas as gpd
-from utils import get_satellite_image
-
 s3_base_url = (
     "projet-formation/diffusion/funathon/"
     "2026/project3/data/images/__/__/"  # TODO: fill in nuts_id and year
@@ -755,7 +929,7 @@ image_filepath = s3_base_url + image_filename
 response_pred = requests.get(
     f"{api_url}/__",  # TODO: endpoint name (str), e.g. "predict_image"
     params={
-        "image":    __,  # TODO: S3 path built above
+        "image": __,  # TODO: S3 path built above
         "polygons": __,  # TODO: set to True to receive polygons
     },
 )
@@ -772,7 +946,7 @@ print(gdf_pred.head())
 
 ```{python}
 #| eval: false
-N_BANDS   = 14
+N_BANDS = 14
 minio_url = "https://minio.lab.sspcloud.fr/"
 
 image_url = minio_url + __  # TODO: S3 image path built above (image_filepath)
@@ -801,36 +975,6 @@ fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5)
 plt.show()
 ```
 
-```{python}
-#| eval: false
-west, south, east, north = transform_bounds(si["crs"], "EPSG:4326", *si["bounds"])
-center_lat = (south + north) / 2
-center_lon = (west + east) / 2
-
-m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
-
-ImageOverlay(
-    image=rgb,
-    bounds=[[south, west], [north, east]],
-    opacity=0.7,
-).add_to(m)
-
-gdf_pred_wgs84 = gdf_pred.to_crs("EPSG:4326")
-
-folium.GeoJson(
-    gdf_pred_wgs84,
-    style_function=lambda feature: {
-        "fillColor": __,  # TODO: use label_to_color to colour by label
-        "color": "black",
-        "weight": 0.5,
-        "fillOpacity": 0.6,
-    },
-    tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
-).add_to(m)
-
-m
-```
-
 ::: {.callout-tip collapse="true"}
 ## Hint
 
@@ -851,9 +995,6 @@ m
 
 ```{python}
 #| eval: true
-#| echo: false
-from utils import get_satellite_image
-
 s3_base_url = (
     "projet-formation/diffusion/funathon/"
     "2026/project3/data/images/LU000/2024/"
@@ -894,24 +1035,6 @@ axes[1].set_ylim(ymin, ymax)
 axes[1].axis("off")
 fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5), frameon=True)
 plt.show()
-
-west, south, east, north = transform_bounds(si["crs"], "EPSG:4326", *si["bounds"])
-center_lat = (south + north) / 2
-center_lon = (west + east) / 2
-m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
-ImageOverlay(image=rgb, bounds=[[south, west], [north, east]], opacity=0.7).add_to(m)
-gdf_pred_wgs84 = gdf_pred.to_crs("EPSG:4326")
-folium.GeoJson(
-    gdf_pred_wgs84,
-    style_function=lambda feature: {
-        "fillColor": label_to_color.get(feature["properties"]["label"], "#808080"),
-        "color": "black",
-        "weight": 0.5,
-        "fillOpacity": 0.6,
-    },
-    tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
-).add_to(m)
-m
 ```
 :::
 
@@ -938,14 +1061,14 @@ and save it to a Parquet file.
 response_nuts = requests.get(
     f"{api_url}/__",  # TODO: endpoint name (str), e.g. "predict_nuts"
     params={
-        "nuts_id": "__",  # TODO: NUTS3 identifier (str), e.g. "LU000"
-        "year":    __,    # TODO: year (int, between 2018 and 2024)
+        "nuts_id": __,  # TODO: NUTS3 identifier (str), e.g. "LU000"
+        "year": __,    # TODO: year (int, between 2018 and 2024)
     },
 )
 response_nuts.raise_for_status()
 
 gdf_nuts = gpd.GeoDataFrame.from_features(
-    json.loads(response_nuts.json())["features"],  # parse GeoJSON string → dict → features
+    json.loads(response_nuts.json()['predictions'])["features"],  # parse GeoJSON string → dict → features
     crs="EPSG:3035",
 )
 
@@ -956,7 +1079,7 @@ print(gdf_nuts.head())
 ```{python}
 #| eval: false
 gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
-nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
+nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 
 m_nuts = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
 
@@ -991,9 +1114,8 @@ m_nuts
 
 ```{python}
 #| eval: true
-#| echo: false
 nuts_id = "LU000"
-year    = 2024
+year = 2024
 
 response_nuts = requests.get(
     f"{api_url}/predict_nuts",
@@ -1002,14 +1124,14 @@ response_nuts = requests.get(
 response_nuts.raise_for_status()
 
 gdf_nuts = gpd.GeoDataFrame.from_features(
-    json.loads(response_nuts.json())["features"],
+    json.loads(response_nuts.json()['predictions'])["features"],
     crs="EPSG:3035",
 )
 
 print(f"{len(gdf_nuts)} polygons received")
 
 gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
-nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
+nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 
 m_nuts = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
 

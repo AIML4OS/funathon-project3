@@ -594,7 +594,7 @@ flowchart LR
     B --> C["Reproject<br>EPSG:3035"]
     C --> D["Spatial join<br>with NUTS3"]
     D --> E["NUTS code"]
-    E --> F["filename2bbox<br>.parquet"]
+    E --> F["<pre>filename2bbox.parquet</pre>"]
     F --> G["Tile URL"]
 ```
 
@@ -757,10 +757,33 @@ print(f"NUTS3 region: {nuts_code}")  # → BE100
 
 # Step 4: Check availability
 available = [
-    "AT130", "BE100", "BG411", "CZ010", "DE300", "DEA23", "DK011", "EE001",
-    "EL303", "ES300", "FI1B1", "FR101", "LU000", "HRO41", "HU110", "ITI43",
-    "LT011", "LU000", "LV006", "MT001", "NL329", "PL127", "PT170", "RO321",
-    "SE110", "SI041", "SK010",
+    "AT130",
+    "BE100",
+    "BG411",
+    "CZ010",
+    "DE300",
+    "DEA23",
+    "DK011",
+    "EE001",
+    "EL303",
+    "ES300",
+    "FI1B1",
+    "FR101",
+    "LU000",
+    "HRO41",
+    "HU110",
+    "ITI43",
+    "LT011",
+    "LU000",
+    "LV006",
+    "MT001",
+    "NL329",
+    "PL127",
+    "PT170",
+    "RO321",
+    "SE110",
+    "SI041",
+    "SK010",
 ]
 print(f"Available: {nuts_code in available}")  # → True
 
@@ -1344,6 +1367,8 @@ In supervised machine learning, you need **pairs** of inputs and labels to train
 
 CLC+ Backbone provides **pixel-level** land-cover classification across Europe at **10 m resolution**, making it an ideal ground-truth dataset for training and evaluating segmentation models. The labels are temporally aligned with the satellite imagery (same year), ensuring that the land-cover classification corresponds to what the satellite actually observed.
 
+We will be using the label from **2021** to train our model.
+
 ## Land-cover classes
 
 CLC+ Backbone uses **10 land-cover classes**:
@@ -1783,60 +1808,115 @@ m
 :::: {.callout-note collapse="true"}
 ## Optional — Click to expand
 
-This section shows how to download CLC+ Backbone labels directly from the Copernicus Land Monitoring Service REST API and prepare them for the training pipeline. It is **not** needed for the rest of the tutorial — the pre-processed labels on S3 are sufficient.
+This section shows how to download CLC+ Backbone labels directly from the Copernicus Land Monitoring Service REST API and prepare them for the training pipeline. It is **not** needed for the rest of the sections — the pre-processed labels on S3 are sufficient.
 
-## Downloading from the CDSE WCS API
+## Downloading from the Copernicus Land Monitoring Service ImageServer
 
-Labels can be downloaded through the Copernicus Land Monitoring Service REST API. The `download_clcpluslabel()` utility function handles this:
+Labels can be downloaded directly from the Copernicus Land Monitoring Service using the ArcGIS ImageServer `exportImage` endpoint. No authentication is required. The bounding box must match the satellite tile extent exactly to ensure pixel-level alignment.
 
 ```{python}
 #| eval: false
 
-from utils import download_clcpluslabel, tiff_to_numpy
+import requests
+import numpy as np
+import rasterio
+from rasterio.io import MemoryFile
 
-# Bounding box matching a LU000 tile (EPSG:3035)
+year = 2021
+export_url = (
+    f"https://copernicus.discomap.eea.europa.eu/arcgis/rest/services/CLC_plus/"
+    f"CLMS_CLCplus_RASTER_{year}_010m_eu/ImageServer/exportImage"
+)
+
 bbox = [3649890, 2331750, 3652390, 2334250]
+xmin, ymin, xmax, ymax = bbox
+resolution = 10  # 1 pixel = 10 m
+size_x = int((xmax - xmin) / resolution)
+size_y = int((ymax - ymin) / resolution)
 
-download_clcpluslabel("label_2024.tif", bbox, year=2024)
-label_array = tiff_to_numpy("label_2024.tif")  # 2D array of class IDs (1-10)
+params = {
+    "f": "image",
+    "bbox": f"{xmin},{ymin},{xmax},{ymax}",
+    "bboxSR": "3035",
+    "imageSR": "3035",
+    "size": f"{size_x},{size_y}",
+    "format": "tiff",
+}
+
+response = requests.get(export_url, params=params)
+response.raise_for_status()
+
+with MemoryFile(response.content) as memfile:
+    with memfile.open() as src:
+        label_array = src.read(1)  # single band, shape (H, W)
+
+# Map nodata values to 0 (254 = unclassified, 255 = nodata)
+label_array[(label_array == 254) | (label_array == 255)] = 0
+print(f"Label shape: {label_array.shape}, classes: {np.unique(label_array)}")
 ```
 
-The function queries the **WCS** (Web Coverage Service) endpoint of the CLC+ Backbone service, requesting the raster data for the specified bounding box and year. The bounding box must match the satellite tile extent exactly to ensure pixel-level alignment.
-
 ::: {.callout-caution}
-## Exercise 11 (optional) — Download a CLC+ label from CDSE
+## Exercise 11 (optional) — Download a CLC+ label from the ImageServer API
 
-**Goal:** Download the CLC+ Backbone land-cover label that matches a Sentinel-2 patch and convert it to a NumPy array.
+**Goal:** Query the Copernicus Land Monitoring Service ImageServer directly to download the CLC+ Backbone label matching a Sentinel-2 patch, and convert it to a NumPy array.
 
 **Steps:**
 
-1. Define the bounding box matching the LU000 tile (EPSG:3035): `[3649890, 2331750, 3652390, 2334250]`
-2. Call `download_clcpluslabel()` with the filename, bounding box, and year
-3. Convert the downloaded TIFF to a NumPy array using `tiff_to_numpy()`
+1. Define the bounding box `[3649890, 2331750, 3652390, 2334250]` (EPSG:3035) and compute pixel dimensions (1 px = 10 m)
+2. Build the `exportImage` URL for `year=2021`
+3. Send a GET request with the required parameters and raise on HTTP errors
+4. Load the TIFF response in-memory with `MemoryFile(response.content)` and read band 1
+5. Map nodata values 254 and 255 to 0
 :::
 
 ```{python}
 #| eval: false
 
-from utils import download_clcpluslabel, tiff_to_numpy
+import requests
+import numpy as np
+import rasterio
+from rasterio.io import MemoryFile
 
-# Bounding box matching the LU000 tile (EPSG:3035)
+# Step 1: Define bounding box and compute pixel dimensions
+year = 2021
 bbox = [3649890, 2331750, 3652390, 2334250]
-year = 2024
-filename = "test_label.tif"
+xmin, ymin, xmax, ymax = bbox
+resolution = 10  # 1 pixel = 10 m
+size_x = ___  # TODO: int((xmax - xmin) / resolution)
+size_y = ___  # TODO: int((ymax - ymin) / resolution)
 
-# Step 1: Download the label
-___  # TODO
+# Step 2: Build the exportImage URL
+export_url = ___  # TODO: f"https://copernicus.discomap.eea.europa.eu/arcgis/rest/services/CLC_plus/CLMS_CLCplus_RASTER_{year}_010m_eu/ImageServer/exportImage"
 
-# Step 2: Convert to NumPy array
-img_array = ___  # TODO
+# Step 3: Send the request
+params = {
+    "f": "image",
+    "bbox": f"{xmin},{ymin},{xmax},{ymax}",
+    "bboxSR": "3035",
+    "imageSR": "3035",
+    "size": f"{size_x},{size_y}",
+    "format": "tiff",
+}
+response = ___  # TODO: requests.get(export_url, params=params)
+___  # TODO: response.raise_for_status()
+
+# Step 4: Load TIFF from memory and read band 1
+with MemoryFile(___) as memfile:  # TODO: response.content
+    with memfile.open() as src:
+        img_array = ___  # TODO: src.read(1)
+
+# Step 5: Map nodata values to 0
+img_array[___] = 0  # TODO: (img_array == 254) | (img_array == 255)
 ```
 
 ::: {.callout-tip collapse="true"}
 ## Hint — Exercise 11
 
-- `download_clcpluslabel(filename, bbox, year)` downloads the label and saves it as a TIFF file.
-- `tiff_to_numpy(filename)` opens the TIFF, converts it to a NumPy array, cleans up nodata values (254, 255 → 0), and returns the array.
+- The ImageServer URL pattern: `https://copernicus.discomap.eea.europa.eu/arcgis/rest/services/CLC_plus/CLMS_CLCplus_RASTER_{year}_010m_eu/ImageServer/exportImage`
+- `bboxSR` and `imageSR` both set to `"3035"` keep the data in EPSG:3035 (metres).
+- `size` must match the bbox extent: `size_x = int((xmax - xmin) / 10)`, `size_y = int((ymax - ymin) / 10)`.
+- `MemoryFile(response.content)` wraps the raw bytes so `rasterio` can open the TIFF without writing to disk.
+- `src.read(1)` reads band 1 as a 2D NumPy array of shape `(H, W)`.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -1845,14 +1925,40 @@ img_array = ___  # TODO
 ```{python}
 #| eval: false
 
-from utils import download_clcpluslabel, tiff_to_numpy
+import requests
+import numpy as np
+import rasterio
+from rasterio.io import MemoryFile
 
+year = 2021
 bbox = [3649890, 2331750, 3652390, 2334250]
-year = 2024
-filename = "test_label.tif"
+xmin, ymin, xmax, ymax = bbox
+resolution = 10
+size_x = int((xmax - xmin) / resolution)
+size_y = int((ymax - ymin) / resolution)
 
-download_clcpluslabel(filename, bbox, year)
-img_array = tiff_to_numpy(filename)
+export_url = (
+    f"https://copernicus.discomap.eea.europa.eu/arcgis/rest/services/CLC_plus/"
+    f"CLMS_CLCplus_RASTER_{year}_010m_eu/ImageServer/exportImage"
+)
+
+params = {
+    "f": "image",
+    "bbox": f"{xmin},{ymin},{xmax},{ymax}",
+    "bboxSR": "3035",
+    "imageSR": "3035",
+    "size": f"{size_x},{size_y}",
+    "format": "tiff",
+}
+
+response = requests.get(export_url, params=params)
+response.raise_for_status()
+
+with MemoryFile(response.content) as memfile:
+    with memfile.open() as src:
+        img_array = src.read(1)
+
+img_array[(img_array == 254) | (img_array == 255)] = 0
 ```
 :::
 

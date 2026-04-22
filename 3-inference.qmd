@@ -816,12 +816,11 @@ are fast thanks to the S3 cache.
 #| eval: true
 # This block runs silently to set up shared variables for exercises 6, 7 and 8.
 import numpy as np
-import matplotlib.pyplot as plt
+import geopandas
 import folium
 from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds
 from intermediate_solutions.solution_step3.utils import get_satellite_image
-
 ```
 
 ::: {.callout-caution}

@@ -816,7 +816,7 @@ are fast thanks to the S3 cache.
 #| eval: true
 # This block runs silently to set up shared variables for exercises 6, 7 and 8.
 import numpy as np
-import geopandas
+import geopandas as gpd
 import folium
 from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds

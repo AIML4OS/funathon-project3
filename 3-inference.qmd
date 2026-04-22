@@ -358,7 +358,7 @@ from intermediate_solutions.solution_step3.utils import (
 ```
 
 ```{python}
-#| eval: false
+#| eval: true
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
 image_path = (

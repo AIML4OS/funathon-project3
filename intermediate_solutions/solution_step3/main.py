@@ -168,22 +168,23 @@ fs = s3fs.S3FileSystem(
     endpoint_url=__,  # TODO: MinIO endpoint URL (str)
 )
 
-s3_model_path = __  # TODO: S3 path to the model directory (without s3://)
+s3_run_path = __ # TODO: S3 path to the run directory
+s3_model_path = s3_run_path + "model"
 local_model_dir = Path(tempfile.mkdtemp()) / "model"
 
-# TODO: recursively download the model directory to local_model_dir
-fs.get(__, __, recursive=__)
+fs.get(__, __, recursive=__)  # TODO: download the model directory recursively
 
-model = mlflow.pyfunc.load_model(__)  # TODO: path to the local model directory
+model = mlflow.pyfunc.load_model(__)  # TODO: local model directory path (str)
 
-params_url = __  # TODO: public HTTPS URL to the params.json artifact
+params_url = "https://minio.lab.sspcloud.fr/" + s3_run_path + "params.json"
 
-run_params = requests.get(__).json()  # TODO: fetch and parse params.json
+response = requests.get(params_url)
+run_params = response.json()
 
 n_bands = __(run_params[__])  # TODO: cast to int
 tiles_size = __(run_params[__])  # TODO: cast to int
 augment_size = __(run_params[__])  # TODO: cast to int
-module_name = run_params[__]      # TODO: read as str
+module_name = run_params[__]  # TODO: read as str
 normalization_mean = run_params[__][:n_bands]  # TODO: key name
 normalization_std = run_params[__][:n_bands]  # TODO: key name
 
@@ -212,26 +213,31 @@ print(f"std={normalization_std}")
 #     anon=True,
 #     endpoint_url="https://minio.lab.sspcloud.fr",
 # )
-#
-# s3_model_path   = "projet-formation/mlflow-artifacts/4/cf04bf4c53e84f6baf1d15f928100fb2/artifacts/model"
+
+# s3_run_path = "projet-formation/mlflow-artifacts/4/76277e88294e4ed4bf22d64dbc2d70d3/artifacts/"
+
+# s3_model_path = s3_run_path + "model"
 # local_model_dir = Path(tempfile.mkdtemp()) / "model"
-#
+
 # fs.get(s3_model_path, str(local_model_dir), recursive=True)
-#
+
 # model = mlflow.pyfunc.load_model(str(local_model_dir))
-#
-# params_url = (
-#     "https://minio.lab.sspcloud.fr/projet-formation/mlflow-artifacts/"
-#     "4/cf04bf4c53e84f6baf1d15f928100fb2/artifacts/params.json"
-# )
-# run_params = requests.get(params_url).json()
-#
-# n_bands           = int(run_params["n_bands"])
-# tiles_size        = int(run_params["tiles_size"])
-# augment_size      = int(run_params["augment_size"])
-# module_name       = run_params["module_name"]
+
+# params_url = "https://minio.lab.sspcloud.fr/" + s3_run_path + "params.json"
+
+# response = requests.get(params_url)
+# run_params = response.json()
+
+# n_bands = int(run_params["n_bands"])
+# tiles_size = int(run_params["tiles_size"])
+# augment_size = int(run_params["augment_size"])
+# module_name = run_params["module_name"]
 # normalization_mean = run_params["normalization_mean"][:n_bands]
-# normalization_std  = run_params["normalization_std"][:n_bands]
+# normalization_std = run_params["normalization_std"][:n_bands]
+
+# print(f"n_bands={n_bands}, tiles_size={tiles_size}, augment_size={augment_size}")
+# print(f"mean={normalization_mean}")
+# print(f"std={normalization_std}")
 # ------------------------------------------------------------
 
 

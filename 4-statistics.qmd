@@ -216,8 +216,221 @@ plt.tight_layout()
 plt.show()
 ```
 
-## Interactive map
+## Interactive map — sealed surface density
 
-## Evolution
+The map below highlights the spatial distribution of sealed surfaces
+(class 1 — buildings, roads, paved areas) across the NUTS3 region.
+Each polygon is coloured by class, with sealed areas standing out in red.
+Hovering over a polygon shows its class name and area in km².
+
+```{python}
+#| eval: true
+import folium
+from folium.raster_layers import ImageOverlay
+from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
+
+label_to_color = {
+    1:  "#FF0100",
+    2:  "#238B23",
+    3:  "#80FF00",
+    4:  "#00FF00",
+    5:  "#804000",
+    6:  "#CCF24E",
+    7:  "#FEFF80",
+    8:  "#FF81FF",
+    9:  "#BFBFBF",
+    10: "#0080FF",
+}
+
+gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
+nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
+
+m = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
+
+folium.GeoJson(
+    gdf_nuts_wgs84,
+    style_function=lambda feature: {
+        "fillColor":   label_to_color.get(feature["properties"]["label"], "#808080"),
+        "color":       "black",
+        "weight":      0.3,
+        "fillOpacity": 0.7 if feature["properties"]["label"] == 1 else 0.4,
+    },
+    tooltip=folium.GeoJsonTooltip(
+        fields=["class_name", "area_km2"],
+        aliases=["Class:", "Area (km²):"],
+        localize=True,
+    ),
+).add_to(m)
+
+m
+```
+
+## Evolution — land-cover change between 2021 and 2024
+
+This section compares land-cover predictions for a single tile and for the
+full NUTS3 region between **2021** and **2024**. For each year, predictions
+are fetched from the API, statistics are computed, and the two years are
+compared side by side.
+
+### Single tile — 2021 vs 2024
+
+```{python}
+#| eval: true
+image_filepath_2021 = (
+    "projet-formation/diffusion/funathon/"
+    "2026/project3/data/images/LU000/2021/"
+    "4042000_2951690_0_637.tif"
+)
+
+response_2021 = requests.get(
+    f"{api_url}/predict_image",
+    params={"image": image_filepath_2021, "polygons": True},
+)
+
+gdf_tile_2021 = gpd.GeoDataFrame.from_features(
+    json.loads(response_2021.json())["features"],
+    crs="EPSG:3035",
+)
+
+gdf_tile_2021["area_m2"]    = gdf_tile_2021.geometry.area
+gdf_tile_2021["area_km2"]   = gdf_tile_2021["area_m2"] / 1e6
+gdf_tile_2021["class_name"] = gdf_tile_2021["label"].map(class_names)
+```
+
+```{python}
+#| eval: true
+def compute_stats(gdf):
+    stats = (
+        gdf.groupby(["label", "class_name"])
+        .agg(
+            n_polygons           = ("geometry", "count"),
+            total_area_km2       = ("area_km2", "sum"),
+            mean_polygon_area_m2 = ("area_m2",  "mean"),
+            max_polygon_area_m2  = ("area_m2",  "max"),
+        )
+        .reset_index()
+        .sort_values("total_area_km2", ascending=False)
+    )
+    total = stats["total_area_km2"].sum()
+    stats["share_pct"] = (stats["total_area_km2"] / total * 100).round(2)
+    return stats, total
+
+
+stats_tile_2021, total_tile_2021 = compute_stats(gdf_tile_2021)
+stats_tile_2024, total_tile_2024 = compute_stats(gdf_tile)
+
+tile_2021 = stats_tile_2021.set_index("class_name")["share_pct"].rename("2021 (%)")
+tile_2024 = stats_tile_2024.set_index("class_name")["share_pct"].rename("2024 (%)")
+
+tile_comparison = pd.concat([tile_2021, tile_2024], axis=1).fillna(0)
+tile_comparison["change (pp)"] = (tile_comparison["2024 (%)"] - tile_comparison["2021 (%)"]).round(2)
+
+print("=== Single tile — share change 2021 → 2024 ===")
+print(tile_comparison.sort_values("change (pp)", ascending=False).to_string())
+```
+
+```{python}
+#| eval: true
+fig, ax = plt.subplots(figsize=(9, 5))
+
+x      = range(len(tile_comparison))
+width  = 0.35
+labels = tile_comparison.index.tolist()
+
+bars_2021 = ax.barh([i + width / 2 for i in x], tile_comparison["2021 (%)"], width, label="2021", color="steelblue")
+bars_2024 = ax.barh([i - width / 2 for i in x], tile_comparison["2024 (%)"], width, label="2024", color="darkorange")
+
+ax.set_yticks(list(x))
+ax.set_yticklabels(labels)
+ax.set_xlabel("Share (%)")
+ax.set_title("Land-cover share — single tile, 2021 vs 2024")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+### NUTS3 region — 2021 vs 2024
+
+```{python}
+#| eval: true
+response_nuts_2021 = requests.get(
+    f"{api_url}/predict_nuts",
+    params={"nuts_id": "LU000", "year": 2021},
+)
+
+gdf_nuts_2021 = gpd.GeoDataFrame.from_features(
+    json.loads(response_nuts_2021.json()["predictions"])["features"],
+    crs="EPSG:3035",
+)
+
+gdf_nuts_2021["area_m2"]    = gdf_nuts_2021.geometry.area
+gdf_nuts_2021["area_km2"]   = gdf_nuts_2021["area_m2"] / 1e6
+gdf_nuts_2021["class_name"] = gdf_nuts_2021["label"].map(class_names)
+```
+
+```{python}
+#| eval: true
+stats_nuts_2021, total_nuts_2021 = compute_stats(gdf_nuts_2021)
+stats_nuts_2024, total_nuts_2024 = compute_stats(gdf_nuts)
+
+nuts_2021 = stats_nuts_2021.set_index("class_name")["share_pct"].rename("2021 (%)")
+nuts_2024 = stats_nuts_2024.set_index("class_name")["share_pct"].rename("2024 (%)")
+
+nuts_comparison = pd.concat([nuts_2021, nuts_2024], axis=1).fillna(0)
+nuts_comparison["change (pp)"] = (nuts_comparison["2024 (%)"] - nuts_comparison["2021 (%)"]).round(2)
+
+print("=== NUTS3 LU000 — share change 2021 → 2024 ===")
+print(nuts_comparison.sort_values("change (pp)", ascending=False).to_string())
+```
+
+```{python}
+#| eval: true
+# Key category summary
+for label, category in [(1, "Sealed"), ([2, 3, 4], "Forest"), ([6, 7], "Agricultural"), (10, "Water")]:
+    labels = [label] if isinstance(label, int) else label
+    km2_2021 = stats_nuts_2021.loc[stats_nuts_2021["label"].isin(labels), "total_area_km2"].sum()
+    km2_2024 = stats_nuts_2024.loc[stats_nuts_2024["label"].isin(labels), "total_area_km2"].sum()
+    delta    = km2_2024 - km2_2021
+    sign     = "+" if delta >= 0 else ""
+    print(f"{category:<20}: {km2_2021:.2f} km² (2021) → {km2_2024:.2f} km² (2024)  Δ {sign}{delta:.2f} km²")
+```
+
+```{python}
+#| eval: true
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+x      = range(len(nuts_comparison))
+width  = 0.35
+labels = nuts_comparison.index.tolist()
+
+axes[0].barh([i + width / 2 for i in x], nuts_comparison["2021 (%)"], width, label="2021", color="steelblue")
+axes[0].barh([i - width / 2 for i in x], nuts_comparison["2024 (%)"], width, label="2024", color="darkorange")
+axes[0].set_yticks(list(x))
+axes[0].set_yticklabels(labels)
+axes[0].set_xlabel("Share (%)")
+axes[0].set_title("Land-cover share — LU000, 2021 vs 2024")
+axes[0].legend()
+
+colors = ["green" if v >= 0 else "red" for v in nuts_comparison["change (pp)"]]
+axes[1].barh(labels, nuts_comparison["change (pp)"], color=colors)
+axes[1].axvline(0, color="black", linewidth=0.8)
+axes[1].set_xlabel("Change (percentage points)")
+axes[1].set_title("Land-cover change 2021 → 2024 — LU000")
+
+plt.tight_layout()
+plt.show()
+```
 
 ## Be free to create new statistics and visualizations
+
+The analyses above are just a starting point. Here are some ideas to go further:
+
+- **Spatial clustering**: identify contiguous sealed zones above a certain
+  area threshold to locate urban cores
+- **Per-tile breakdown**: compute statistics for each individual tile to
+  map within-region heterogeneity
+- **Change detection map**: build a Folium map where polygons are coloured
+  by their change status (gained sealed, lost forest, stable, etc.)
+- **Ratio indicators**: compute forest-to-sealed ratio or green
+  infrastructure share per sub-region

@@ -16,10 +16,33 @@ full NUTS3 region.
 
 ## Load the predictions
 ```{python}
-#| eval: false
-
+#| eval: true
 import geopandas as gpd
+import requests
+import json
 
+api_url = "https://funathon-2026-project3.lab.sspcloud.fr"
+
+image_filepath = (
+    "projet-formation/diffusion/funathon/"
+    "2026/project3/data/images/LU000/2024/"
+    "4042000_2951690_0_637.tif"
+)
+
+response_pred = requests.get(
+    f"{api_url}/predict_image",
+    params={"image": image_filepath, "polygons": True},
+)
+
+gdf_tile = gpd.GeoDataFrame.from_features(
+    json.loads(response_pred.json())["features"],
+    crs="EPSG:3035",
+)
+```
+
+
+```{python}
+#| eval: true
 class_names = {
     1:  "Sealed",
     2:  "Woody – needle leaved",
@@ -33,7 +56,6 @@ class_names = {
     10: "Water",
 }
 
-gdf_tile = gpd.read_parquet("predictions_LU000_3034500_2011690_2024.parquet")
 gdf_tile["area_m2"]    = gdf_tile.geometry.area
 gdf_tile["area_km2"]   = gdf_tile["area_m2"] / 1e6
 gdf_tile["class_name"] = gdf_tile["label"].map(class_names)
@@ -41,7 +63,7 @@ gdf_tile["class_name"] = gdf_tile["label"].map(class_names)
 
 ## Compute area statistics per class
 ```{python}
-#| eval: false
+#| eval: true
 
 stats_tile = (
     gdf_tile.groupby(["label", "class_name"])
@@ -63,7 +85,7 @@ print(stats_tile.to_string(index=False))
 
 ## Highlight key land-cover categories
 ```{python}
-#| eval: false
+#| eval: true
 
 sealed_km2 = stats_tile.loc[stats_tile["label"] == 1,  "total_area_km2"].sum()
 forest_km2 = stats_tile.loc[stats_tile["label"].isin([2, 3, 4]), "total_area_km2"].sum()
@@ -78,8 +100,7 @@ print(f"Water              : {water_km2:.2f} km²  ({water_km2 / total_km2 * 100
 
 ## Visualise the distribution
 ```{python}
-#| eval: false
-
+#| eval: true
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots(figsize=(8, 4))
@@ -101,9 +122,23 @@ land-cover composition, and allows comparison with the individual tile.
 
 ## Load the predictions
 ```{python}
-#| eval: false
+#| eval: true
+nuts_id = "LU000"
+year = 2024
 
-gdf_nuts = gpd.read_parquet("predictions_LU000_2024.parquet")
+response_nuts = requests.get(
+    f"{api_url}/predict_nuts",
+    params={"nuts_id": nuts_id, "year": year},
+)
+
+gdf_nuts = gpd.GeoDataFrame.from_features(
+    json.loads(response_nuts.json()['predictions'])["features"],
+    crs="EPSG:3035",
+)
+```
+
+```{python}
+#| eval: true
 gdf_nuts["area_m2"] = gdf_nuts.geometry.area
 gdf_nuts["area_km2"] = gdf_nuts["area_m2"] / 1e6
 gdf_nuts["class_name"] = gdf_nuts["label"].map(class_names)
@@ -111,8 +146,7 @@ gdf_nuts["class_name"] = gdf_nuts["label"].map(class_names)
 
 ## Compute area statistics per class
 ```{python}
-#| eval: false
-
+#| eval: true
 stats_nuts = (
     gdf_nuts.groupby(["label", "class_name"])
     .agg(
@@ -133,8 +167,7 @@ print(stats_nuts.to_string(index=False))
 
 ## Highlight key land-cover categories
 ```{python}
-#| eval: false
-
+#| eval: true
 sealed_km2 = stats_nuts.loc[stats_nuts["label"] == 1,           "total_area_km2"].sum()
 forest_km2 = stats_nuts.loc[stats_nuts["label"].isin([2, 3, 4]),"total_area_km2"].sum()
 agri_km2 = stats_nuts.loc[stats_nuts["label"].isin([6, 7]),   "total_area_km2"].sum()
@@ -148,8 +181,7 @@ print(f"Water              : {water_km2:.2f} km²  ({water_km2 / total_nuts_km2 
 
 ## Compare tile vs. NUTS3
 ```{python}
-#| eval: false
-
+#| eval: true
 import pandas as pd
 
 tile_shares = (
@@ -165,8 +197,7 @@ print(comparison.sort_values("nuts3_share_pct", ascending=False).to_string())
 
 ## Visualise the NUTS3 distribution
 ```{python}
-#| eval: false
-
+#| eval: true
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
 stats_nuts.set_index("class_name")["total_area_km2"].sort_values().plot(
@@ -185,48 +216,8 @@ plt.tight_layout()
 plt.show()
 ```
 
-## Interactive map — sealed area per polygon
+## Interactive map
 
-```{python}
-#| eval: false
-import folium
-import branca.colormap as cm
-
-# Reproject to WGS84 for folium
-gdf_nuts_wgs84 = gdf_nuts[gdf_nuts["label"] == 1].to_crs("EPSG:4326")
-
-# Centroid of each polygon
-gdf_nuts_wgs84["centroid"] = gdf_nuts_wgs84.geometry.centroid
-gdf_nuts_wgs84["lat"] = gdf_nuts_wgs84["centroid"].y
-gdf_nuts_wgs84["lon"] = gdf_nuts_wgs84["centroid"].x
-
-# Colormap scaled to polygon area
-colormap = cm.LinearColormap(
-    colors=["#ffffcc", "#fd8d3c", "#800026"],
-    vmin=gdf_nuts_wgs84["area_m2"].min(),
-    vmax=gdf_nuts_wgs84["area_m2"].max(),
-    caption="Sealed area (m²)",
-)
-
-# Map centred on the NUTS3 region
-center = [gdf_nuts_wgs84["lat"].mean(), gdf_nuts_wgs84["lon"].mean()]
-m = folium.Map(location=center, zoom_start=11, tiles="CartoDB positron")
-
-for _, row in gdf_nuts_wgs84.iterrows():
-    # Radius proportional to area (m²), capped at 30
-    radius = min(3 + row["area_m2"] / 500, 30)
-    folium.CircleMarker(
-        location=[row["lat"], row["lon"]],
-        radius=radius,
-        color=colormap(row["area_m2"]),
-        fill=True,
-        fill_color=colormap(row["area_m2"]),
-        fill_opacity=0.7,
-        tooltip=f"Area: {row['area_m2']:.0f} m²",
-    ).add_to(m)
-
-colormap.add_to(m)
-m
-```
+## Evolution
 
 ## Be free to create new statistics and visualizations

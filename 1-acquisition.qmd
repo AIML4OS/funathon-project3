@@ -2751,6 +2751,41 @@ thousands of individual HTTP calls for a single region), a more efficient approa
    re-downloading everything from scratch on the next run?
 :::
 
+::: {.callout-tip collapse="true"}
+## Answers
+
+1. **Unit of download** — downloading per product tile is far more efficient. A single Sentinel-2
+   product (100 km × 100 km) contains 14 JP2 band files shared by hundreds of 2.5 km patches. The
+   CDSE EO S3 supports *range requests* via GDAL's `/vsis3/` virtual filesystem, so you can
+   window-read just the bytes that fall within each patch's bounding box — no need to download the
+   entire JP2. The overhead per patch drops from one full HTTP round-trip to a few kilobytes of
+   partial reads from already-open file handles.
+
+2. **Multi-resolution bands** — rasterio's `read()` method accepts an `out_shape=(H, W)` argument.
+   When the requested window spans more (or fewer) source pixels than the output shape, rasterio
+   resamples on the fly. Using `out_shape=(250, 250)` for every band regardless of native
+   resolution automatically brings 20 m and 60 m bands up to the 10 m grid — no explicit
+   `reproject` or `resize` step is needed.
+
+3. **Multiple product tiles** — the OData API returns each product's geographic footprint as a
+   GeoJSON polygon. After querying for all products covering the region, you intersect each patch's
+   WGS84 bounding box with every product footprint using `shapely`. Only patches that intersect a
+   given product are processed when reading that product's JP2 files, so no patch is extracted from
+   a product that doesn't cover it.
+
+4. **Two S3 accounts** — `s3fs` and GDAL maintain their S3 configuration independently. The
+   personal S3 credentials live in system environment variables (`AWS_S3_ENDPOINT`, etc.) and are
+   read by `s3fs`. EO S3 credentials are injected into GDAL's configuration exclusively through a
+   `rasterio.env.Env(...)` context manager — they override GDAL's S3 settings only for the
+   duration of the window-read, then the context restores the previous state. The two credential
+   sets never collide.
+
+5. **Resumability** — before starting any download work for a tile, the script checks whether both
+   the image and label files already exist on personal S3 with `fs.exists()`. If they do, the tile
+   is skipped. This means the script can be re-run after any interruption and will pick up exactly
+   where it left off without re-transferring data.
+:::
+
 The complete solution is provided in `final_solution/download_region.py` — a self-contained
 `uv` script that requires no virtual environment setup. EO S3 credentials are separate from your
 CDSE API credentials and are generated at
@@ -2767,6 +2802,7 @@ uv run final_solution/download_region.py \
 
 Required environment variables for personal S3: `AWS_S3_ENDPOINT`, `AWS_ACCESS_KEY_ID`,
 `AWS_SECRET_ACCESS_KEY`.
+:::
 
 # Summary
 
@@ -2783,7 +2819,7 @@ In this chapter you built the full data pipeline that feeds a land-cover segment
 
 ## What's next?
 
-You now have aligned **image / label pairs** — the raw material for supervised learning.
+You now have aligned **image / label pairs** — the raw material for supervised learning. You can continue with either:
 
 - **[Model Training](2-model.qmd)** *(optional)* — train a SegFormer segmentation model on the Sentinel-2 / CLC+ pairs you assembled here.
-- **[Inference and Statistics](3-inference.qmd)** — run a pre-trained model on new tiles, aggregate predictions to regional statistics, and map land-cover change.
+- **[Inference](3-inference.qmd)** — run a pre-trained model on new tiles, to map land cover predictions on newer images.

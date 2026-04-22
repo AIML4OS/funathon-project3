@@ -704,7 +704,7 @@ m
 ## Solution
 
 ```{python}
-#| eval: false
+#| eval: true
 import folium
 from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds

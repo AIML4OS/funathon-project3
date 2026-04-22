@@ -103,22 +103,13 @@ import urllib.request
 import rasterio
 import numpy as np
 
-# Download the sample tile locally (once)
 tile_url = (
     "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
     "funathon/2026/project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
-os.makedirs("data", exist_ok=True)
-tile_path = "data/sample_tile.tif"
 
-if not os.path.exists(tile_path):
-    urllib.request.urlretrieve(tile_url, tile_path)
-    print(f"Downloaded sample tile to {tile_path}")
-else:
-    print(f"Sample tile already present at {tile_path}")
-
-with rasterio.open(tile_path) as src:
+with rasterio.open(tile_url) as src:
     tile_crs = src.crs
     tile_bounds = src.bounds
     tile_count = src.count
@@ -174,6 +165,24 @@ serve as a display normalization routine for Sentinel-2 imagery. Here's what eac
 - `np.clip(rgb / p98, 0, 1)` — Divides all pixel values by that 98th percentile (so that ~98% of pixels fall in the 0–1 range), then clamps everything to [0, 1]. The top 2% of brightest pixels get clipped to white.
 
 In short, it's a contrast stretch. Raw Sentinel-2 L2A surface reflectance values are typically 16-bit integers (0–10,000 scale), which look almost entirely black if you display them directly. This technique maps the usable dynamic range to [0, 1] in a way that produces a visually pleasing true-color image, while being robust to outliers — essentially the same idea as the "percent clip" stretch in QGIS or ArcGIS.
+
+Without those lines, the image is a lot darker :
+
+```{python}
+#| eval: true
+
+import matplotlib.pyplot as plt
+
+# Transpose to (H, W, 3) and normalize for display
+rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.imshow(rgb)
+ax.set_title("Sentinel-2 RGB composite (B4, B3, B2) — LU000 (no normalization)")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
+```
 :::
 
 
@@ -181,11 +190,11 @@ In short, it's a contrast stretch. Raw Sentinel-2 L2A surface reflectance values
 ::: {.callout-caution}
 ## Exercise 1 — Read a Sentinel-2 tile and display it
 
-**Goal:** Open the local sample Sentinel-2 patch, extract the RGB bands, normalize the image, and display it.
+**Goal:** Open the remote sample Sentinel-2 patch, extract the RGB bands, normalize the image, and display it.
 
 **Steps:**
 
-1. Open the tile with `rasterio.open(tile_path)` and read bands 4, 3, 2 (Red, Green, Blue)
+1. Open the tile with `rasterio.open(tile_url)` and read bands 4, 3, 2 (Red, Green, Blue)
 2. Store the CRS and bounds from the rasterio source
 3. Transpose the array to `(H, W, 3)` and normalize for display (divide by the 98th percentile, clip to `[0, 1]`)
 4. Display the RGB composite with `matplotlib`
@@ -194,7 +203,7 @@ In short, it's a contrast stretch. Raw Sentinel-2 L2A surface reflectance values
 ::: {.callout-tip collapse="true"}
 ## Hint — Exercise 1
 
-- Inside the `with rasterio.open(tile_path) as src:` block, use `src.read([4, 3, 2])` to get a `(3, H, W)` array.
+- Inside the `with rasterio.open(tile_url) as src:` block, use `src.read([4, 3, 2])` to get a `(3, H, W)` array.
 - `src.crs` and `src.bounds` give you the CRS and bounding box.
 - Transpose with `np.transpose(rgb_data, (1, 2, 0))`, cast to `float32`, then normalize: divide by `np.percentile(rgb, 98)` and clip to `[0, 1]` with `np.clip`.
 
@@ -207,23 +216,14 @@ import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Download the sample tile locally (once)
 tile_url = (
     "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
     "funathon/2026/project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
-os.makedirs("data", exist_ok=True)
-tile_path = "data/sample_tile.tif"
-
-if not os.path.exists(tile_path):
-    urllib.request.urlretrieve(tile_url, tile_path)
-    print(f"Downloaded sample tile to {tile_path}")
-else:
-    print(f"Sample tile already present at {tile_path}")
 
 # Step 1: Open the tile and read RGB bands (4, 3, 2)
-with rasterio.open(tile_path) as src:
+with rasterio.open(tile_url) as src:
     rgb_data = ___  # TODO: read bands 4, 3, 2
     tile_crs = ___  # TODO
     tile_bounds = ___  # TODO
@@ -251,22 +251,13 @@ import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Download the sample tile locally (once)
 tile_url = (
     "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
     "funathon/2026/project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
-os.makedirs("data", exist_ok=True)
-tile_path = "data/sample_tile.tif"
 
-if not os.path.exists(tile_path):
-    urllib.request.urlretrieve(tile_url, tile_path)
-    print(f"Downloaded sample tile to {tile_path}")
-else:
-    print(f"Sample tile already present at {tile_path}")
-
-with rasterio.open(tile_path) as src:
+with rasterio.open(tile_url) as src:
     rgb_data = src.read([4, 3, 2])
     tile_crs = src.crs
     tile_bounds = src.bounds
@@ -308,7 +299,7 @@ A **band composite** is an image formed by mapping three spectral bands to the R
 
 **Steps:**
 
-1. Open the tile with `rasterio.open(tile_path)` and print `src.profile`
+1. Open the tile with `rasterio.open(tile_url)` and print `src.profile`
 2. Read bands `[8, 4, 3]` (NIR, Red, Green)
 3. Normalize the false-colour image (same method as Exercise 1: 98th percentile + clip)
 4. Display the true-colour RGB (from Exercise 1) and false-colour composite side by side
@@ -330,10 +321,14 @@ import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
 
-tile_path = "data/sample_tile.tif"
+tile_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
+)
 
 # Step 2a: Open the tile and print the raster profile
-with rasterio.open(tile_path) as src:
+with rasterio.open(tile_url) as src:
     print(___) # TODO: print src.profile
 
     # Step 2b: Read false-colour bands (NIR=8, Red=4, Green=3)
@@ -367,9 +362,13 @@ import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
 
-tile_path = "data/sample_tile.tif"
+tile_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
+)
 
-with rasterio.open(tile_path) as src:
+with rasterio.open(tile_url) as src:
     print(src.profile)
     fc_data = src.read([8, 4, 3])
 
@@ -431,10 +430,14 @@ import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
 
-tile_path = "data/sample_tile.tif"
+tile_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
+)
 
 # Step 3a: Read NIR (band 8) and Red (band 4) as float32
-with rasterio.open(tile_path) as src:
+with rasterio.open(tile_url) as src:
     nir = ___  # TODO: src.read(8).astype(np.float32)
     red = ___  # TODO: src.read(4).astype(np.float32)
 
@@ -462,9 +465,13 @@ import rasterio
 import numpy as np
 import matplotlib.pyplot as plt
 
-tile_path = "data/sample_tile.tif"
+tile_url = (
+    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "funathon/2026/project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
+)
 
-with rasterio.open(tile_path) as src:
+with rasterio.open(tile_url) as src:
     nir = src.read(8).astype(np.float32)
     red = src.read(4).astype(np.float32)
 

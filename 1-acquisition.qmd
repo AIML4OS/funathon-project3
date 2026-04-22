@@ -2709,3 +2709,23 @@ print(f"Downloaded {products[0]['Name']}")
 :::
 
 ::::
+
+# Summary
+
+In this chapter you built the full data pipeline that feeds a land-cover segmentation model:
+
+| Step | What you did | Key tools |
+|------|-------------|-----------|
+| **Load & explore imagery** | Opened a Sentinel-2 GeoTIFF, read spectral bands, and inspected raster metadata | `rasterio` |
+| **Visualise composites** | Displayed true-colour and false-colour composites; computed NDVI | `numpy`, `matplotlib` |
+| **Geospatial manipulation** | Worked with CRS, built geometries, performed spatial joins, and plotted interactive maps | `geopandas`, `shapely`, `folium` |
+| **Navigate the tile index** | Geocoded a city with Nominatim, resolved its NUTS3 region, and found the covering tile with the `filename2bbox.parquet` index | `requests`, `geopandas` |
+| **Load CLC+ labels** | Downloaded pre-processed land-cover labels from S3 and paired them pixel-for-pixel with satellite images | `numpy`, `urllib` |
+| *(Optional)* **Acquire new data** | Downloaded CLC+ labels from the Copernicus ImageServer; queried and downloaded Sentinel-2 imagery from the Sentinel Hub and OData APIs | `requests`, `rasterio.io.MemoryFile` |
+
+## What's next?
+
+You now have aligned **image / label pairs** — the raw material for supervised learning.
+
+- **[Model Training](2-model.qmd)** *(optional)* — train a SegFormer segmentation model on the Sentinel-2 / CLC+ pairs you assembled here.
+- **[Inference and Statistics](3-inference.qmd)** — run a pre-trained model on new tiles, aggregate predictions to regional statistics, and map land-cover change.

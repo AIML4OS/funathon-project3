@@ -963,6 +963,8 @@ print(gdf_pred.head())
 
 ```{python}
 #| eval: false
+import geopandas as gpd
+
 N_BANDS = 14
 minio_url = "https://minio.lab.sspcloud.fr/"
 
@@ -1012,6 +1014,8 @@ plt.show()
 
 ```{python}
 #| eval: true
+import geopandas as gpd
+
 s3_base_url = (
     "projet-formation/diffusion/funathon/"
     "2026/project3/data/images/LU000/2024/"
@@ -1030,7 +1034,7 @@ gdf_pred = gpd.GeoDataFrame.from_features(
     crs="EPSG:3035",
 )
 
-N_BANDS   = 14
+N_BANDS = 14
 minio_url = "https://minio.lab.sspcloud.fr/"
 image_url = minio_url + image_filepath
 si = get_satellite_image(image_url, n_bands=N_BANDS)

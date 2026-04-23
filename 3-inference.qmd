@@ -1198,9 +1198,11 @@ print(gdf_nuts.head())
 ```{python}
 #| eval: false
 from utils import get_satellite_image
+import folium
 from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds
 import numpy as np
+import pandas as pd
 
 gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
 nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
@@ -1289,6 +1291,7 @@ print(gdf_nuts.head())
 #| eval: true
 #| echo: true
 #| results: hide
+import folium
 from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds
 import numpy as np

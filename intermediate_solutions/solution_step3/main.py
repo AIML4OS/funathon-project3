@@ -832,7 +832,6 @@ plt.show()
 #   2. Parse the response as a GeoDataFrame
 #   3. Print the number of polygons and the first rows
 #   4. Display on a Folium map with per-class colouring
-#   5. Save the GeoDataFrame to a Parquet file
 # ============================================================
 
 response_nuts = requests.get(
@@ -879,7 +878,6 @@ m_nuts
 # - The first call for a new NUTS3/year combination may take
 #   several minutes; subsequent calls are fast thanks to the S3 cache.
 # - Pass gdf_nuts_wgs84 (already reprojected to EPSG:4326) to folium.GeoJson().
-# - Choose a meaningful Parquet filename, e.g. "predictions_LU000_2024.parquet".
 # ------------------------------------------------------------
 
 # ------------------------------------------------------------
@@ -900,6 +898,7 @@ m_nuts
 # )
 
 # print(f"{len(gdf_nuts)} polygons received")
+# print(gdf_nuts.head())
 
 # gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
 # nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid

@@ -1170,7 +1170,6 @@ and save it to a Parquet file.
 2. Parse the response as a GeoDataFrame
 3. Print the number of polygons and the first rows
 4. Display on a Folium map with per-class colouring
-5. Save the GeoDataFrame to a Parquet file
 :::
 
 ```{python}
@@ -1255,12 +1254,32 @@ m_nuts
 - Add each layer to its `FeatureGroup` with `.add_to(fg)`, then add the
   group to the map with `.add_to(m_nuts)`.
 - `folium.LayerControl(collapsed=False)` keeps the widget open by default.
-- Choose a meaningful Parquet filename, e.g. `"predictions_LU000_2024.parquet"`.
 :::
 
 ::: {.callout-tip collapse="true"}
 ## Solution
 
+```{python}
+#| eval: true
+#| echo: true
+#| results: hide
+nuts_id = "LU000"
+year    = 2024
+
+response_nuts = requests.get(
+    f"{api_url}/predict_nuts",
+    params={"nuts_id": nuts_id, "year": year},
+)
+response_nuts.raise_for_status()
+
+gdf_nuts = gpd.GeoDataFrame.from_features(
+    json.loads(response_nuts.json()["predictions"])["features"],
+    crs="EPSG:3035",
+)
+
+print(f"{len(gdf_nuts)} polygons received")
+print(gdf_nuts.head())
+```
 ```{python}
 #| eval: true
 #| echo: true

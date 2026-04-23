@@ -691,19 +691,24 @@ Both layers must be in **EPSG:4326** (WGS84, latitude/longitude) for Folium to
 place them correctly. `transform_bounds()` reprojects the raster bounding box,
 and `gdf_pred.to_crs("EPSG:4326")` reprojects the vector polygons.
 
+Each layer is wrapped in a `folium.FeatureGroup` so that a `LayerControl`
+widget lets the user toggle them on and off independently directly on the map.
+
 ::: {.callout-caution}
-## Exercise 5 — Display predictions on an interactive Folium map
+## Exercise 5 — Display predictions on an interactive Folium map with layer control
 
 **Goal:** Overlay the RGB image and the predicted polygons on an interactive
-Folium map with per-class colours.
+Folium map as two independent toggleable layers.
 
 **Steps:**
 
 1. Reproject the image bounds to EPSG:4326 with `transform_bounds()`
 2. Create a `folium.Map` centred on the tile
-3. Add an `ImageOverlay` with the normalised RGB array
-4. Reproject `gdf_pred` to EPSG:4326 and add a `GeoJson` layer coloured by
-   label using `label_to_color`
+3. Create a `FeatureGroup` named `"Sentinel-2 RGB"` and add an `ImageOverlay`
+   to it, then add the group to the map
+4. Create a `FeatureGroup` named `"Predicted polygons"` and add a `GeoJson`
+   layer coloured by label to it, then add the group to the map
+5. Add a `folium.LayerControl(collapsed=False)` to display the toggle widget
 :::
 
 ```{python}
@@ -712,20 +717,24 @@ import folium
 from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds
 
-west, south, east, north = transform_bounds(satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"])
+west, south, east, north = transform_bounds(si["crs"], "EPSG:4326", *si["bounds"])
 center_lat = (south + north) / 2
 center_lon = (west + east) / 2
 
 m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
 
+# Layer 1 — RGB image
+fg_image = folium.FeatureGroup(name="__", show=__)  # TODO: layer name (str), show by default (bool)
 ImageOverlay(
     image=__,                              # TODO: normalised RGB array
     bounds=[[south, west], [north, east]],
     opacity=0.7,
-).add_to(m)
+).add_to(__)  # TODO: add to fg_image
+__.add_to(m)  # TODO: add fg_image to map
 
-gdf_pred_wgs84 = gdf_pred.to_crs(__)  # TODO: target EPSG code for Folium (str)
-
+# Layer 2 — Predictions
+fg_pred = folium.FeatureGroup(name="__", show=__)  # TODO: layer name (str), show by default (bool)
+gdf_pred_wgs84 = gdf_pred.to_crs("__")  # TODO: target EPSG code for Folium (str)
 folium.GeoJson(
     gdf_pred_wgs84,
     style_function=lambda feature: {
@@ -735,7 +744,11 @@ folium.GeoJson(
         "fillOpacity": 0.6,
     },
     tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
-).add_to(m)
+).add_to(__)  # TODO: add to fg_pred
+__.add_to(m)  # TODO: add fg_pred to map
+
+# Layer control toggle widget
+folium.LayerControl(collapsed=__).add_to(m)  # TODO: collapsed (bool)
 
 m
 ```
@@ -749,50 +762,54 @@ m
 - Pass `rgb` (the normalised `float32` array) to `ImageOverlay`.
 - `feature["properties"]["label"]` gives the integer class ID;
   use `label_to_color.get(..., "#808080")` for a safe fallback.
+- Each layer goes into a `folium.FeatureGroup(name="...", show=True)`;
+  call `.add_to(fg)` on the layer, then `.add_to(m)` on the group.
+- `folium.LayerControl(collapsed=False)` keeps the widget open by default.
+
+::: {.callout-note}
+In Exercise 5, `si` refers to `satellite_img` loaded from local inference.
+In Exercise 8 (API section), `si` will be loaded via `get_satellite_image()`.
+:::
 :::
 
 ::: {.callout-tip collapse="true"}
 ## Solution
 
 ```{python}
-#| eval: true
-#| echo: true
-#| results: hide
-import folium
-from folium.raster_layers import ImageOverlay
-from rasterio.warp import transform_bounds
-
+#| eval: false
 west, south, east, north = transform_bounds(
     satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"]
 )
-
-west, south, east, north = transform_bounds(satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"])
 center_lat = (south + north) / 2
 center_lon = (west + east) / 2
 
 m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
 
+fg_image = folium.FeatureGroup(name="Sentinel-2 RGB", show=True)
 ImageOverlay(
     image=rgb,
     bounds=[[south, west], [north, east]],
     opacity=0.7,
-).add_to(m)
+).add_to(fg_image)
+fg_image.add_to(m)
 
+fg_pred = folium.FeatureGroup(name="Predicted polygons", show=True)
 gdf_pred_wgs84 = gdf_pred.to_crs("EPSG:4326")
-
 folium.GeoJson(
     gdf_pred_wgs84,
     style_function=lambda feature: {
-        "fillColor": label_to_color.get(
-            feature["properties"]["label"], "#808080"
-        ),
+        "fillColor": label_to_color.get(feature["properties"]["label"], "#808080"),
         "color": "black",
         "weight": 0.5,
         "fillOpacity": 0.6,
     },
     tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
-).add_to(m)
+).add_to(fg_pred)
+fg_pred.add_to(m)
 
+folium.LayerControl(collapsed=False).add_to(m)
+
+m
 ```
 :::
 
@@ -892,7 +909,7 @@ several minutes, as it needs to run inference on each tile. Subsequent calls
 are fast thanks to the S3 cache.
 :::
 
-## Exercise 6 — Find a satellite image from a GPS point
+## Find a satellite image from a GPS point
 
 ::: {.callout-caution}
 ## Exercise 6
@@ -973,7 +990,7 @@ print(f"Image found: {image_filename}")
 ```
 :::
 
-## Exercise 7 — Predict a single image via the API
+## Predict a single image via the API
 
 ::: {.callout-caution}
 ## Exercise 7
@@ -1132,7 +1149,7 @@ axes[1].axis("off")
 fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5), frameon=True)
 ```
 
-## Exercise 8 — Predict an entire NUTS3 region
+## Predict an entire NUTS3 region
 
 ::: {.callout-caution}
 ## Exercise 8
@@ -1155,14 +1172,14 @@ and save it to a Parquet file.
 response_nuts = requests.get(
     f"{api_url}/__",  # TODO: endpoint name (str), e.g. "predict_nuts"
     params={
-        "nuts_id": __,  # TODO: NUTS3 identifier (str), e.g. "LU000"
-        "year": __,    # TODO: year (int, between 2018 and 2024)
+        "nuts_id": "__",  # TODO: NUTS3 identifier (str), e.g. "LU000"
+        "year":    __,    # TODO: year (int, between 2018 and 2024)
     },
 )
 response_nuts.raise_for_status()
 
 gdf_nuts = gpd.GeoDataFrame.from_features(
-    json.loads(response_nuts.json()['predictions'])["features"],  # parse GeoJSON string → dict → features
+    json.loads(response_nuts.json())["features"],  # parse GeoJSON string → dict → features
     crs="EPSG:3035",
 )
 
@@ -1172,13 +1189,19 @@ print(gdf_nuts.head())
 
 ```{python}
 #| eval: false
+from utils import get_satellite_image
+from folium.raster_layers import ImageOverlay
+from rasterio.warp import transform_bounds
+
 gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
-nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
+nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 
 m_nuts = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
 
+# Layer 1 — Predictions
+fg_pred = folium.FeatureGroup(name="__", show=__)  # TODO: layer name (str), visible by default (bool)
 folium.GeoJson(
-    __,  # TODO: reprojected NUTS3 GeoDataFrame (gdf_nuts_wgs84)
+    __,  # TODO: reprojected NUTS3 GeoDataFrame
     style_function=lambda feature: {
         "fillColor": __,  # TODO: use label_to_color to colour by label
         "color": "black",
@@ -1186,7 +1209,28 @@ folium.GeoJson(
         "fillOpacity": 0.6,
     },
     tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
-).add_to(m_nuts)
+).add_to(__)  # TODO: add to fg_pred
+__.add_to(m_nuts)  # TODO: add fg_pred to map
+
+# Layer 2 — Satellite images (one ImageOverlay per tile)
+minio_url = "https://minio.lab.sspcloud.fr/"
+s3_base   = "projet-formation/diffusion/funathon/2026/project3/data/images/LU000/2024/"
+
+fg_img = folium.FeatureGroup(name="__", show=__)  # TODO: layer name (str), visible by default (bool)
+
+tile_filenames = gdf_nuts["__"].unique().tolist()  # TODO: column containing tile filenames
+
+for filename in tile_filenames:
+    si       = get_satellite_image(minio_url + s3_base + filename, n_bands=__)  # TODO: n_bands
+    rgb_tile = np.transpose(si["array"][[3, 2, 1]], (1, 2, 0)).astype(np.float32)
+    p98      = np.percentile(rgb_tile, 98)
+    rgb_tile = np.clip(rgb_tile / p98, 0, 1)
+    w, s, e, n = transform_bounds(si["__"], "EPSG:4326", *si["__"])  # TODO: crs and bounds keys
+    ImageOverlay(image=rgb_tile, bounds=[[s, w], [n, e]], opacity=0.7).add_to(__)  # TODO: fg_img
+
+__.add_to(m_nuts)  # TODO: add fg_img to map
+
+folium.LayerControl(collapsed=__).add_to(m_nuts)  # TODO: collapsed (bool)
 
 m_nuts
 ```
@@ -1194,12 +1238,16 @@ m_nuts
 ::: {.callout-tip collapse="true"}
 ## Hint
 
-- The endpoint name is `"predict_nuts"`.
-- `response_nuts.json()` returns a GeoJSON string; `json.loads()` parses it
-  into a dict before calling `from_features()`.
-- The first call for a new NUTS3/year combination may take several minutes;
-  subsequent calls are fast thanks to the S3 cache.
-- Pass `gdf_nuts_wgs84` (already reprojected to EPSG:4326) to `folium.GeoJson()`.
+- Use `FeatureGroup(name="Predicted polygons", show=True)` for the
+  predictions and `FeatureGroup(name="Sentinel-2 RGB", show=False)` for
+  the images — hidden by default so the map stays readable at NUTS3 scale.
+- `gdf_nuts` has a `"filename"` column with the source tile name — use it
+  to build the full HTTPS URL for `get_satellite_image()`.
+- `si["crs"]` and `si["bounds"]` are the dict keys to pass to
+  `transform_bounds()`.
+- Add each layer to its `FeatureGroup` with `.add_to(fg)`, then add the
+  group to the map with `.add_to(m_nuts)`.
+- `folium.LayerControl(collapsed=False)` keeps the widget open by default.
 - Choose a meaningful Parquet filename, e.g. `"predictions_LU000_2024.parquet"`.
 :::
 
@@ -1210,27 +1258,21 @@ m_nuts
 #| eval: true
 #| echo: true
 #| results: hide
+from utils import get_satellite_image
+from folium.raster_layers import ImageOverlay
+from rasterio.warp import transform_bounds
+import numpy as np
+
 nuts_id = "LU000"
-year = 2024
-
-response_nuts = requests.get(
-    f"{api_url}/predict_nuts",
-    params={"nuts_id": nuts_id, "year": year},
-)
-response_nuts.raise_for_status()
-
-gdf_nuts = gpd.GeoDataFrame.from_features(
-    json.loads(response_nuts.json()['predictions'])["features"],
-    crs="EPSG:3035",
-)
-
-print(f"{len(gdf_nuts)} polygons received")
+year    = 2024
 
 gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
-nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
+nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 
 m_nuts = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
 
+# Layer 1 — Predictions
+fg_pred = folium.FeatureGroup(name="Predicted polygons", show=True)
 folium.GeoJson(
     gdf_nuts_wgs84,
     style_function=lambda feature: {
@@ -1240,7 +1282,30 @@ folium.GeoJson(
         "fillOpacity": 0.6,
     },
     tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
-).add_to(m_nuts)
+).add_to(fg_pred)
+fg_pred.add_to(m_nuts)
+
+# Layer 2 — Satellite images (one ImageOverlay per tile)
+minio_url = "https://minio.lab.sspcloud.fr/"
+s3_base   = "projet-formation/diffusion/funathon/2026/project3/data/images/LU000/2024/"
+
+fg_img = folium.FeatureGroup(name="Sentinel-2 RGB", show=False)
+
+tile_filenames = gdf_nuts["filename"].unique().tolist()
+
+for filename in tile_filenames:
+    si       = get_satellite_image(minio_url + s3_base + filename, n_bands=14)
+    rgb_tile = np.transpose(si["array"][[3, 2, 1]], (1, 2, 0)).astype(np.float32)
+    p98      = np.percentile(rgb_tile, 98)
+    rgb_tile = np.clip(rgb_tile / p98, 0, 1)
+    w, s, e, n = transform_bounds(si["crs"], "EPSG:4326", *si["bounds"])
+    ImageOverlay(image=rgb_tile, bounds=[[s, w], [n, e]], opacity=0.7).add_to(fg_img)
+
+fg_img.add_to(m_nuts)
+
+folium.LayerControl(collapsed=False).add_to(m_nuts)
+
+m_nuts
 ```
 :::
 

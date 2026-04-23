@@ -8,39 +8,33 @@ on:
 
 jobs:
   publish-site:
-      runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-      permissions:
-        contents: write
-      steps:
+    permissions:
+      contents: write
+    steps:
 
-        - name: Check out repository
-          uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-        - name: Install the latest version of uv
-          uses: astral-sh/setup-uv@v6
-          with:
-            version: "latest"
-            python-version: 3.13
-            
-        - name: Prerequisites for GDAL
-          run: |
-            sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
-            sudo apt-get update
-            sudo apt-get install gdal-bin libgdal-dev
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          python-version: 3.13
 
-        - name: Install Python Dependencies
-          run: |
-            uv sync
+      - name: Install Python Dependencies
+        run: |
+          uv sync
 
-        - name: Set up Quarto
-          uses: quarto-dev/quarto-actions/setup@v2
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
 
-        - name: Render
-          run: uv run quarto render
+      - name: Render
+        run: uv run quarto render
 
-        - name: Publish to GitHub Pages
-          uses: quarto-dev/quarto-actions/publish@v2
-          with:
-            target: gh-pages
-            render: false
+      - name: Publish to GitHub Pages
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+          render: false

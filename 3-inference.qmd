@@ -779,6 +779,10 @@ In Exercise 8 (API section), `si` will be loaded via `get_satellite_image()`.
 #| eval: true
 #| echo: true
 #| results: hide
+import folium
+from folium.raster_layers import ImageOverlay
+from rasterio.warp import transform_bounds
+
 west, south, east, north = transform_bounds(
     satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"]
 )

@@ -253,8 +253,8 @@ print(f"std={normalization_std}")
 # segmentation model on it to produce a labelled mask.
 #
 # The image is publicly available at:
-#   https://minio.lab.sspcloud.fr/projet-formation/
-#   diffusion/funathon/2026/project3/data/images/
+#   https://minio.lab.sspcloud.fr/projet-funathon/
+#   2026/project3/data/images/
 #   {NUTS}/{year}/{filename}.tif
 #
 # Steps:
@@ -266,8 +266,8 @@ print(f"std={normalization_std}")
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
 image_path = (
-    "https://minio.lab.sspcloud.fr/projet-formation/"
-    "diffusion/funathon/2026/project3/data/images/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/"
+    "2026/project3/data/images/"
     + __  # TODO: relative path to the image (str), use image_target
 )
 
@@ -300,8 +300,8 @@ print(f"Classes found : {set(predictions.flatten().tolist())}")
 # image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
 # image_path = (
-#     "https://minio.lab.sspcloud.fr/projet-formation/"
-#     "diffusion/funathon/2026/project3/data/images/"
+#     "https://minio.lab.sspcloud.fr/projet-funathon/"
+#     "2026/project3/data/images/"
 #     + image_target
 # )
 
@@ -699,8 +699,8 @@ print(f"Image found: {image_filename}")
 # ============================================================
 
 s3_base_url = (
-    "projet-formation/diffusion/funathon/"
-    "2026/project3/data/images/__/__/"  # TODO: fill in nuts_id and year
+    "projet-funathon/2026/project3/"
+    "data/images/__/__/"  # TODO: fill in nuts_id and year
 )
 
 image_filepath = s3_base_url + image_filename
@@ -754,7 +754,7 @@ plt.show()
 # HINT — Exercise 7
 # ------------------------------------------------------------
 # - The S3 path follows the pattern:
-#   "projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_id}/{year}/"
+#   "projet-funathon/2026/project3/data/images/{nuts_id}/{year}/"
 # - The endpoint name is "predict_image".
 # - Set polygons=True to include GeoJSON polygons in the response.
 # - response_pred.json() returns a GeoJSON string;
@@ -769,8 +769,8 @@ plt.show()
 # SOLUTION — Exercise 7
 # ------------------------------------------------------------
 # s3_base_url = (
-#     "projet-formation/diffusion/funathon/"
-#     "2026/project3/data/images/LU000/2024/"
+#     "projet-funathon/2026/project3/"
+#     "data/images/LU000/2024/"
 # )
 
 # image_filepath = s3_base_url + image_filename

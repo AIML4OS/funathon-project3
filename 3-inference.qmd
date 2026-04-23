@@ -316,8 +316,8 @@ from utils import predict, get_satellite_image
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
 image_path = (
-    "https://minio.lab.sspcloud.fr/projet-formation/"
-    "diffusion/funathon/2026/project3/data/images/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/"
+    "2026/project3/data/images/"
     + __  # TODO: relative path to the image (str), use image_target
 )
 
@@ -366,8 +366,8 @@ from intermediate_solutions.solution_step3.utils import (
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
 image_path = (
-    "https://minio.lab.sspcloud.fr/projet-formation/"
-    "diffusion/funathon/2026/project3/data/images/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/"
+    "2026/project3/data/images/"
     + image_target
 )
 
@@ -776,7 +776,9 @@ In Exercise 8 (API section), `si` will be loaded via `get_satellite_image()`.
 ## Solution
 
 ```{python}
-#| eval: false
+#| eval: true
+#| echo: true
+#| results: hide
 west, south, east, north = transform_bounds(
     satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"]
 )
@@ -1009,8 +1011,8 @@ retrieve the predicted polygons, then visualise them on a static plot.
 ```{python}
 #| eval: false
 s3_base_url = (
-    "projet-formation/diffusion/funathon/"
-    "2026/project3/data/images/__/__/"  # TODO: fill in nuts_id and year
+    "projet-funathon/2026/project3/"
+    "data/images/__/__/"  # TODO: fill in nuts_id and year
 )
 
 image_filepath = s3_base_url + image_filename
@@ -1070,7 +1072,7 @@ plt.show()
 ## Hint
 
 - The S3 path follows the pattern:
-  `"projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_id}/{year}/"`.
+  `"projet-funathon/2026/project3/data/images/{nuts_id}/{year}/"`.
 - The endpoint name is `"predict_image"`.
 - Set `polygons=True` to include GeoJSON polygons in the response.
 - `response_pred.json()` returns a GeoJSON string; `json.loads()` parses it
@@ -1091,8 +1093,8 @@ plt.show()
 import geopandas as gpd
 
 s3_base_url = (
-    "projet-formation/diffusion/funathon/"
-    "2026/project3/data/images/LU000/2024/"
+    "projet-funathon/2026/project3/"
+    "data/images/LU000/2024/"
 )
 
 image_filepath = s3_base_url + image_filename
@@ -1214,7 +1216,7 @@ __.add_to(m_nuts)  # TODO: add fg_pred to map
 
 # Layer 2 — Satellite images (one ImageOverlay per tile)
 minio_url = "https://minio.lab.sspcloud.fr/"
-s3_base   = "projet-formation/diffusion/funathon/2026/project3/data/images/LU000/2024/"
+s3_base   = "projet-funathon/2026/project3/data/images/LU000/2024/"
 
 fg_img = folium.FeatureGroup(name="__", show=__)  # TODO: layer name (str), visible by default (bool)
 
@@ -1287,7 +1289,7 @@ fg_pred.add_to(m_nuts)
 
 # Layer 2 — Satellite images (one ImageOverlay per tile)
 minio_url = "https://minio.lab.sspcloud.fr/"
-s3_base   = "projet-formation/diffusion/funathon/2026/project3/data/images/LU000/2024/"
+s3_base   = "projet-funathon/2026/project3/data/images/LU000/2024/"
 
 fg_img = folium.FeatureGroup(name="Sentinel-2 RGB", show=False)
 

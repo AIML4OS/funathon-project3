@@ -240,12 +240,18 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="machine-learning-in-90-seconds">Machine learning in 90 seconds</h2>
 <p>If you haven’t worked with machine learning before, here is the whole idea of this project in one paragraph.</p>
 <p><strong>Supervised learning</strong> means showing a model many <em>(input, correct-answer)</em> pairs and letting it figure out the mapping between them on its own. Once trained, we feed it a brand-new input and it predicts the answer. In this project, the inputs are Sentinel-2 satellite tiles and the answers are land-cover maps from <a href="https://land.copernicus.eu/en/products/clc-backbone"><strong>CLC+ Backbone</strong></a>, a high-resolution land-cover product produced by the Copernicus Land Monitoring Service covering the whole of Europe.</p>
-<div class="cell" data-layout-align="default">
+<div class="cell" data-eval="true" data-layout-align="default">
 <div class="cell-output-display">
 <div>
 <p></p><figure class="figure"><p></p>
 <div>
-
+<pre class="mermaid mermaid-js">flowchart LR
+    A["🛰️ Images"] --&gt; M
+    B["🗺️ Labels"] --&gt; M
+    M["Model(SegFormer)"] --&gt;|learns from pairs| T["Trainedmodel"]
+    N["🛰️ New image"] --&gt; T
+    T --&gt; P["🗺️ Predicted label"]
+</pre>
 </div>
 <p></p></figure><p></p>
 </div>

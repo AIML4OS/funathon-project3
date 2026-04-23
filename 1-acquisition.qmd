@@ -71,7 +71,7 @@ A **spectral band** is a narrow window of wavelengths that the sensor records se
 - **60 m — atmospheric correction.** `B1` (coastal aerosol), `B9` (water vapour) and `B10` (cirrus). These bands exist primarily to *clean up* the other bands, not to describe the ground, so a coarser pixel is sufficient.
 
 ::: {.callout-note}
-**L1C vs L2A — why this dataset has 12 spectral bands, not 13.** Copernicus distributes Sentinel-2 data at two processing levels. **Level-1C** contains top-of-atmosphere reflectance for all 13 bands. **Level-2A** applies atmospheric correction and delivers surface reflectance, which is what we want for land-cover mapping — but it **drops `B10`**, since cirrus information is consumed during the correction step and is no longer needed downstream. In exchange, L2A adds a **Scene Classification Layer (SCL)** at 20 m that labels each pixel as vegetation, bare soil, water, cloud, shadow, etc. The training dataset in this tutorial is built from L2A products, so you'll see `B1–B9`, `B8A`, `B11`, `B12` and `SCL` — 13 channels total, with `B10` absent by design.
+**L1C vs L2A — two processing levels.** Copernicus distributes Sentinel-2 data at two processing levels. **Level-1C** contains top-of-atmosphere reflectance for all 13 bands. **Level-2A** applies atmospheric correction and delivers surface reflectance, which is what we want for land-cover mapping. L2A also adds a **Scene Classification Layer (SCL)** at 20 m that labels each pixel as vegetation, bare soil, water, cloud, shadow, etc. The training dataset in this tutorial is built from L2A products — for convenience the pre-processed GeoTIFFs keep all 13 spectral bands plus the SCL (14 channels total). Note that `B10` (cirrus) is not directly useful for land-cover mapping once atmospheric correction has been applied — it is kept in the file for completeness but we will not use it.
 :::
 
 | Band | Central <br> wavelength (nm) | Resolution (m) | Description | Use / Application |
@@ -106,6 +106,7 @@ Key concepts:
 - `src.crs` — the coordinate reference system attached to the raster.
 - `src.bounds` — the geographic extent as `(left, bottom, right, top)`.
 - `src.profile` / `src.meta` — full metadata dictionary (driver, dtype, nodata value, affine transform, etc.).
+
 **Why band indexing matters:** Sentinel-2 has 13 spectral bands, reading specific band combinations reveals different features:
 
 - `src.read([4, 3, 2])` → **true-colour RGB** (Red, Green, Blue)
@@ -113,6 +114,16 @@ Key concepts:
 - `src.read([8, 4])` → bands needed for **NDVI** (Normalised Difference Vegetation Index)
 
 You will practise these combinations in the exercises below.
+
+::: {.callout-warning}
+**Watch out: `B8` vs `B8A`.** Sentinel-2's band names don't all match their position in the file. In the pre-processed GeoTIFFs here, bands are stored in this order:
+
+| Rasterio index | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Sentinel-2 name | B1 | B2 | B3 | B4 | B5 | B6 | B7 | B8 | **B8A** | B9 | B10 | B11 | B12 | SCL |
+
+So `src.read(9)` gives you **B8A** (narrow NIR), not B9. It's only a coincidence that `src.read(2)` through `src.read(8)` line up with B2–B8. If you adapt this code for other bands — especially SWIR (B11, B12) — check this table to avoid off-by-one bugs.
+:::
 
 ::: {.callout-tip}
 **Learn more:** [rasterio documentation](https://rasterio.readthedocs.io/)
@@ -494,7 +505,7 @@ import matplotlib.pyplot as plt
 
 tile_url = (
     "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
-    "funathon/2026/project3/data/images/LU000/"
+    "project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
 
@@ -725,7 +736,9 @@ lon, lat = ___, ___  # TODO: extract coordinates
 
 # Step 2: Create GeoDataFrame and reproject
 city_point = gpd.GeoDataFrame(
-    {"city": [___]}, geometry=[Point(___, ___)], crs=___  # TODO
+    {"city": [___]},
+    geometry=[Point(___, ___)],
+    crs=___,  # TODO
 )
 city_point = city_point.to_crs(___)  # TODO: target CRS
 
@@ -740,15 +753,37 @@ nuts_code = city_nuts.iloc[0][___]  # TODO: column name
 
 # Step 4: Check availability
 available = [
-    "AT130", "BE100", "BG411", "CZ010", "DE300", "DEA23", "DK011", "EE001",
-    "EL303", "ES300", "FI1B1", "FR101", "LU000", "HRO41", "HU110", "ITI43",
-    "LT011", "LU000", "LV006", "MT001", "NL329", "PL127", "PT170", "RO321",
-    "SE110", "SI041", "SK010",
+    "AT130",
+    "BE100",
+    "BG411",
+    "CZ010",
+    "DE300",
+    "DEA23",
+    "EE001",
+    "EL303",
+    "ES300",
+    "FI1B1",
+    "FR101",
+    "FRJ27",
+    "LU000",
+    "HRO41",
+    "HU110",
+    "ITI43",
+    "LT011",
+    "LV006",
+    "MT001",
+    "NL329",
+    "PL127",
+    "PT170",
+    "RO321",
+    "SE110",
+    "SI041",
+    "SK010",
 ]
 print(f"NUTS3 code: {nuts_code}, available: {nuts_code in available}")
 
 # Step 5: Build S3 URL
-base_url = f"s3://projet-hackathon-ntts-2025/data-preprocessed/satellite-images/SENTINEL2/{___}"  # TODO
+base_url = f"s3://projet-funathon/2026/project3/data/images/{___}"  # TODO
 print(base_url)
 ```
 :::
@@ -803,7 +838,7 @@ available = [
     "ES300",
     "FI1B1",
     "FR101",
-    "LU000",
+    "FRJ27",
     "HRO41",
     "HU110",
     "ITI43",
@@ -822,7 +857,7 @@ available = [
 print(f"Available: {nuts_code in available}")  # → True
 
 # Step 5: Build S3 URL
-base_url = f"s3://projet-hackathon-ntts-2025/data-preprocessed/satellite-images/SENTINEL2/{nuts_code}"
+base_url = f"s3://projet-funathon/2026/project3/data/images/{nuts_code}"  # TODO
 print(base_url)
 ```
 :::
@@ -849,7 +884,7 @@ year = 2024
 nuts_code = "LU000"
 parquet_url = (
     f"https://minio.lab.sspcloud.fr/projet-funathon/2026/"
-    f"/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet"
+    f"project3/data/images/{nuts_code}/{year}/filename2bbox.parquet"
 )
 
 # Read the tile index
@@ -2013,10 +2048,10 @@ The training pipeline in section 2 expects labels as NumPy `.npy` files stored o
 
 ```
 # Satellite image
-s3://.../patchs/CLCplus-Backbone/SENTINEL2/{NUTS}/{year}/{size}/{patch_id}.tif
+s3://projet-funathon/2026/project3/data/images/{NUTS}/{year}/{patch_id}.tif
 
 # Corresponding label
-s3://.../labels/CLCplus-Backbone/SENTINEL2/{NUTS}/{year}/{size}/{patch_id}.npy
+s3://projet-funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy
 ```
 
 ::: {.callout-caution}
@@ -2047,7 +2082,7 @@ ___  # TODO: np.save(local_path, img_array)
 fs = ___  # TODO: get_file_system()
 
 # Step 3: Build the S3 destination path
-s3_path = ___  # TODO: "projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/LU000/2024/250/3649890_2331750_0_937.npy"
+s3_path = ___  # TODO: "projet-funathon/2026/project3/data/images/LU000/2024/250/3649890_2331750_0_937.npy"
 
 # Step 4: Upload to S3
 ___  # TODO: fs.put(local_path, s3_path)
@@ -2063,7 +2098,7 @@ print(fs.ls(___))  # TODO: S3 directory path (without filename)
 - `get_file_system()` returns an `s3fs.S3FileSystem` configured with the SSP Cloud credentials.
 - The S3 path must **not** include the `s3://` prefix when using `fs.put()` and `fs.ls()`.
 - `fs.put(local_path, s3_path)` uploads a local file to S3.
-- `fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/LU000/2024/250")` lists all files in the directory.
+- `fs.ls("rojet-funathon/2026/project3/data/labels/LU000/2021")` lists all files in the directory.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -2080,10 +2115,12 @@ np.save(local_path, img_array)
 
 fs = get_file_system()
 
-s3_path = "projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/LU000/2024/250/3649890_2331750_0_937.npy"
+s3_path = (
+    "projet-funathon/2026/project3/data/labels/LU000/2021/3649890_2331750_0_937.npy"
+)
 fs.put(local_path, s3_path)
 
-print(fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbone/SENTINEL2/LU000/2024/250"))
+print(fs.ls("projet-funathon/2026/project3/data/labels/LU000/2021"))
 ```
 :::
 

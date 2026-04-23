@@ -114,8 +114,8 @@ import rasterio
 import numpy as np
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/images/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
 
@@ -227,8 +227,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/images/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
 
@@ -262,8 +262,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/images/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
 
@@ -332,8 +332,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/images/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
 
@@ -373,8 +373,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/images/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
 
@@ -441,8 +441,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/images/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
 
@@ -476,7 +476,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 tile_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
     "funathon/2026/project3/data/images/LU000/"
     "2024/4042000_2951690_0_637.tif"
 )
@@ -528,13 +528,13 @@ Pre-processed Sentinel-2 patches are publicly available on the SSP Cloud object 
 The **HTTPS URL** follows this pattern:
 
 ```
-https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/{NUTS}/{year}/{patch_id}.tif
+https://minio.lab.sspcloud.fr/projet-funathon/2026/project3/data/images/{NUTS}/{year}/{patch_id}.tif
 ```
 
 The equivalent **S3 path** is:
 
 ```
-s3://projet-formation/diffusion/funathon/2026/project3/data/images/{NUTS}/{year}/{patch_id}.tif
+s3://projet-funathon/2026/project3/data/images/{NUTS}/{year}/{patch_id}.tif
 ```
 
 Each pre-processed patch is a GeoTIFF covering a **250 x 250 pixel** area (2 500 m at 10 m resolution). The URL path encodes the key metadata:
@@ -656,7 +656,7 @@ Once you have the NUTS3 code, you can build the S3 base URL for tiles in that re
 ```python
 #| eval: false
 
-base_url = f"s3://projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_code}"
+base_url = f"s3://projet-funathon/2026/project3/data/images/{nuts_code}"
 print(base_url)
 ```
 
@@ -676,7 +676,7 @@ print(base_url)
 2. Create a `Point(lon, lat)` geometry and wrap it in a GeoDataFrame (CRS: EPSG:4326)
 3. Reproject to EPSG:3035 and spatial-join with the NUTS3 boundaries
 4. Check if the resulting NUTS3 code is in the list of available regions
-5. Build the S3 base URL: `s3://projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_code}`
+5. Build the S3 base URL: `s3://projet-funathon/2026/project3/data/images/{nuts_code}`
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -831,8 +831,8 @@ import matplotlib.pyplot as plt
 year = 2024
 nuts_code = "LU000"
 parquet_url = (
-    f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    f"funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet"
+    f"https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    f"/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet"
 )
 
 # Read the tile index
@@ -856,8 +856,8 @@ print(f"Matching tile: {tile_filename}")
 
 # Build the full HTTPS URL
 tile_url = (
-    f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    f"funathon/2026/project3/data/images/{nuts_code}/{year}/{tile_filename}"
+    f"https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    f"project3/data/images/{nuts_code}/{year}/{tile_filename}"
 )
 
 # Open the tile and display the RGB composite
@@ -895,7 +895,7 @@ plt.show()
 ::: {.callout-tip collapse="true"}
 ## Hint — Exercise 5
 
-- The parquet URL pattern is: `https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet`
+- The parquet URL pattern is: `https://minio.lab.sspcloud.fr/projet-funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet`
 - `pd.read_parquet(url)` reads directly from an HTTPS URL (requires `pyarrow`).
 - City coordinates: `city_point.geometry.iloc[0].x` and `.y` — already in EPSG:3035 from Exercise 4.
 - Containment check: `xmin <= x <= xmax and ymin <= y <= ymax`.
@@ -969,8 +969,8 @@ import matplotlib.pyplot as plt
 # Step 1: Build the parquet URL
 year = 2024
 parquet_url = (
-    f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    f"funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet"
+    f"https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    f"project3/data/images/{nuts_code}/{year}/filename2bbox.parquet"
 )
 
 # Step 2: Read the tile index
@@ -993,8 +993,8 @@ print(f"Matching tile: {tile_filename}")
 
 # Step 5: Build the full tile URL
 tile_url = (
-    f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    f"funathon/2026/project3/data/images/{nuts_code}/{year}/{tile_filename}"
+    f"https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    f"project3/data/images/{nuts_code}/{year}/{tile_filename}"
 )
 
 # Step 6: Open, read RGB, normalize and display
@@ -1415,7 +1415,7 @@ Pre-processed CLC+ Backbone labels are publicly available on the SSP Cloud objec
 The **HTTPS URL** follows this pattern:
 
 ```
-https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy
+https://minio.lab.sspcloud.fr/projet-funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy
 ```
 
 The label and image paths mirror each other — to find the label for a given image, replace `images` with `labels` and `.tif` with `.npy`:
@@ -1448,8 +1448,8 @@ import numpy as np
 
 # Label URL for a LU000 patch, year 2021
 label_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/labels/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/labels/LU000/"
     "2021/4042000_2951690_0_637.npy"
 )
 
@@ -1488,8 +1488,8 @@ cmap = ListedColormap([color for _, color in classes])
 
 # Load the matching satellite image
 image_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/images/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
     "2021/4042000_2951690_0_637.tif"
 )
 with rasterio.open(image_url) as src:
@@ -1544,7 +1544,7 @@ The CLC+ labels and Sentinel-2 patches share the same CRS (EPSG:3035) and boundi
 ::: {.callout-tip collapse="true"}
 ## Hint — Exercise 9
 
-- The label URL pattern is: `https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy`
+- The label URL pattern is: `https://minio.lab.sspcloud.fr/projet-funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy`
 - Use `urllib.request.urlopen(url)` as a context manager, then `np.load(io.BytesIO(response.read()))` to load the array.
 - `np.unique(my_label)` returns the distinct class IDs present in the tile.
 - Set `vmin=1, vmax=10` in `imshow()` so the colormap maps correctly to the 10 classes.
@@ -1566,7 +1566,7 @@ year = ___        # TODO: e.g. 2021
 patch_id = ___    # TODO: e.g. "4042000_2951690_0_637"
 
 # Step 2: Build the label URL
-label_url = ___  # TODO: f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{nuts_code}/{year}/{patch_id}.npy"
+label_url = ___  # TODO: f"https://minio.lab.sspcloud.fr/projet-funathon/2026/project3/data/labels/{nuts_code}/{year}/{patch_id}.npy"
 
 # Step 3: Load the label
 with urllib.request.urlopen(label_url) as response:
@@ -1606,7 +1606,7 @@ nuts_code = "LU000"
 year = 2021
 patch_id = "4042000_2951690_0_637"
 
-label_url = f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{nuts_code}/{year}/{patch_id}.npy"
+label_url = f"https://minio.lab.sspcloud.fr/projet-funathon/2026/project3/data/labels/{nuts_code}/{year}/{patch_id}.npy"
 
 with urllib.request.urlopen(label_url) as response:
     my_label = np.load(io.BytesIO(response.read()))
@@ -1692,8 +1692,8 @@ classes = [
 
 # Step 1: Load satellite image and build RGB composite
 image_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/images/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
     "2021/4017000_2974190_0_402.tif"
 )
 with rasterio.open(image_url) as src:
@@ -1706,8 +1706,8 @@ rgb_overlay = np.clip(rgb_overlay / np.percentile(rgb_overlay, 98), 0, 1)
 
 # Step 2: Load the matching label
 label_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/labels/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/labels/LU000/"
     "2021/4017000_2974190_0_402.npy"
 )
 with urllib.request.urlopen(label_url) as response:
@@ -1771,8 +1771,8 @@ classes = [
 
 # Step 1: Load satellite image
 image_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/images/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
     "2021/4017000_2974190_0_402.tif"
 )
 with rasterio.open(image_url) as src:
@@ -1785,8 +1785,8 @@ rgb_overlay = np.clip(rgb_overlay / np.percentile(rgb_overlay, 98), 0, 1)
 
 # Step 2: Load the matching label
 label_url = (
-    "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
-    "funathon/2026/project3/data/labels/LU000/"
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/labels/LU000/"
     "2021/4042000_2951690_0_637.npy"
 )
 with urllib.request.urlopen(label_url) as response:
@@ -1831,7 +1831,7 @@ m
 :::
 
 
-# Acquiring CLC+ Labels from APIs
+# Acquiring CLC+ Labels from APIs (Optional)
 
 :::: {.callout-note collapse="true"}
 ## Optional — Click to expand
@@ -2073,7 +2073,7 @@ print(fs.ls("projet-hackathon-ntts-2025/data-preprocessed/labels/CLCplus-Backbon
 ::::
 
 
-# Acquiring Sentinel-2 Data from APIs
+# Acquiring Sentinel-2 Data from APIs (Optional)
 
 :::: {.callout-note collapse="true"}
 ## Optional — Click to expand

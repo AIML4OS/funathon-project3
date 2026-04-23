@@ -22,7 +22,7 @@ This section introduces [Sentinel-2](https://sentiwiki.copernicus.eu/web/s2-miss
 
 ## What is Sentinel-2?
 
-[[Sentinel-2 Mission information](https://sentiwiki.copernicus.eu/web/s2-mission) is an Earth observation mission from the European Space Agency (ESA), part of the [Copernicus programme](https://www.copernicus.eu/). It consists of two twin satellites — **Sentinel-2A** and **Sentinel-2B** — placed in the same sun-synchronous orbit but phased 180 degrees apart, giving a **5-day revisit time** at the equator.
+[Sentinel-2](https://sentiwiki.copernicus.eu/web/s2-mission) is an Earth observation mission from the European Space Agency (ESA), part of the [Copernicus programme](https://www.copernicus.eu/). It consists of two twin satellites — **Sentinel-2A** and **Sentinel-2B** — placed in the same sun-synchronous orbit but phased 180 degrees apart, giving a **5-day revisit time** at the equator.
 
 Key characteristics:
 
@@ -45,6 +45,16 @@ These properties make Sentinel-2 a reference dataset for land-cover mapping, agr
 
 ::: {.callout-tip}
 **Official reference:** [Sentinel-2 Mission information](https://sentiwiki.copernicus.eu/web/s2-mission), specifically [Sentinel-2 Spectral Response Functions (S2-SRF) document](https://sentiwiki.copernicus.eu/__attachments/1692737/COPE-GSEG-EOPG-TN-15-0007%20-%20Sentinel-2%20Spectral%20Response%20Functions%202024%20-%204.0.xlsx?inst-v=29a9468e-c82d-4e65-9e31-d654700543f9)
+:::
+
+A **spectral band** is a narrow window of wavelengths that the sensor records separately. Sentinel-2's MultiSpectral Instrument (MSI) captures **13 bands** spanning visible, near-infrared (NIR) and short-wave infrared (SWIR) light — from 443 nm to 2190 nm. Each band is tuned to a specific physical property of the surface or atmosphere, and the table below groups them by **native spatial resolution**, which reflects a hardware trade-off made by ESA:
+
+- **10 m — the "core" mapping bands.** `B2` (blue), `B3` (green), `B4` (red) and `B8` (NIR). These are the bands you'll use most often to look at the landscape: true-colour RGB composites, NDVI, and any high-detail analysis of vegetation, water or built-up areas.
+- **20 m — vegetation structure and moisture.** The three red-edge bands (`B5`, `B6`, `B7`) trace the steep transition between red and NIR that is characteristic of healthy chlorophyll. `B8A` is a narrower NIR window, and `B11`/`B12` (SWIR) are sensitive to water content in leaves and soil, as well as snow/cloud discrimination.
+- **60 m — atmospheric correction.** `B1` (coastal aerosol), `B9` (water vapour) and `B10` (cirrus). These bands exist primarily to *clean up* the other bands, not to describe the ground, so a coarser pixel is sufficient.
+
+::: {.callout-note}
+**L1C vs L2A — why this dataset has 12 spectral bands, not 13.** Copernicus distributes Sentinel-2 data at two processing levels. **Level-1C** contains top-of-atmosphere reflectance for all 13 bands. **Level-2A** applies atmospheric correction and delivers surface reflectance, which is what we want for land-cover mapping — but it **drops `B10`**, since cirrus information is consumed during the correction step and is no longer needed downstream. In exchange, L2A adds a **Scene Classification Layer (SCL)** at 20 m that labels each pixel as vegetation, bare soil, water, cloud, shadow, etc. The training dataset in this tutorial is built from L2A products, so you'll see `B1–B9`, `B8A`, `B11`, `B12` and `SCL` — 13 channels total, with `B10` absent by design.
 :::
 
 | Band | Central <br> wavelength (nm) | Resolution (m) | Description | Use / Application |
@@ -2756,62 +2766,83 @@ Starting from scratch, the script must:
 ::: {.callout-note}
 ## Something to think about — before looking at the solution
 
-1. **Defining the tile grid** — the NUTS3 boundary is an irregular polygon. How do you cover it
-   with a regular grid of 2 500 m × 2 500 m patches? What do you do with patches that extend
-   beyond the boundary?
-2. **Unit of download** — should you request data patch by patch, or download a full Sentinel-2
-   product tile (100 km × 100 km) and cut patches from it? What are the bandwidth trade-offs?
-3. **Multi-resolution bands** — the 14 bands live in different JP2 files at 10 m, 20 m, and 60 m.
-   How do you bring them all to the same 10 m grid when extracting a patch?
-4. **Multiple product tiles** — a NUTS3 region can span several Sentinel-2 product tiles.
-   How do you determine which product covers which patch?
-5. **Two S3 accounts** — EO S3 (`eodata.dataspace.copernicus.eu`) and your personal SSP Cloud
-   bucket use different endpoints and different credentials. How can the script handle both
-   simultaneously without them interfering?
-6. **Resumability** — if the script is interrupted after 300 of 600 tiles, how do you avoid
-   re-downloading everything from scratch on the next run?
+These questions focus on **architectural decisions** you'd have to make if you were writing the
+script yourself. As you read the reference solution afterwards, you can match each answer to the
+function that implements it.
+
+1. **Which API for product discovery?** CDSE exposes several catalogue APIs — STAC, OpenSearch,
+   Sentinel Hub OGC, and OData. They return the same underlying products but with different query
+   languages, result shapes, and server-side filtering capabilities. Which one is right for a
+   *scripted batch download*, and why?
+2. **Coarse-grained vs. fine-grained downloads.** Should the script fetch each 2 500 m patch
+   independently, or download a whole 100 km × 100 km Sentinel-2 product once and cut the patches
+   out of it? Think about request count, total bytes transferred, and code complexity.
+3. **Avoiding unnecessary bytes.** Each JP2 band file weighs 50–100 MB. How do you extract only
+   the 250×250 px window that belongs to a patch, without paying the full download cost — or at
+   least without paying it more than once per product?
+4. **Two S3 back-ends in the same script.** The source (CDSE EO S3, `eodata.dataspace.copernicus.eu`)
+   and the destination (your personal SSP Cloud bucket) are different S3 services with different
+   endpoints, different access keys, and very different latencies. How do you keep their
+   credentials and connections from interfering with each other?
+5. **Writing a multi-band GeoTIFF in memory.** Once you've extracted 13 resampled band arrays for
+   a patch, how do you package them as a single georeferenced GeoTIFF that you can upload in one
+   `put_object` request, *without* touching the local filesystem?
+6. **Reconstructing `filename2bbox.parquet` and resumability.** How is the tile index written, and
+   what's the mechanism that lets the script be interrupted after 300 of 600 tiles and resume
+   exactly where it left off on the next run — without re-downloading anything?
 :::
 
 ::: {.callout-tip collapse="true"}
 ## Answers
 
-1. **Defining the tile grid** — load the NUTS3 boundary as a shapely geometry (in EPSG:3035),
-   snap a regular grid to the nearest multiple of 2 500 m below the bounding box origin, then
-   iterate over all candidate 2 500 m × 2 500 m cells and keep only those whose `box` intersects
-   the NUTS3 polygon. Patches that partially extend beyond the boundary are kept — they will simply
-   contain pixels with no CLC+ class label (nodata = 0) at the edges. After processing, filename
-   and bbox for every patch are written to `filename2bbox.parquet` on personal S3.
+1. **Which API for product discovery?** → `find_s2_products()`. The script uses the
+   **[OData catalogue API](https://documentation.dataspace.copernicus.eu/APIs/OData.html)** because
+   it supports rich server-side filtering through a single `$filter` expression (product type,
+   geographic intersection, cloud cover, date range, online status) and returns the exact metadata
+   the script needs — including each product's `GeoFootprint` and its canonical `S3Path`. STAC is
+   excellent for generic catalogue browsing but doesn't expose the embedded attribute filters
+   (like `cloudCover`) as first-class query parameters. Sentinel Hub's Processing API is
+   image-oriented (returns rendered tiles) rather than metadata-oriented. For a batch script that
+   needs to *discover products first and then decide what to read*, OData is the cleanest fit.
 
-2. **Unit of download** — downloading per product tile is far more efficient. A single Sentinel-2
-   product (100 km × 100 km) contains 14 JP2 band files shared by hundreds of 2.5 km patches. The
-   CDSE EO S3 supports *range requests* via GDAL's `/vsis3/` virtual filesystem, so you can
-   window-read just the bytes that fall within each patch's bounding box — no need to download the
-   entire JP2. The overhead per patch drops from one full HTTP round-trip to a few kilobytes of
-   partial reads from already-open file handles.
+2. **Coarse-grained vs. fine-grained downloads.** → product-first loop in `main()`,
+   `open_band_readers()`. Downloading **per product** is dramatically more efficient. A single
+   product's 13 JP2 bands are shared by *hundreds* of 2.5 km patches within that product's 100 km
+   footprint. The script therefore downloads each product's bands exactly once, holds them open in
+   memory, and loops over all covered patches before moving on. Fine-grained per-patch downloads
+   would multiply request count and total bytes by orders of magnitude.
 
-3. **Multi-resolution bands** — rasterio's `read()` method accepts an `out_shape=(H, W)` argument.
-   When the requested window spans more (or fewer) source pixels than the output shape, rasterio
-   resamples on the fly. Using `out_shape=(250, 250)` for every band regardless of native
-   resolution automatically brings 20 m and 60 m bands up to the 10 m grid — no explicit
-   `reproject` or `resize` step is needed.
+3. **Avoiding unnecessary bytes.** → `open_band_readers()` + `read_patch()`. The script uses
+   `eo_fs.cat(s3_path)` to pull each JP2 into a `rasterio.MemoryFile` once per product. After
+   that, every patch is a cheap `rasterio` window read against the already-open in-memory reader —
+   no further network I/O. (GDAL's `/vsis3/` virtual filesystem would also support *partial* range
+   reads straight from S3, but eagerly downloading the JP2 wins whenever a product covers many
+   patches, which is the common case here.) The resulting per-patch read is ~250 px × 250 px ×
+   13 bands ≈ a few hundred KB of uncompressed raster out of ~700 MB of source data per product.
 
-4. **Multiple product tiles** — the OData API returns each product's geographic footprint as a
-   GeoJSON polygon. After querying for all products covering the region, you intersect each patch's
-   WGS84 bounding box with every product footprint using `shapely`. Only patches that intersect a
-   given product are processed when reading that product's JP2 files, so no patch is extracted from
-   a product that doesn't cover it.
+4. **Two S3 back-ends in the same script.** → `build_eo_fs()` and `build_personal_fs()`. The
+   script creates **two independent `s3fs.S3FileSystem` instances**, one per endpoint, each with
+   its own credentials. Because JP2 bytes are materialised into a `MemoryFile` before rasterio
+   opens them, rasterio never has to resolve a network URL and never mixes the two credential
+   sets. The destination bucket is accessed only through its own file system for `exists()` /
+   `open("wb")` calls.
 
-5. **Two S3 accounts** — `s3fs` and GDAL maintain their S3 configuration independently. The
-   personal S3 credentials live in system environment variables (`AWS_S3_ENDPOINT`, etc.) and are
-   read by `s3fs`. EO S3 credentials are injected into GDAL's configuration exclusively through a
-   `rasterio.env.Env(...)` context manager — they override GDAL's S3 settings only for the
-   duration of the window-read, then the context restores the previous state. The two credential
-   sets never collide.
+5. **Writing a multi-band GeoTIFF in memory.** → `patch_array_to_tiff_bytes()`. The script
+   relies on rasterio's `MemoryFile`: it opens an empty `MemoryFile()`, calls
+   `memfile.open(**profile)` to create a GeoTIFF dataset (specifying driver, dtype, width, height,
+   band count, CRS = EPSG:3035, affine transform derived from the patch bbox, deflate
+   compression), writes the `(13, H, W)` array, closes the inner dataset to flush the data to
+   GDAL's `/vsimem/` buffer, and finally calls `memfile.read()` to pull the encoded bytes back
+   out. Those bytes go straight into the upload call — no temp file on disk.
 
-6. **Resumability** — before starting any download work for a tile, the script checks whether both
-   the image and label files already exist on personal S3 with `fs.exists()`. If they do, the tile
-   is skipped. This means the script can be re-run after any interruption and will pick up exactly
-   where it left off without re-transferring data.
+6. **Reconstructing `filename2bbox.parquet` and resumability.** → tile-existence check in
+   `main()` + `tiles[['filename','bbox']].to_parquet(...)` at the end. The filename + bbox of
+   every candidate patch is known *up front* from the NUTS3-grid construction (`build_tile_grid`);
+   the parquet index is just that DataFrame written to personal S3 after processing. For
+   resumability, before any work on a patch the script calls `personal_fs.exists(...)` on both the
+   image `.tif` and the label `.npy`; if both are present it skips. This treats file-present as
+   "done", so the trade-off is that if a previous run produced corrupt tiles (e.g. before the CRS
+   fix in `read_patch`), you must delete those keys explicitly before re-running.
 :::
 
 The complete solution is provided in `final_solution/download_region.py` — a self-contained

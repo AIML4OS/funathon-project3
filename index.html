@@ -75,11 +75,17 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<script src="site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
 
 
 <meta property="og:title" content="Project 3 – Satellite Image Segmentation with Deep Learning – AIML4OS Funathon - Project 3">
 <meta property="og:description" content="Satellite images segmentation">
+<meta property="og:image" content="https://aiml4os.github.io/funathon-project3/assets/classification-example.png">
 <meta property="og:site_name" content="AIML4OS Funathon - Project 3">
+<meta property="og:image:height" content="212">
+<meta property="og:image:width" content="224">
 </head>
 
 <body class="nav-fixed quarto-light">
@@ -141,11 +147,9 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
-  <ul class="collapse">
-  <li><a href="#what-is-satellite-image-segmentation" id="toc-what-is-satellite-image-segmentation" class="nav-link" data-scroll-target="#what-is-satellite-image-segmentation">What is satellite image segmentation?</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#machine-learning-in-90-seconds" id="toc-machine-learning-in-90-seconds" class="nav-link" data-scroll-target="#machine-learning-in-90-seconds">Machine learning in 90 seconds</a></li>
   <li><a href="#what-you-will-learn" id="toc-what-you-will-learn" class="nav-link" data-scroll-target="#what-you-will-learn">What you will learn</a></li>
-  </ul></li>
   <li><a href="#structure-of-the-project" id="toc-structure-of-the-project" class="nav-link" data-scroll-target="#structure-of-the-project">Structure of the project</a></li>
   <li><a href="#initialization-of-the-project" id="toc-initialization-of-the-project" class="nav-link" data-scroll-target="#initialization-of-the-project">Initialization of the project</a>
   <ul class="collapse">
@@ -228,12 +232,52 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 </tbody>
 </table>
-<section id="introduction" class="level1 unnumbered">
-<h1 class="unnumbered">Introduction</h1>
+<section id="introduction" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="introduction">Introduction</h2>
 <p>Satellite imagery is one of the richest data sources available for understanding how land is used and how it changes over time. With this project, you will work with <strong>Sentinel-2</strong> multispectral images from the European Copernicus programme and use a <strong>deep learning model (SegFormer)</strong> to perform <strong>semantic segmentation</strong> : classifying every pixel in an image into a land-cover category.</p>
-<section id="what-is-satellite-image-segmentation" class="level2">
-<h2 class="anchored" data-anchor-id="what-is-satellite-image-segmentation">What is satellite image segmentation?</h2>
-<p>A <em>segmentation mask</em> assigns a class label to each pixel in an image. In the context of land-cover mapping, those classes correspond to categories such as <em>sealed surfaces</em> (buildings, roads), <em>forests</em>, <em>cropland</em>, or <em>water</em>… The ground-truth labels we use come from <a href="https://land.copernicus.eu/en/products/clc-backbone"><strong>CLC+ Backbone</strong></a>, a high-resolution land-cover product produced by the Copernicus Land Monitoring Service covering the whole of Europe.</p>
+</section>
+<section id="machine-learning-in-90-seconds" class="level2">
+<h2 class="anchored" data-anchor-id="machine-learning-in-90-seconds">Machine learning in 90 seconds</h2>
+<p>If you haven’t worked with machine learning before, here is the whole idea of this project in one paragraph.</p>
+<p><strong>Supervised learning</strong> means showing a model many <em>(input, correct-answer)</em> pairs and letting it figure out the mapping between them on its own. Once trained, we feed it a brand-new input and it predicts the answer. In this project, the inputs are Sentinel-2 satellite tiles and the answers are land-cover maps from <a href="https://land.copernicus.eu/en/products/clc-backbone"><strong>CLC+ Backbone</strong></a>, a high-resolution land-cover product produced by the Copernicus Land Monitoring Service covering the whole of Europe.</p>
+<div class="cell" data-eval="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    A["🛰️ Images"] --&gt; M
+    B["🗺️ Labels"] --&gt; M
+    M["Model(SegFormer)"] --&gt;|learns from pairs| T["Trainedmodel"]
+    N["🛰️ New image"] --&gt; T
+    T --&gt; P["🗺️ Predicted label"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p><strong>Classification vs.&nbsp;semantic segmentation.</strong> Most introductory ML examples deal with <em>classification</em> — one label for a whole image (<em>“this is a cat”</em>). Land-cover mapping needs something finer: <strong>semantic segmentation</strong>, where the model assigns a class to <em>every pixel</em>, producing a colored mask the same shape as the input. We don’t just want to know <em>“there is forest in this tile”</em> — we want to know exactly <strong>which pixels</strong> are forest, which are water, and which are buildings.</p>
+<div class="quarto-layout-panel" data-layout-ncol="2">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/classification-example.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Classification</strong> — one label for the whole image.</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/segmentation-example.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Semantic segmentation</strong> — one label per pixel.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
 </section>
 <section id="what-you-will-learn" class="level2">
 <h2 class="anchored" data-anchor-id="what-you-will-learn">What you will learn</h2>
@@ -247,7 +291,6 @@ ul.task-list li input[type="checkbox"] {
 <li>Compute regional statistics (area by class, artificialization rates) using administrative boundaries</li>
 <li><em>(Optional)</em> Train a segmentation model from scratch</li>
 </ul>
-</section>
 </section>
 <section id="structure-of-the-project" class="level1">
 <h1>Structure of the project</h1>

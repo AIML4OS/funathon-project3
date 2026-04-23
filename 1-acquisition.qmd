@@ -810,7 +810,7 @@ The workflow is straightforward: read the parquet file, extract the city's EPSG:
 Here is a complete example that continues from the Luxembourg geocoding above:
 
 ```{python}
-#| eval: false
+#| eval: true
 
 import pandas as pd
 import rasterio
@@ -2731,7 +2731,7 @@ print(f"Downloaded {products[0]['Name']}")
 
 # Downloading an Entire NUTS Region (Optional)
 
-::: {.callout-note collapse="true"}
+::: {.callout-note collapse="true" title="Optional - Click to expand"}
 
 The exercises above worked with individual tiles — one image, one label at a time.
 Building a production-ready training dataset means repeating this process for every

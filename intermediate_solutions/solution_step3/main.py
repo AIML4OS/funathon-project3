@@ -23,6 +23,7 @@ from rasterio.warp import transform_bounds
 import s3fs
 import tempfile
 from pathlib import Path
+import pandas as pd
 
 from utils import (
     create_geojson_from_mask,
@@ -833,18 +834,20 @@ plt.show()
 #   3. Print the number of polygons and the first rows
 #   4. Display on a Folium map with per-class colouring
 # ============================================================
+nuts_id = "LU000"
+year    = 2024
 
 response_nuts = requests.get(
     f"{api_url}/__",  # TODO: endpoint name (str), e.g. "predict_nuts"
     params={
-        "nuts_id": __,  # TODO: NUTS3 identifier (str), e.g. "LU000"
-        "year": __,    # TODO: year (int, between 2018 and 2024)
+        "nuts_id": "__",  # TODO: NUTS3 identifier (str), e.g. "LU000"
+        "year":    __,    # TODO: year (int, between 2018 and 2024)
     },
 )
 response_nuts.raise_for_status()
 
 gdf_nuts = gpd.GeoDataFrame.from_features(
-    json.loads(response_nuts.json()["predictions"])["features"],  # parse GeoJSON string → dict → features
+    json.loads(response_nuts.json())["features"],  # parse GeoJSON string → dict → features
     crs="EPSG:3035",
 )
 
@@ -852,12 +855,14 @@ print(f"{len(gdf_nuts)} polygons received")
 print(gdf_nuts.head())
 
 gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
-nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
+nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 
 m_nuts = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
 
+# Layer 1 — Predictions
+fg_pred = folium.FeatureGroup(name="__", show=__)  # TODO: layer name (str), visible by default (bool)
 folium.GeoJson(
-    __,  # TODO: reprojected NUTS3 GeoDataFrame (gdf_nuts_wgs84)
+    __,  # TODO: reprojected NUTS3 GeoDataFrame
     style_function=lambda feature: {
         "fillColor": __,  # TODO: use label_to_color to colour by label
         "color": "black",
@@ -865,7 +870,30 @@ folium.GeoJson(
         "fillOpacity": 0.6,
     },
     tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
-).add_to(m_nuts)
+).add_to(__)  # TODO: add to fg_pred
+__.add_to(m_nuts)  # TODO: add fg_pred to map
+
+# Layer 2 — Satellite images (one ImageOverlay per tile)
+minio_url = "https://minio.lab.sspcloud.fr/"
+s3_base   = f"projet-funathon/2026/project3/data/images/__/__/"  # TODO: nuts3, year
+
+fg_img = folium.FeatureGroup(name="__", show=__)  # TODO: layer name (str), visible by default (bool)
+
+url_filenames = minio_url + s3_base + "filename2bbox.parquet"
+df_filenames = pd.read_parquet(url_filenames)
+tile_filenames = df_filenames.filename.tolist()
+
+for filename in tile_filenames:
+    si       = get_satellite_image(minio_url + s3_base + filename, n_bands=__)  # TODO: n_bands
+    rgb_tile = np.transpose(si["array"][[3, 2, 1]], (1, 2, 0)).astype(np.float32)
+    p98      = np.percentile(rgb_tile, 98)
+    rgb_tile = np.clip(rgb_tile / p98, 0, 1)
+    w, s, e, n = transform_bounds(si["__"], "EPSG:4326", *si["__"])  # TODO: crs and bounds keys
+    ImageOverlay(image=rgb_tile, bounds=[[s, w], [n, e]], opacity=0.7).add_to(__)  # TODO: fg_img
+
+__.add_to(m_nuts)  # TODO: add fg_img to map
+
+folium.LayerControl(collapsed=__).add_to(m_nuts)  # TODO: collapsed (bool)
 
 m_nuts
 
@@ -905,6 +933,8 @@ m_nuts
 
 # m_nuts = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
 
+# # Layer 1 — Predictions
+# fg_pred = folium.FeatureGroup(name="Predicted polygons", show=True)
 # folium.GeoJson(
 #     gdf_nuts_wgs84,
 #     style_function=lambda feature: {
@@ -914,7 +944,30 @@ m_nuts
 #         "fillOpacity": 0.6,
 #     },
 #     tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
-# ).add_to(m_nuts)
+# ).add_to(fg_pred)
+# fg_pred.add_to(m_nuts)
+
+# # Layer 2 — Satellite images (one ImageOverlay per tile)
+# minio_url = "https://minio.lab.sspcloud.fr/"
+# s3_base   = f"projet-funathon/2026/project3/data/images/{nuts_id}/{year}/"
+
+# fg_img = folium.FeatureGroup(name="Sentinel-2 RGB", show=False)
+
+# url_filenames = minio_url + s3_base + "filename2bbox.parquet"
+# df_filenames = pd.read_parquet(url_filenames)
+# tile_filenames = df_filenames.filename.tolist()
+
+# for filename in tile_filenames:
+#     si       = get_satellite_image(minio_url + s3_base + filename, n_bands=14)
+#     rgb_tile = np.transpose(si["array"][[3, 2, 1]], (1, 2, 0)).astype(np.float32)
+#     p98      = np.percentile(rgb_tile, 98)
+#     rgb_tile = np.clip(rgb_tile / p98, 0, 1)
+#     w, s, e, n = transform_bounds(si["crs"], "EPSG:4326", *si["bounds"])
+#     ImageOverlay(image=rgb_tile, bounds=[[s, w], [n, e]], opacity=0.7).add_to(fg_img)
+
+# fg_img.add_to(m_nuts)
+
+# folium.LayerControl(collapsed=False).add_to(m_nuts)
 
 # m_nuts
 # ------------------------------------------------------------

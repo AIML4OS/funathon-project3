@@ -1174,6 +1174,9 @@ and save it to a Parquet file.
 
 ```{python}
 #| eval: false
+nuts_id = "LU000"
+year    = 2024
+
 response_nuts = requests.get(
     f"{api_url}/__",  # TODO: endpoint name (str), e.g. "predict_nuts"
     params={
@@ -1220,11 +1223,13 @@ __.add_to(m_nuts)  # TODO: add fg_pred to map
 
 # Layer 2 — Satellite images (one ImageOverlay per tile)
 minio_url = "https://minio.lab.sspcloud.fr/"
-s3_base   = "projet-funathon/2026/project3/data/images/LU000/2024/"
+s3_base   = f"projet-funathon/2026/project3/data/images/__/__/"  # TODO: nuts3, year
 
 fg_img = folium.FeatureGroup(name="__", show=__)  # TODO: layer name (str), visible by default (bool)
 
-tile_filenames = gdf_nuts["__"].unique().tolist()  # TODO: column containing tile filenames
+url_filenames = minio_url + s3_base + "filename2bbox.parquet"
+df_filenames = pd.read_parquet(url_filenames)
+tile_filenames = df_filenames.filename.tolist()
 
 for filename in tile_filenames:
     si       = get_satellite_image(minio_url + s3_base + filename, n_bands=__)  # TODO: n_bands
@@ -1288,9 +1293,6 @@ from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds
 import numpy as np
 
-nuts_id = "LU000"
-year    = 2024
-
 gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
 nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 
@@ -1312,11 +1314,13 @@ fg_pred.add_to(m_nuts)
 
 # Layer 2 — Satellite images (one ImageOverlay per tile)
 minio_url = "https://minio.lab.sspcloud.fr/"
-s3_base   = "projet-funathon/2026/project3/data/images/LU000/2024/"
+s3_base   = f"projet-funathon/2026/project3/data/images/{nuts_id}/{year}/"
 
 fg_img = folium.FeatureGroup(name="Sentinel-2 RGB", show=False)
 
-tile_filenames = gdf_nuts["filename"].unique().tolist()
+url_filenames = minio_url + s3_base + "filename2bbox.parquet"
+df_filenames = pd.read_parquet(url_filenames)
+tile_filenames = df_filenames.filename.tolist()
 
 for filename in tile_filenames:
     si       = get_satellite_image(minio_url + s3_base + filename, n_bands=14)

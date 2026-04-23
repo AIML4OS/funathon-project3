@@ -11,15 +11,12 @@ author:
   affiliations:
       - name: "[Insee](https://www.insee.fr/fr/accueil)"
 - name: Meilame Tayebjee
-  email: cedric.couralet@insee.fr
+  email: meilame.tayebjee@insee.fr
   affiliations:
       - name: "[Insee](https://www.insee.fr/fr/accueil)"
 format:
   html:
-    number-sections: true
-editor: visual
-editor_options:
-  chunk_output_type: console
+    number-sections: false
 ---
 
 ```{=html}
@@ -33,15 +30,19 @@ editor_options:
   <tbody>
     <tr>
       <td><span class="level-button level-beginner">Beginner</span></td>
-      <td>Doing the exercises of steps 1 and 3, relying on clues and solutions if needed.</td>
+      <td>Doing the exercises of steps 1, 3 and 4, relying on clues and solutions if needed.</td>
     </tr>
     <tr>
       <td><span class="level-button level-intermediate">Intermediate</span></td>
-      <td>Doing the exercises of steps 1 to 3, without relying on clues and solutions.</td>
+      <td>Doing the exercises of steps 1 to 4 </td>
     </tr>
     <tr>
       <td><span class="level-button level-expert">Expert</span></td>
+<<<<<<< HEAD
       <td>Doing the exercises of steps 1 to 4, without relying on clues and solutions.</td>
+=======
+      <td>Doing the exercises of steps 1 to 4, without relying on clues and solutions</td>
+>>>>>>> main
     </tr>
   </tbody>
 </table>
@@ -59,37 +60,34 @@ A *segmentation mask* assigns a class label to each pixel in an image. In the co
 
 By completing this project you will learn to:
 
--   Download and manipulate satellite imagery and land-cover labels
--   Understand the structure of multispectral raster data (bands, CRS, bounding boxes)
--   Manipulate geodata and associate it to maps
--   Run inference with a pre-trained SegFormer model to produce land-cover maps
--   Compute regional statistics (area by class, artificialization rates) using administrative boundaries
--   *(Optional)* Train a segmentation model with PyTorch Lightning
--   *(Optional)* Deploy an interactive dashboard to explore the results
+- Download and manipulate satellite imagery and land-cover labels
+- *(Optional)* Use CDSE interfaces to fetch Sentinel2 images
+- Understand the structure of multispectral raster data (bands, CRS, bounding boxes)
+- Manipulate geodata and associate it to maps
+- Run inference with a pre-trained SegFormer model to produce land-cover maps
+- Compute regional statistics (area by class, artificialization rates) using administrative boundaries
+- *(Optional)* Train a segmentation model from scratch
 
 # Structure of the project
 
 This project has four sections (listed in the banner at the top of the page):
 
 1.  **Data Acquisition & Manipulation** -- Download Sentinel-2 images and CLC+ labels, visualise and manipulate raster data.
+<<<<<<< HEAD
 2.  **Model Training** *(optional)* -- Understand the SegFormer architecture and how the segmentation model was trained.
 3.  **Inference** -- Use a pre-trained model to produce land-cover maps.
 4.  **Statistics** *(optional)* -- Compute regional statistics based on the predictions.
+=======
+2.  **Model Training** *(optional)* -- Understand the SegFormer architecture and how the segmentation model was trained (and train a model by yourself)
+3.  **Inference** -- Use a pre-trained model to produce land-cover maps.
+4.  **Statistics** -- Use the predictions to compute regional statistics.
+>>>>>>> main
 
 # Initialization of the project
 
-## fork the github project in your own account with `Git` {{< fa brands git-alt >}}
+Create a [Vscode-python](https://datalab.sspcloud.fr/launcher/ide/vscode-python) service on SSP Cloud.
 
-This will facilitate modification and tests :
-
-https://github.com/AIML4OS/funathon-project3/fork
-
-::: {.callout-note appearance="simple"}
-## Getting started on SSP Cloud
-
-[Vscode-python](https://datalab.sspcloud.fr/launcher/ide/vscode-python).
-
-Create a VScode service on SSP Cloud. In the service, open a terminal by clicking on {{< fa brands fa-bars >}}, then `Terminal > New Terminal`. Clone the project repository with:
+In the service, open a terminal by clicking on {{< fa brands fa-bars >}}, then `Terminal > New Terminal`. Clone the project repository with:
 
 ```
 git clone https://github.com/AIML4OS/funathon-project3.git
@@ -97,12 +95,13 @@ git clone https://github.com/AIML4OS/funathon-project3.git
 
 Structure of the project:
 
--   The `.qmd` files and the `_quarto.yaml` file are necessary to build the website;
--   The file `pyproject.toml` describes the dependencies of the project;
--   The `starting_point/` folder contains exercise templates with TODO blanks;
--   Intermediate solutions to the exercises are available in the `intermediate_solutions/` folder;
--   The final solution is available in the `final_solution/` folder.
+- The `.qmd` files and the `_quarto.yaml` file are necessary to build the website;
+- The file `pyproject.toml` describes the dependencies of the project;
+- The `starting_point/` folder contains exercise templates to complete.
+- final solutions are available in the `final_solution/` folder.
 :::
+
+
 
 ## Installation of dependencies
 
@@ -111,3 +110,18 @@ Install the project dependencies by running the following command in the termina
 ```
 source ./init.sh
 ```
+
+## Working on the exercises
+
+The exercise templates in `starting_point/` are Python files split into **cells** delimited by `# %%` comments. Each cell corresponds to one exercise from the tutorial pages.
+
+To execute them interactively:
+
+1. Open a `.py` file from `starting_point/` in VSCode
+2. VSCode recognises `# %%` markers and displays a **"Run Cell"** button above each one
+3. Click **Run Cell** (or press `Ctrl+Enter` / `Shift+Enter`) to execute a single cell in an interactive Python window
+4. Write your solution code under the corresponding `# %%` header, then run the cell to test it
+
+::: {.callout-tip}
+The tutorial pages (`.qmd` files) contain the full exercise descriptions, hints, and solutions. Use them as reference while working in the `.py` files.
+:::

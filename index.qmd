@@ -44,13 +44,32 @@ format:
 </table>
 ```
 
-# Introduction {.unnumbered}
+## Introduction {.unnumbered}
 
 Satellite imagery is one of the richest data sources available for understanding how land is used and how it changes over time. With this project, you will work with **Sentinel-2** multispectral images from the European Copernicus programme and use a **deep learning model (SegFormer)** to perform **semantic segmentation** : classifying every pixel in an image into a land-cover category.
 
-## What is satellite image segmentation?
+## Machine learning in 90 seconds
 
-A *segmentation mask* assigns a class label to each pixel in an image. In the context of land-cover mapping, those classes correspond to categories such as *sealed surfaces* (buildings, roads), *forests*, *cropland*, or *water*... The ground-truth labels we use come from [**CLC+ Backbone**](https://land.copernicus.eu/en/products/clc-backbone), a high-resolution land-cover product produced by the Copernicus Land Monitoring Service covering the whole of Europe.
+If you haven't worked with machine learning before, here is the whole idea of this project in one paragraph.
+
+**Supervised learning** means showing a model many *(input, correct-answer)* pairs and letting it figure out the mapping between them on its own. Once trained, we feed it a brand-new input and it predicts the answer. In this project, the inputs are Sentinel-2 satellite tiles and the answers are land-cover maps from [**CLC+ Backbone**](https://land.copernicus.eu/en/products/clc-backbone), a high-resolution land-cover product produced by the Copernicus Land Monitoring Service covering the whole of Europe.
+
+```{mermaid}
+flowchart LR
+    A["🛰️ Images"] --> M
+    B["🗺️ Labels"] --> M
+    M["Model(SegFormer)"] -->|learns from pairs| T["Trainedmodel"]
+    N["🛰️ New image"] --> T
+    T --> P["🗺️ Predicted label"]
+```
+
+**Classification vs. semantic segmentation.** Most introductory ML examples deal with *classification* — one label for a whole image (*"this is a cat"*). Land-cover mapping needs something finer: **semantic segmentation**, where the model assigns a class to *every pixel*, producing a colored mask the same shape as the input. We don't just want to know *"there is forest in this tile"* — we want to know exactly **which pixels** are forest, which are water, and which are buildings.
+
+::: {layout-ncol=2}
+![**Classification** — one label for the whole image.](assets/classification-example.png)
+
+![**Semantic segmentation** — one label per pixel.](assets/segmentation-example.png)
+:::
 
 ## What you will learn
 

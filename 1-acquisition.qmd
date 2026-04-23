@@ -1439,7 +1439,7 @@ import numpy as np
 label_url = (
     "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
     "funathon/2026/project3/data/labels/LU000/"
-    "2021/4017000_2974190_0_402.npy"
+    "2021/4042000_2951690_0_637.npy"
 )
 
 with urllib.request.urlopen(label_url) as response:
@@ -1479,7 +1479,7 @@ cmap = ListedColormap([color for _, color in classes])
 image_url = (
     "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
     "funathon/2026/project3/data/images/LU000/"
-    "2021/4017000_2974190_0_402.tif"
+    "2021/4042000_2951690_0_637.tif"
 )
 with rasterio.open(image_url) as src:
     rgb_data = src.read([4, 3, 2])
@@ -1552,7 +1552,7 @@ from matplotlib.colors import ListedColormap
 # Step 1: Choose your tile
 nuts_code = ___  # TODO: e.g. "LU000"
 year = ___        # TODO: e.g. 2021
-patch_id = ___    # TODO: e.g. "4017000_2974190_0_402"
+patch_id = ___    # TODO: e.g. "4042000_2951690_0_637"
 
 # Step 2: Build the label URL
 label_url = ___  # TODO: f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{nuts_code}/{year}/{patch_id}.npy"
@@ -1593,7 +1593,7 @@ from matplotlib.colors import ListedColormap
 
 nuts_code = "LU000"
 year = 2021
-patch_id = "4017000_2974190_0_402"
+patch_id = "4042000_2951690_0_637"
 
 label_url = f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/labels/{nuts_code}/{year}/{patch_id}.npy"
 
@@ -1603,10 +1603,20 @@ with urllib.request.urlopen(label_url) as response:
 print(f"Shape: {my_label.shape}")
 print(f"Classes: {np.unique(my_label)}")
 
-cmap = ListedColormap([
-    "#FF0100", "#238B23", "#80FF00", "#00FF00", "#804000",
-    "#CCF24E", "#FEFF80", "#FF81FF", "#BFBFBF", "#0080FF",
-])
+cmap = ListedColormap(
+    [
+        "#FF0100",
+        "#238B23",
+        "#80FF00",
+        "#00FF00",
+        "#804000",
+        "#CCF24E",
+        "#FEFF80",
+        "#FF81FF",
+        "#BFBFBF",
+        "#0080FF",
+    ]
+)
 
 fig, ax = plt.subplots(figsize=(5, 5))
 ax.imshow(my_label, cmap=cmap, vmin=1, vmax=10)
@@ -1766,7 +1776,7 @@ rgb_overlay = np.clip(rgb_overlay / np.percentile(rgb_overlay, 98), 0, 1)
 label_url = (
     "https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
     "funathon/2026/project3/data/labels/LU000/"
-    "2021/4017000_2974190_0_402.npy"
+    "2021/4042000_2951690_0_637.npy"
 )
 with urllib.request.urlopen(label_url) as response:
     label = np.load(io.BytesIO(response.read()))
@@ -2131,7 +2141,7 @@ process_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
 evalscript = """
 //VERSION=3
 function setup() {
-  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "UINT16" } };
+  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "AUTO" } };
 }
 function evaluatePixel(sample) {
   return [sample.B04, sample.B03, sample.B02];
@@ -2232,7 +2242,7 @@ process_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
 evalscript = """
 //VERSION=3
 function setup() {
-  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "UINT16" } };
+  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "AUTO" } };
 }
 function evaluatePixel(sample) {
   return [sample.B04, sample.B03, sample.B02];
@@ -2341,7 +2351,7 @@ process_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
 evalscript = """
 //VERSION=3
 function setup() {
-  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "UINT16" } };
+  return { input: ["B04", "B03", "B02"], output: { bands: 3, sampleType: "AUTO" } };
 }
 function evaluatePixel(sample) {
   return [sample.B04, sample.B03, sample.B02];
@@ -2354,16 +2364,18 @@ request_body = {
             "bbox": bbox,
             "properties": {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"},
         },
-        "data": [{
-            "type": "sentinel-2-l2a",
-            "dataFilter": {
-                "timeRange": {
-                    "from": "2024-06-01T00:00:00Z",
-                    "to": "2024-08-31T23:59:59Z",
+        "data": [
+            {
+                "type": "sentinel-2-l2a",
+                "dataFilter": {
+                    "timeRange": {
+                        "from": "2024-06-01T00:00:00Z",
+                        "to": "2024-08-31T23:59:59Z",
+                    },
+                    "maxCloudCoverage": 20,
                 },
-                "maxCloudCoverage": 20,
-            },
-        }],
+            }
+        ],
     },
     "output": {
         "width": 512,
@@ -2715,7 +2727,11 @@ print(f"Downloaded {products[0]['Name']}")
 ```
 :::
 
-# Downloading an Entire NUTS Region
+:::
+
+# Downloading an Entire NUTS Region (Optional)
+
+::: {.callout-note collapse="true"}
 
 The exercises above worked with individual tiles — one image, one label at a time.
 Building a production-ready training dataset means repeating this process for every

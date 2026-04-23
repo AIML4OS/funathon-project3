@@ -55,6 +55,7 @@ If you haven't worked with machine learning before, here is the whole idea of th
 **Supervised learning** means showing a model many *(input, correct-answer)* pairs and letting it figure out the mapping between them on its own. Once trained, we feed it a brand-new input and it predicts the answer. In this project, the inputs are Sentinel-2 satellite tiles and the answers are land-cover maps from [**CLC+ Backbone**](https://land.copernicus.eu/en/products/clc-backbone), a high-resolution land-cover product produced by the Copernicus Land Monitoring Service covering the whole of Europe.
 
 ```{mermaid}
+%%| eval: true
 flowchart LR
     A["🛰️ Images"] --> M
     B["🗺️ Labels"] --> M

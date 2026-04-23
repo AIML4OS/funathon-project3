@@ -12,6 +12,7 @@ format:
 Training a segmentation model needs a dataset of `(image, label)` pairs — satellite tiles on one side, land-cover maps on the other. **This chapter builds that dataset.** By the end, you'll know how to pull a Sentinel-2 tile for any European city, fetch its matching CLC+ label, and confirm the two are perfectly aligned pixel-for-pixel.
 
 ```{mermaid}
+%%| eval: true
 flowchart LR
     C1["Chapter 1Build the(image, label) dataset"]:::current
     C2["Chapter 2 (optional)Train a modelon the dataset"]
@@ -102,7 +103,7 @@ Key concepts:
 
 - **Raster** = a grid of pixels organised into **bands** (layers). Each band represents one channel of data (e.g. a spectral band from a satellite sensor).
 - `rasterio.open(path)` returns a `DatasetReader` — works with local files and HTTPS URLs alike.
-- `src.read(bands)` returns a NumPy array with shape `(bands, H, W)` — this is the **CHW** (Channel, Height, Width) convention. For display with `matplotlib`, you need to **transpose** to `(H, W, C)` — the **HWC** convention — using `np.transpose(array, (1, 2, 0))`.
+- `src.read(bands)` returns a NumPy array with shape `(bands, H, W)` — this is the **CHW** (Channel, Height, Width) convention, used by rasterio, PyTorch, and most deep learning frameworks. For display with `matplotlib` (or PIL), you need to **transpose** to `(H, W, C)` — the **HWC** (Height, Width, Channel) convention — using `np.transpose(array, (1, 2, 0))`. Expect to move between the two conventions constantly: CHW when feeding arrays to a model, HWC when plotting them.
 - `src.crs` — the coordinate reference system attached to the raster.
 - `src.bounds` — the geographic extent as `(left, bottom, right, top)`.
 - `src.profile` / `src.meta` — full metadata dictionary (driver, dtype, nodata value, affine transform, etc.).
@@ -165,8 +166,10 @@ print(f"Shape:  {tile_count} bands x {tile_height} x {tile_width} px")
  The pre-processed GeoTIFF files used here contain **14 bands**: the 13 spectral bands from Sentinel2 plus a **Scene Classification Layer (SCL)** stored as band 14. The SCL is a derived quality mask that classifies each pixel as cloud, shadow, vegetation, water, etc. — it is not a spectral band and we will not use it.
 :::
 
+Now let's display the tile as an **RGB composite** (true-colour: Red, Green, Blue).
 
-Now let's display the tile as an **RGB composite** (true-colour: Red, Green, Blue):
+**A quick word on display normalization.** Raw Sentinel-2 L2A surface reflectance is stored as 16-bit integers on a 0–10 000 scale. `matplotlib` expects RGB values in `[0, 1]`, so passing the raw array directly produces an almost-black image. We fix this with a standard *percent-clip contrast stretch*: divide every pixel by the 98th percentile of the image (so ~98 % of pixels fall into `[0, 1]`) and then clamp the top 2 % to `1`. This is the same idea as the "percent clip" stretch in QGIS or ArcGIS — it's robust to the handful of extremely bright outliers (clouds, specular reflections, sensor artefacts) that would otherwise compress the rest of the image into a dark band.
+
 
 ```{python}
 # | eval: true
@@ -187,27 +190,17 @@ plt.tight_layout()
 plt.show()
 ```
 
-::: {.callout-note collapse="true" title=""}
-The lines :
+::: {.callout-note collapse="true" title="Line-by-line breakdown (and what happens without normalization)"}
 
-```python
-rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
-p98 = np.percentile(rgb, 98)
-rgb = np.clip(rgb / p98, 0, 1)
-```
+- `np.transpose(rgb_data, (1, 2, 0))` — rearranges from rasterio's `(bands, height, width)` to matplotlib's expected `(height, width, bands)`.
+- `np.percentile(rgb, 98)` — the 98th percentile of all pixel values, used instead of the true maximum so that a few bright outliers don't dominate the scale.
+- `np.clip(rgb / p98, 0, 1)` — rescales so ~98 % of pixels fall into `[0, 1]` and clamps the top 2 % to white.
 
-serve as a display normalization routine for Sentinel-2 imagery. Here's what each line does:
-
-- `np.transpose(rgb_data, (1, 2, 0))` — Rearranges the array from rasterio's native shape (bands, height, width) to (height, width, bands), which is what matplotlib/PIL expect for displaying an RGB image.
-- `np.percentile(rgb, 98)` — Finds the 98th percentile value across all pixels. This is used instead of the actual maximum because Sentinel-2 reflectance data often has a few extremely bright outlier pixels (clouds, specular reflections, sensor artifacts) that would otherwise compress the rest of the image into a very dark range.
-- `np.clip(rgb / p98, 0, 1)` — Divides all pixel values by that 98th percentile (so that ~98% of pixels fall in the 0–1 range), then clamps everything to [0, 1]. The top 2% of brightest pixels get clipped to white.
-
-In short, it's a contrast stretch. Raw Sentinel-2 L2A surface reflectance values are typically 16-bit integers (0–10,000 scale), which look almost entirely black if you display them directly. This technique maps the usable dynamic range to [0, 1] in a way that produces a visually pleasing true-color image, while being robust to outliers — essentially the same idea as the "percent clip" stretch in QGIS or ArcGIS.
-
-Without those lines, the image is a lot darker :
+Without those three lines, the raw 16-bit data displays like this:
 
 ```{python}
 #| eval: true
+#| output: false
 
 import matplotlib.pyplot as plt
 
@@ -565,10 +558,9 @@ The equivalent **S3 path** is:
 s3://projet-funathon/2026/project3/data/images/{NUTS}/{year}/{patch_id}.tif
 ```
 
-Each pre-processed patch is a GeoTIFF covering a **250 x 250 pixel** area (2 500 m at 10 m resolution). The URL path encodes the key metadata:
-
+Each pre-processed patch is a GeoTIFF covering a **250 x 250 pixel** area (2 500 m at 10 m resolution). That size is a practical compromise: large enough to give the segmentation model meaningful spatial context (parcel boundaries, roads, forest edges, river meanders), small enough to fit many patches per GPU batch during training, and small enough that a whole NUTS3 region can be tiled into a few hundred patches rather than a few million. The URL path encodes the key metadata:
 ```
-.../SENTINEL2/{NUTS}/{year}/{xmin}_{ymin}_{idx}_{id}.tif
+...images/{NUTS}/{year}/{xmin}_{ymin}_{idx}_{id}.tif
 ```
 
 | Field | Example value | Meaning |
@@ -621,6 +613,10 @@ The HTTPS URLs work from anywhere without credentials — great for reading indi
 | SE110 | Stockholms län (Stockholm) | Sweden |
 | SI041 | Osrednjeslovenska (Ljubljana area) | Slovenia |
 | SK010 | Bratislavský kraj (Bratislava) | Slovakia |
+
+::: {.callout-note}
+**Scale of the dataset and class imbalance.** Across the 27 pre-processed NUTS3 regions and the available years (2021 and 2024), the dataset contains roughly **15 000–20 000 `(image, label)` patches** — a comfortable size for training a segmentation model on a single GPU. Because these regions are built around European capital cities, the 10 CLC+ classes are *not* evenly represented: *sealed surfaces*, *permanent herbaceous* and *periodically herbaceous* dominate, while *lichens and mosses* or *broadleaved evergreen trees* are rare or completely absent in most tiles. This **class imbalance** is a first-order concern when training a segmentation model — naive training will optimise for the common classes and ignore the rare ones.
+:::
 
 :::
 
@@ -1437,7 +1433,7 @@ In supervised machine learning, you need **pairs** of inputs and labels to train
 
 CLC+ Backbone provides **pixel-level** land-cover classification across Europe at **10 m resolution**, making it an ideal ground-truth dataset for training and evaluating segmentation models. The labels are temporally aligned with the satellite imagery (same year), ensuring that the land-cover classification corresponds to what the satellite actually observed.
 
-We will be using the label from **2021** to train our model.
+**Why 2021?** CLC+ Backbone's most recent public release at the time of writing is the **2021** edition, so that's the year we use for labels. Each label is paired with a Sentinel-2 image from the **same year** — land cover actually changes between years (new construction, deforestation, crop rotation), and mismatched pairs would teach the model to predict yesterday's ground truth for today's image. The 2024 Sentinel-2 imagery you saw in the earlier exercises is kept for Chapter 3, where we run the trained model on *new* images that have no label — which is the whole point of training a model in the first place.
 
 ## Land-cover classes
 
@@ -1480,7 +1476,13 @@ The label and image paths mirror each other — to find the label for a given im
 The `{patch_id}` encodes `{xmin}_{ymin}_{idx}_{id}` in EPSG:3035 metres and is identical between images and labels.
 
 ::: {.callout-note}
-**Loading `.npy` from a URL.** Unlike GeoTIFF files (which `rasterio` can open directly from a URL), `.npy` files must be fetched into memory first using `urllib.request.urlopen()` + `io.BytesIO` + `np.load()`. They contain no embedded CRS or bounds metadata — the spatial information is encoded in the filename and matches the corresponding image tile.
+**Loading `.npy` from a URL.** Unlike GeoTIFF files (which `rasterio` can open directly from a URL), `.npy` files must be fetched into memory first. The three-step idiom is:
+
+1. `urllib.request.urlopen(url)` — opens the remote URL and lets you call `.read()` on it to pull down the raw bytes.
+2. `io.BytesIO(response.read())` — wraps those raw bytes in an *in-memory file-like object*. This step exists because `np.load` expects something it can call `.read()` on (a file handle or an equivalent stream), not a plain `bytes` value.
+3. `np.load(...)` — parses that stream back into a NumPy array.
+
+`.npy` files contain no embedded CRS or bounds metadata — the spatial information is encoded in the filename and matches the corresponding image tile.
 :::
 
 ::: {.callout-tip}
@@ -1575,9 +1577,12 @@ plt.tight_layout()
 plt.show()
 ```
 
-## Label--image alignment
+## Label–image alignment — this is the training target
 
-The CLC+ labels and Sentinel-2 patches share the same CRS (EPSG:3035) and bounding box, which means they are **spatially aligned by construction**. Because images and labels share the naming convention `{xmin}_{ymin}_{idx}_{id}`, every pixel at position `(i, j)` in the label corresponds to the same 10 m ground cell as pixel `(i, j)` in the satellite image. This makes the dataset directly usable for training a segmentation model: the image is the input and the label is the target.
+**What you just displayed is exactly what the model is trained on.** The RGB image on the left is the *input*; the coloured mask on the right is the *target*. The entire goal of the segmentation model is this: given a new Sentinel-2 tile that the model has never seen, produce a mask of the same shape with the correct class at every pixel.
+
+This only works because the images and labels are **spatially aligned by construction**: they share the same CRS (EPSG:3035) and bounding box, and use identical filenames (`{xmin}_{ymin}_{idx}_{id}`). Pixel `(i, j)` in the label therefore refers to the same 10 m patch of ground as pixel `(i, j)` in the image — always. A large collection of such `(image, label)` pairs is exactly what Chapter 2 feeds to the model during training.
+
 
 ::: {.callout-caution}
 ## Exercise 9 — Load a CLC+ label from S3
@@ -1883,14 +1888,38 @@ m
 :::
 
 
-# Acquiring CLC+ Labels from APIs (Optional)
+# Summary
+
+In this chapter you built the full data pipeline that feeds a land-cover segmentation model:
+
+| Step | What you did | Key tools |
+|------|-------------|-----------|
+| **Load & explore imagery** | Opened a Sentinel-2 GeoTIFF, read spectral bands, and inspected raster metadata | `rasterio` |
+| **Visualise composites** | Displayed true-colour and false-colour composites; computed NDVI | `numpy`, `matplotlib` |
+| **Geospatial manipulation** | Worked with CRS, built geometries, performed spatial joins, and plotted interactive maps | `geopandas`, `shapely`, `folium` |
+| **Navigate the tile index** | Geocoded a city with Nominatim, resolved its NUTS3 region, and found the covering tile with the `filename2bbox.parquet` index | `requests`, `geopandas` |
+| **Load CLC+ labels** | Downloaded pre-processed land-cover labels from S3 and paired them pixel-for-pixel with satellite images | `numpy`, `urllib` |
+| *(Optional)* **Acquire new data** | Downloaded CLC+ labels from the Copernicus ImageServer; queried and downloaded Sentinel-2 imagery from the Sentinel Hub and OData APIs | `requests`, `rasterio.io.MemoryFile` |
+
+## What's next?
+
+You now have aligned **image / label pairs** — the raw material for supervised learning. You can continue with either:
+
+- **[Model Training](2-model.qmd)** *(optional)* — train a SegFormer segmentation model on the Sentinel-2 / CLC+ pairs you assembled here.
+- **[Inference](3-inference.qmd)** — run a pre-trained model on new tiles, to map land cover predictions on newer images.
+
+If you're curious about where the pre-processed patches come from and how you would build them for a different region, the **[Appendix](#appendix-acquiring-data-from-source-apis)** walks through the full download pipeline from the original Copernicus APIs.
+
+# Appendix — Acquiring data from source APIs{.unnumbered}
+
+## Acquiring CLC+ Labels from APIs{.unnumbered}
 
 :::: {.callout-note collapse="true"}
-## Optional — Click to expand
+### Optional — Click to expand
 
 This section shows how to download CLC+ Backbone labels directly from the Copernicus Land Monitoring Service REST API and prepare them for the training pipeline. It is **not** needed for the rest of the sections — the pre-processed labels on S3 are sufficient.
 
-## Downloading from the Copernicus Land Monitoring Service ImageServer
+### Downloading from the Copernicus Land Monitoring Service ImageServer
 
 Labels can be downloaded directly from the Copernicus Land Monitoring Service using the ArcGIS ImageServer `exportImage` endpoint. No authentication is required. The bounding box must match the satellite tile extent exactly to ensure pixel-level alignment.
 
@@ -1936,7 +1965,7 @@ print(f"Label shape: {label_array.shape}, classes: {np.unique(label_array)}")
 ```
 
 ::: {.callout-caution}
-## Exercise 11 (optional) — Download a CLC+ label from the ImageServer API
+### Exercise 11 (optional) — Download a CLC+ label from the ImageServer API
 
 **Goal:** Query the Copernicus Land Monitoring Service ImageServer directly to download the CLC+ Backbone label matching a Sentinel-2 patch, and convert it to a NumPy array.
 
@@ -1990,7 +2019,7 @@ img_array[___] = 0  # TODO: (img_array == 254) | (img_array == 255)
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 11
+### Hint — Exercise 11
 
 - The ImageServer URL pattern: `https://copernicus.discomap.eea.europa.eu/arcgis/rest/services/CLC_plus/CLMS_CLCplus_RASTER_{year}_010m_eu/ImageServer/exportImage`
 - `bboxSR` and `imageSR` both set to `"3035"` keep the data in EPSG:3035 (metres).
@@ -2000,7 +2029,7 @@ img_array[___] = 0  # TODO: (img_array == 254) | (img_array == 255)
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 11
+### Solution — Exercise 11
 
 ```{python}
 #| eval: false
@@ -2042,7 +2071,7 @@ img_array[(img_array == 254) | (img_array == 255)] = 0
 ```
 :::
 
-## Uploading labels to S3
+### Uploading labels to S3
 
 The training pipeline in section 2 expects labels as NumPy `.npy` files stored on S3, following a specific path convention:
 
@@ -2055,7 +2084,7 @@ s3://projet-funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy
 ```
 
 ::: {.callout-caution}
-## Exercise 12 (optional) — Save the label as `.npy` and upload to S3
+### Exercise 12 (optional) — Save the label as `.npy` and upload to S3
 
 **Goal:** Save the label array from Exercise 11 as a `.npy` file and upload it to S3 in the path expected by the training pipeline.
 
@@ -2092,7 +2121,7 @@ print(fs.ls(___))  # TODO: S3 directory path (without filename)
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 12
+### Hint — Exercise 12
 
 - `np.save("file.npy", array)` saves a NumPy array to disk.
 - `get_file_system()` returns an `s3fs.S3FileSystem` configured with the SSP Cloud credentials.
@@ -2102,7 +2131,7 @@ print(fs.ls(___))  # TODO: S3 directory path (without filename)
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 12
+### Solution — Exercise 12
 
 ```{python}
 #| eval: false
@@ -2127,10 +2156,10 @@ print(fs.ls("projet-funathon/2026/project3/data/labels/LU000/2021"))
 ::::
 
 
-# Acquiring Sentinel-2 Data from APIs (Optional)
+## Acquiring Sentinel-2 Data from APIs{.unnumbered}
 
 :::: {.callout-note collapse="true"}
-## Optional — Click to expand
+### Optional — Click to expand
 
 This section is for users who want to query the Copernicus Data Space Ecosystem directly. It requires a free CDSE account and is not needed for the rest of the tutorial.
 
@@ -2149,7 +2178,7 @@ The official programmatic access point is the [Sentinel Hub API](https://documen
 
 To use the Sentinel Hub API you need a **free CDSE account** — register at <https://dataspace.copernicus.eu/>. Then, register an **OAuth client** in the [CDSE dashboard](https://shapps.dataspace.copernicus.eu/dashboard/#/account/settings) to obtain a **Client ID** and **Client Secret**.
 
-### Authentication
+#### Authentication
 
 Sentinel Hub uses OAuth2 client credentials. Authenticate with `oauthlib` and `requests_oauthlib`:
 
@@ -2171,7 +2200,7 @@ token = oauth.fetch_token(
 )
 ```
 
-### Searching the catalogue
+#### Searching the catalogue
 
 Use the **Catalog API** to find Sentinel-2 L2A products for a given area and date range:
 
@@ -2194,7 +2223,7 @@ results = response.json()
 print(f"Found {len(results['features'])} products")
 ```
 
-### Downloading imagery
+#### Downloading imagery
 
 Use the **Processing API** to download a true-colour Sentinel-2 image as a GeoTIFF:
 
@@ -2250,7 +2279,7 @@ with open("output.tif", "wb") as f:
 - **`filter`**: CQL2 expression for metadata filtering, e.g. `"eo:cloud_cover < 20"` keeps only scenes with under 20 % cloud cover.
 
 ::: {.callout-caution}
-## Exercise 13 (optional) — Geocode a city and download a Sentinel-2 image
+### Exercise 13 (optional) — Geocode a city and download a Sentinel-2 image
 
 **Goal:** Geocode a city of your choice using the Nominatim API, build a bounding box around it, and use the Sentinel Hub Processing API to download and display a true-colour Sentinel-2 image centred on that city.
 
@@ -2359,7 +2388,7 @@ plt.show()
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 13
+### Hint — Exercise 13
 
 - Nominatim: same call as Exercise 4 — `params={"q": city_name, "format": "json", "limit": 1}` with a `User-Agent` header.
 - Bbox: `[lon - delta, lat - delta, lon + delta, lat + delta]` with `delta = 0.05` gives a ~11 km × 11 km area (at mid-latitudes).
@@ -2370,7 +2399,7 @@ plt.show()
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 13
+### Solution — Exercise 13
 
 ```{python}
 #| eval: false
@@ -2484,7 +2513,7 @@ fs.put("./output.tif", "s3://my-bucket/sentinel2/output.tif")
 ```
 
 ::: {.callout-caution}
-## Exercise 14 (optional) — Save the downloaded tile to disk and upload to S3
+### Exercise 14 (optional) — Save the downloaded tile to disk and upload to S3
 
 **Goal:** Save the Sentinel-2 TIFF bytes from Exercise 13 to a local file and upload it to your personal S3 bucket so it can be shared with your team.
 
@@ -2518,7 +2547,7 @@ print(fs.ls(___))  # TODO: S3 directory (without filename)
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 14
+### Hint — Exercise 14
 
 - `response.content` from Exercise 13 holds the raw TIFF bytes — open the file in binary mode (`"wb"`).
 - `get_file_system()` returns an `s3fs.S3FileSystem` configured with the SSP Cloud credentials from environment variables.
@@ -2527,7 +2556,7 @@ print(fs.ls(___))  # TODO: S3 directory (without filename)
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 14
+### Solution — Exercise 14
 
 ```{python}
 #| eval: false
@@ -2545,7 +2574,7 @@ print(fs.ls("my-bucket/sentinel2"))
 ```
 :::
 
-### Mass download via OData API
+#### Mass download via OData API
 
 The [OData API](https://documentation.dataspace.copernicus.eu/APIs/OData.html) is an alternative interface to the CDSE catalogue that follows the **OData v4** standard. While the Sentinel Hub API is designed for custom processing (selecting bands, reprojecting, resampling on-the-fly), the OData API gives you access to **complete Sentinel-2 products** as ZIP archives — the same files you would download from the [CDSE browser](https://browser.dataspace.copernicus.eu/).
 
@@ -2555,7 +2584,7 @@ This is useful when you need:
 - To download many products in bulk
 - Product-level metadata (orbit number, processing baseline, tile grid, etc.)
 
-#### Querying the catalogue
+##### Querying the catalogue
 
 The OData catalogue endpoint is:
 
@@ -2607,7 +2636,7 @@ Key `$filter` elements:
 
 You can also use `$orderby` to sort results and `$top` to limit the number returned.
 
-#### Downloading a product
+##### Downloading a product
 
 To download a product, you need an **access token** obtained via the CDSE identity endpoint (different from the Sentinel Hub OAuth client). Use `grant_type=password` with your CDSE account credentials:
 
@@ -2649,7 +2678,7 @@ print(f"Downloaded {products[0]['Name']}")
 
 
 ::: {.callout-caution}
-## Exercise 15 (optional) — Search and download a Sentinel-2 product via OData
+### Exercise 15 (optional) — Search and download a Sentinel-2 product via OData
 
 **Goal:** Use the OData API to search for Sentinel-2 L2A products over a city of your choice during summer 2021 with less than 15 % cloud cover, then download the first result.
 
@@ -2720,7 +2749,7 @@ print(f"Downloaded {products[0]['Name']}")
 ```
 
 ::: {.callout-tip collapse="true"}
-## Hint — Exercise 15
+### Hint — Exercise 15
 
 - Use the same `$filter` syntax as shown in the OData section above.
 - For the spatial filter, find your city's coordinates (lon, lat) and use: `OData.CSC.Intersects(area=geography'SRID=4326;POINT(lon lat)')` — note the space between lon and lat, not a comma.
@@ -2731,7 +2760,7 @@ print(f"Downloaded {products[0]['Name']}")
 :::
 
 ::: {.callout-tip collapse="true"}
-## Solution — Exercise 15
+### Solution — Exercise 15
 
 ```{python}
 #| eval: false
@@ -2794,7 +2823,7 @@ print(f"Downloaded {products[0]['Name']}")
 
 :::
 
-# Downloading an Entire NUTS Region (Optional)
+## Downloading an Entire NUTS Region{.unnumbered}
 
 ::: {.callout-note collapse="true" title="Optional - Click to expand"}
 
@@ -2818,7 +2847,7 @@ Starting from scratch, the script must:
    then write a `filename2bbox.parquet` index matching the format used in this tutorial.
 
 ::: {.callout-note}
-## Something to think about — before looking at the solution
+### Something to think about — before looking at the solution
 
 These questions focus on **architectural decisions** you'd have to make if you were writing the
 script yourself. As you read the reference solution afterwards, you can match each answer to the
@@ -2847,7 +2876,7 @@ function that implements it.
 :::
 
 ::: {.callout-tip collapse="true"}
-## Answers
+### Answers
 
 1. **Which API for product discovery?** → `find_s2_products()`. The script uses the
    **[OData catalogue API](https://documentation.dataspace.copernicus.eu/APIs/OData.html)** because
@@ -2916,23 +2945,3 @@ uv run final_solution/download_region.py \
 Required environment variables for personal S3: `AWS_S3_ENDPOINT`, `AWS_ACCESS_KEY_ID`,
 `AWS_SECRET_ACCESS_KEY`.
 :::
-
-# Summary
-
-In this chapter you built the full data pipeline that feeds a land-cover segmentation model:
-
-| Step | What you did | Key tools |
-|------|-------------|-----------|
-| **Load & explore imagery** | Opened a Sentinel-2 GeoTIFF, read spectral bands, and inspected raster metadata | `rasterio` |
-| **Visualise composites** | Displayed true-colour and false-colour composites; computed NDVI | `numpy`, `matplotlib` |
-| **Geospatial manipulation** | Worked with CRS, built geometries, performed spatial joins, and plotted interactive maps | `geopandas`, `shapely`, `folium` |
-| **Navigate the tile index** | Geocoded a city with Nominatim, resolved its NUTS3 region, and found the covering tile with the `filename2bbox.parquet` index | `requests`, `geopandas` |
-| **Load CLC+ labels** | Downloaded pre-processed land-cover labels from S3 and paired them pixel-for-pixel with satellite images | `numpy`, `urllib` |
-| *(Optional)* **Acquire new data** | Downloaded CLC+ labels from the Copernicus ImageServer; queried and downloaded Sentinel-2 imagery from the Sentinel Hub and OData APIs | `requests`, `rasterio.io.MemoryFile` |
-
-## What's next?
-
-You now have aligned **image / label pairs** — the raw material for supervised learning. You can continue with either:
-
-- **[Model Training](2-model.qmd)** *(optional)* — train a SegFormer segmentation model on the Sentinel-2 / CLC+ pairs you assembled here.
-- **[Inference](3-inference.qmd)** — run a pre-trained model on new tiles, to map land cover predictions on newer images.

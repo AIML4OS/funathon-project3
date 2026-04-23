@@ -608,7 +608,7 @@ flowchart LR
 Here is a complete example for the Eurostat headquarters in Luxembourg:
 
 ```{python}
-#| eval: false
+#| eval: true
 
 import requests
 import geopandas as gpd

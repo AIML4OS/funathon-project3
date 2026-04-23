@@ -819,6 +819,7 @@ import matplotlib.pyplot as plt
 
 # Build the URL to the parquet index
 year = 2024
+nuts_code = "LU000"
 parquet_url = (
     f"https://minio.lab.sspcloud.fr/projet-formation/diffusion/"
     f"funathon/2026/project3/data/images/{nuts_code}/{year}/filename2bbox.parquet"

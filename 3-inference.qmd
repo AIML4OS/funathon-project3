@@ -8,11 +8,11 @@ format:
 
 # Load the Trained Model
 
-This section covers how to load a trained segmentation model from the MLflow
-Model Registry and apply it to a Sentinel-2 image to produce land-cover predictions.
+This section covers how to load a trained segmentation model apply it to a Sentinel-2 image to produce land-cover predictions.
 
 ## From MLflow (optional)
 
+If a model was trained in the previous step, this exercice permits to load a model from the MLFlow Model Regestry.
 MLflow lets you version and compare training runs, then promote the best model
 to a **Model Registry**. Follow these steps to register your model:
 
@@ -152,7 +152,7 @@ https://minio.lab.sspcloud.fr/projet-formation/mlflow-artifacts/
 Two artifacts are needed:
 
 - **`model/`** — the full MLflow model directory (weights, code, environment)
-- **`params.json`** — a JSON file containing the training hyperparameters
+- a JSON file containing the training hyperparameters
   (`n_bands`, `tiles_size`, `augment_size`, `normalization_mean`, etc.)
 
 The loading strategy is:
@@ -160,10 +160,10 @@ The loading strategy is:
 1. Use `s3fs` with `anon=True` to connect to MinIO without credentials
 2. Download the `model/` directory recursively to a local temporary folder
 3. Load the model from that local folder with `mlflow.pyfunc.load_model()`
-4. Fetch `params.json` over HTTPS with `requests` and parse the hyperparameters
+4. Fetch the file containing the parameters over HTTPS with `requests` and parse the hyperparameters
 
 ::: {.callout-caution}
-## Exercise 1 — Load a pre-trained model from public S3
+## Exercise 1 bis — Load a pre-trained model from public S3
 
 **Goal:** Download the pre-trained segmentation model from MinIO and load it
 locally, along with all the hyperparameters needed to run inference.
@@ -173,8 +173,10 @@ locally, along with all the hyperparameters needed to run inference.
 1. Connect to MinIO anonymously with `s3fs.S3FileSystem(anon=True)`
 2. Download the `model/` directory recursively to a local temp folder
 3. Load the model with `mlflow.pyfunc.load_model()`
-4. Fetch `params.json` over HTTPS and parse `n_bands`, `tiles_size`,
-   `augment_size`, `module_name`, `normalization_mean`, `normalization_std`
+4. Enter https://datalab.sspcloud.fr/file-explorer/projet-formation/mlflow-artifacts/
+4/76277e88294e4ed4bf22d64dbc2d70d3/artifacts/ in your web search bar and look at the files in it.
+Find the file containing all theses parameters `n_bands`, `tiles_size`, `augment_size`,
+`module_name`, `normalization_mean`, `normalization_std` and load it.
 :::
 
 ```{python}
@@ -187,7 +189,7 @@ import numpy as np
 from pathlib import Path
 
 fs = s3fs.S3FileSystem(
-    anon=__,          # TODO: boolean — public access requires no credentials
+    anon=True,
     endpoint_url=__,  # TODO: MinIO endpoint URL (str)
 )
 
@@ -199,7 +201,7 @@ fs.get(__, __, recursive=__)  # TODO: download the model directory recursively
 
 model = mlflow.pyfunc.load_model(__)  # TODO: local model directory path (str)
 
-params_url = "https://minio.lab.sspcloud.fr/" + s3_run_path + "params.json"
+params_url = "https://minio.lab.sspcloud.fr/" + s3_run_path + __  # TODO: file containing the parameters
 
 response = requests.get(params_url)
 run_params = response.json()
@@ -359,6 +361,8 @@ from intermediate_solutions.solution_step3.utils import (
 
 ```{python}
 #| eval: true
+#| echo: true
+#| results: hide
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
 image_path = (
@@ -481,6 +485,8 @@ plt.show()
 
 ```{python}
 #| eval: true
+#| echo: true
+#| results: hide
 satellite_img_array = satellite_img["array"] 
 rgb = np.transpose(
     satellite_img_array[[3, 2, 1]], (1, 2, 0)
@@ -506,12 +512,31 @@ fig.legend(
     frameon=True,
 )
 plt.tight_layout()
+plt.show()
 ```
 :::
 
 ```{python}
 #| eval: true
 #| echo: false
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+axes[0].imshow(rgb)
+axes[0].set_title("Sentinel-2 RGB (B4, B3, B2)")
+axes[0].axis("off")
+
+axes[1].imshow(predictions, cmap=cmap, vmin=1, vmax=10)
+
+axes[1].set_title("Predicted land cover")
+axes[1].axis("off")
+
+fig.legend(
+    handles=legend_elements,
+    loc="center left",
+    bbox_to_anchor=(1.0, 0.5),
+    frameon=True,
+)
+plt.tight_layout()
 plt.show()
 ```
 
@@ -590,6 +615,8 @@ plt.show()
 
 ```{python}
 #| eval: true
+#| echo: true
+#| results: hide
 gdf_pred = create_geojson_from_mask(satellite_img, predictions)
 
 print(f"{len(gdf_pred)} polygons extracted")
@@ -626,7 +653,31 @@ fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5)
 ```{python}
 #| eval: true
 #| echo: false
-plt.show()
+fig, axes = plt.subplots(1, 3, figsize=(20, 6))
+
+axes[0].imshow(rgb)
+axes[0].set_title("Sentinel-2 RGB (B4, B3, B2)")
+axes[0].axis("off")
+
+axes[1].imshow(predictions, cmap=cmap, vmin=1, vmax=10)
+axes[1].set_title("Predicted land cover")
+axes[1].axis("off")
+
+gdf_pred.plot(
+    column="label",
+    cmap=cmap,
+    vmin=1, vmax=10,
+    ax=axes[2],
+    legend=False,
+)
+axes[2].set_title("Predicted polygons")
+axes[2].set_aspect("equal")
+xmin, ymin, xmax, ymax = gdf_pred.total_bounds
+axes[2].set_xlim(xmin, xmax)
+axes[2].set_ylim(ymin, ymax)
+axes[2].axis("off")
+
+fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5), frameon=True)
 ```
 
 ## Display predictions on an interactive map
@@ -705,6 +756,8 @@ m
 
 ```{python}
 #| eval: true
+#| echo: true
+#| results: hide
 import folium
 from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds
@@ -849,7 +902,7 @@ contains a GPS point in Luxembourg.
 
 **Steps:**
 
-1. Choose a GPS point in Luxembourg (e.g. the Eurostat offices)
+1. Choose a GPS point in Luxembourg from Google Maps (e.g. the Eurostat offices)
 2. Call `GET /find_image` with the correct parameters
 3. Print the filename returned by the API
 :::
@@ -894,6 +947,8 @@ print(f"Image found: {image_filename}")
 
 ```{python}
 #| eval: true
+#| echo: true
+#| results: hide
 import json
 import requests
 
@@ -1014,6 +1069,8 @@ plt.show()
 
 ```{python}
 #| eval: true
+#| echo: true
+#| results: hide
 import geopandas as gpd
 
 s3_base_url = (
@@ -1061,7 +1118,18 @@ fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5)
 ```{python}
 #| eval: true
 #| echo: false
-plt.show()
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+axes[0].imshow(rgb)
+axes[0].set_title("Sentinel-2 RGB (B4, B3, B2)")
+axes[0].axis("off")
+gdf_pred.plot(column="label", cmap=cmap, vmin=1, vmax=10, ax=axes[1], legend=False)
+axes[1].set_title("Predicted polygons")
+axes[1].set_aspect("equal")
+xmin, ymin, xmax, ymax = gdf_pred.total_bounds
+axes[1].set_xlim(xmin, xmax)
+axes[1].set_ylim(ymin, ymax)
+axes[1].axis("off")
+fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5), frameon=True)
 ```
 
 ## Exercise 8 — Predict an entire NUTS3 region
@@ -1140,6 +1208,8 @@ m_nuts
 
 ```{python}
 #| eval: true
+#| echo: true
+#| results: hide
 nuts_id = "LU000"
 year = 2024
 

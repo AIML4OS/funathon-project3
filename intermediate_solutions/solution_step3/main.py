@@ -154,17 +154,20 @@ print(f"std={normalization_std}")
 # augment_size, normalization parameters).
 #
 # The model artifacts are publicly available at:
-#   https://minio.lab.sspcloud.fr/projet-formation/mlflow-artifacts/
-#   4/cf04bf4c53e84f6baf1d15f928100fb2/artifacts/model
+#    https://minio.lab.sspcloud.fr/projet-formation/mlflow-artifacts/
+#    4/76277e88294e4ed4bf22d64dbc2d70d3/artifacts/
 #
 # Steps:
 #   1. Connect to public MinIO with s3fs (no credentials)
 #   2. Download the model directory recursively to a local temp folder
 #   3. Load the model with mlflow.pyfunc.load_model()
-#   4. Fetch run parameters from the public params.json artifact
+#   4. Enter https://datalab.sspcloud.fr/file-explorer/projet-formation/mlflow-artifacts/
+#    4/76277e88294e4ed4bf22d64dbc2d70d3/artifacts/ in your web search bar and look at the files in it.
+#    Find the file containing all theses parameters `n_bands`, `tiles_size`, `augment_size`,
+#    `module_name`, `normalization_mean`, `normalization_std` and load it
 # ============================================================
 fs = s3fs.S3FileSystem(
-    anon=__,          # TODO: boolean — public access requires no credentials
+    anon=True,
     endpoint_url=__,  # TODO: MinIO endpoint URL (str)
 )
 
@@ -176,7 +179,7 @@ fs.get(__, __, recursive=__)  # TODO: download the model directory recursively
 
 model = mlflow.pyfunc.load_model(__)  # TODO: local model directory path (str)
 
-params_url = "https://minio.lab.sspcloud.fr/" + s3_run_path + "params.json"
+params_url = "https://minio.lab.sspcloud.fr/" + s3_run_path + __  # TODO: file containing the parameters
 
 response = requests.get(params_url)
 run_params = response.json()
@@ -613,7 +616,7 @@ m
 #   - year    (int) : year of the satellite images (2018–2024)
 #
 # Steps:
-#   1. Choose a GPS point in Luxembourg (e.g. Eurostat offices)
+#   1. Choose a GPS point in Luxembourg from Google Maps (e.g. Eurostat offices)
 #   2. Call the /find_image endpoint with the correct parameters
 #   3. Print the filename returned by the API
 # ============================================================

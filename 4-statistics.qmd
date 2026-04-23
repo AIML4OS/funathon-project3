@@ -13,21 +13,15 @@ Once a single tile has been predicted, you can compute land-cover statistics
 at the image level. This is useful for quickly inspecting the composition of
 a specific area before scaling up to the full NUTS3 region.
 
-## Load the predictions
+## Produce the predictions
 
-The API returns a GeoJSON FeatureCollection of polygons. Each polygon carries
-a `label` attribute (integer from 1 to 10) corresponding to one of the 10
-CLC+ Backbone land-cover classes. We load this directly into a GeoDataFrame
-and enrich it with area measurements and human-readable class names.
+Using the API explored in the previous step, the predictions can be easily produced again.
 
 ```{python}
 #| eval: true
 import geopandas as gpd
 import requests
 import json
-import pandas as pd
-import matplotlib.pyplot as plt
-import folium
 
 api_url = "https://funathon-2026-project3.lab.sspcloud.fr"
 
@@ -75,7 +69,8 @@ gdf_tile["class_name"] = gdf_tile["label"].map(class_names)
 
 **Goal:** Group the predicted polygons by land-cover class and compute the
 total area, number of polygons, mean and max polygon size for each class.
-Then calculate each class's share of the total tile area.
+Then calculate each class's share of the total tile area. Display the result
+as a `GT` table with formatted columns and colour-coded shares.
 
 **Steps:**
 
@@ -84,18 +79,20 @@ Then calculate each class's share of the total tile area.
    `max_polygon_area_m2`
 3. Compute `total_km2` as the sum of all class areas
 4. Add a `share_pct` column as the percentage of total area
-5. Print the result sorted by `total_area_km2` descending
+5. Display with `GT` — format numbers and colour `share_pct`
 :::
 
 ```{python}
 #| eval: false
+from great_tables import GT, style, loc
+
 stats_tile = (
     gdf_tile.groupby(["label", "class_name"])
     .agg(
-        n_polygons           = ("geometry", "__"),   # TODO: aggregation function (str)
-        total_area_km2       = ("area_km2", "__"),   # TODO: aggregation function (str)
-        mean_polygon_area_m2 = ("area_m2",  "__"),   # TODO: aggregation function (str)
-        max_polygon_area_m2  = ("area_m2",  "__"),   # TODO: aggregation function (str)
+        n_polygons           = ("geometry", "__"),  # TODO: aggregation function (str)
+        total_area_km2       = ("area_km2", "__"),  # TODO: aggregation function (str)
+        mean_polygon_area_m2 = ("area_m2",  "__"),  # TODO: aggregation function (str)
+        max_polygon_area_m2  = ("area_m2",  "__"),  # TODO: aggregation function (str)
     )
     .reset_index()
     .sort_values("total_area_km2", ascending=False)
@@ -104,7 +101,22 @@ stats_tile = (
 total_km2 = __  # TODO: sum of all total_area_km2
 stats_tile["share_pct"] = (__ / total_km2 * 100).round(2)  # TODO: column to normalise
 
-print(stats_tile.to_string(index=False))
+(
+    GT(stats_tile, rowname_col="class_name")
+    .tab_header(title="Land-cover statistics — single tile (LU000, 2024)")
+    .cols_label(
+        label                = "Label",
+        n_polygons           = "N polygons",
+        total_area_km2       = "Total area (km²)",
+        mean_polygon_area_m2 = "Mean area (m²)",
+        max_polygon_area_m2  = "Max area (m²)",
+        share_pct            = "Share (%)",
+    )
+    .fmt_number(columns=["total_area_km2"], decimals=2)
+    .fmt_number(columns=["mean_polygon_area_m2", "max_polygon_area_m2"], decimals=0)
+    .fmt_number(columns=["share_pct"], decimals=1)
+    .data_color(columns=["share_pct"], palette=["white", "steelblue"])
+)
 ```
 
 ::: {.callout-tip collapse="true"}
@@ -114,6 +126,7 @@ print(stats_tile.to_string(index=False))
   for polygon size statistics.
 - `total_km2 = stats_tile["total_area_km2"].sum()`.
 - `share_pct = stats_tile["total_area_km2"] / total_km2 * 100`.
+- Pass `rowname_col="class_name"` to `GT()` to use class names as row labels.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -123,6 +136,8 @@ print(stats_tile.to_string(index=False))
 #| eval: true
 #| echo: true
 #| results: hide
+from great_tables import GT, style, loc
+
 stats_tile = (
     gdf_tile.groupby(["label", "class_name"])
     .agg(
@@ -137,13 +152,45 @@ stats_tile = (
 
 total_km2 = stats_tile["total_area_km2"].sum()
 stats_tile["share_pct"] = (stats_tile["total_area_km2"] / total_km2 * 100).round(2)
+
+(
+    GT(stats_tile, rowname_col="class_name")
+    .tab_header(title="Land-cover statistics — single tile (LU000, 2024)")
+    .cols_label(
+        label                = "Label",
+        n_polygons           = "N polygons",
+        total_area_km2       = "Total area (km²)",
+        mean_polygon_area_m2 = "Mean area (m²)",
+        max_polygon_area_m2  = "Max area (m²)",
+        share_pct            = "Share (%)",
+    )
+    .fmt_number(columns=["total_area_km2"], decimals=2)
+    .fmt_number(columns=["mean_polygon_area_m2", "max_polygon_area_m2"], decimals=0)
+    .fmt_number(columns=["share_pct"], decimals=1)
+    .data_color(columns=["share_pct"], palette=["white", "steelblue"])
+)
 ```
 :::
 
 ```{python}
 #| eval: true
 #| echo: false
-print(stats_tile.to_string(index=False))
+(
+    GT(stats_tile, rowname_col="class_name")
+    .tab_header(title="Land-cover statistics — single tile (LU000, 2024)")
+    .cols_label(
+        label                = "Label",
+        n_polygons           = "N polygons",
+        total_area_km2       = "Total area (km²)",
+        mean_polygon_area_m2 = "Mean area (m²)",
+        max_polygon_area_m2  = "Max area (m²)",
+        share_pct            = "Share (%)",
+    )
+    .fmt_number(columns=["total_area_km2"], decimals=2)
+    .fmt_number(columns=["mean_polygon_area_m2", "max_polygon_area_m2"], decimals=0)
+    .fmt_number(columns=["share_pct"], decimals=1)
+    .data_color(columns=["share_pct"], palette=["white", "steelblue"])
+)
 ```
 
 ## Highlight key land-cover categories
@@ -152,7 +199,8 @@ print(stats_tile.to_string(index=False))
 ## Exercise 2 — Summarise key land-cover groups
 
 **Goal:** Aggregate the per-class statistics into four meaningful land-cover
-groups and print a concise summary with area and share.
+groups and display a concise summary table with area and share, colour-coded
+by sealed surface intensity.
 
 The four groups are:
 
@@ -167,21 +215,38 @@ The four groups are:
 
 1. Filter `stats_tile` by label for each group using `.loc[]` and `.isin()`
 2. Sum `total_area_km2` for each group
-3. Compute the share as a percentage of `total_km2`
-4. Print a formatted summary line for each group
+3. Build a summary `pd.DataFrame` with `area_km2` and `share_pct`
+4. Display with `GT` and colour `share_pct`
 :::
 
 ```{python}
 #| eval: false
+import pandas as pd
+
 sealed_km2 = stats_tile.loc[stats_tile["label"] == __,              "total_area_km2"].sum()  # TODO: label
 forest_km2 = stats_tile.loc[stats_tile["label"].isin([__, __, __]), "total_area_km2"].sum()  # TODO: labels
 agri_km2   = stats_tile.loc[stats_tile["label"].isin([__, __]),     "total_area_km2"].sum()  # TODO: labels
 water_km2  = stats_tile.loc[stats_tile["label"] == __,              "total_area_km2"].sum()  # TODO: label
 
-print(f"Sealed (built-up)  : {sealed_km2:.2f} km²  ({sealed_km2 / total_km2 * 100:.1f} %)")
-print(f"Forest             : {forest_km2:.2f} km²  ({forest_km2 / total_km2 * 100:.1f} %)")
-print(f"Agricultural       : {agri_km2:.2f}  km²  ({agri_km2  / total_km2 * 100:.1f} %)")
-print(f"Water              : {water_km2:.2f} km²  ({water_km2 / total_km2 * 100:.1f} %)")
+summary_df = pd.DataFrame({
+    "Group":    ["Sealed (built-up)", "Forest", "Agricultural", "Water"],
+    "area_km2": [sealed_km2, forest_km2, agri_km2, water_km2],
+    "share_pct": [
+        sealed_km2 / total_km2 * 100,
+        forest_km2 / total_km2 * 100,
+        agri_km2   / total_km2 * 100,
+        water_km2  / total_km2 * 100,
+    ],
+})
+
+(
+    GT(summary_df, rowname_col="Group")
+    .tab_header(title="Key land-cover groups — single tile (LU000, 2024)")
+    .cols_label(area_km2="Area (km²)", share_pct="Share (%)")
+    .fmt_number(columns=["area_km2"], decimals=2)
+    .fmt_number(columns=["share_pct"], decimals=1)
+    .data_color(columns=["share_pct"], palette=["white", "#FF0100"])
+)
 ```
 
 ::: {.callout-tip collapse="true"}
@@ -190,6 +255,7 @@ print(f"Water              : {water_km2:.2f} km²  ({water_km2 / total_km2 * 100
 - Sealed = label 1, Forest = labels 2, 3, 4, Agricultural = labels 6, 7,
   Water = label 10.
 - Use `.loc[condition, "total_area_km2"].sum()` to filter and aggregate.
+- Build a small `pd.DataFrame` before passing it to `GT()`.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -199,20 +265,45 @@ print(f"Water              : {water_km2:.2f} km²  ({water_km2 / total_km2 * 100
 #| eval: true
 #| echo: true
 #| results: hide
-sealed_km2 = stats_tile.loc[stats_tile["label"] == 1,              "total_area_km2"].sum()
-forest_km2 = stats_tile.loc[stats_tile["label"].isin([2, 3, 4]),   "total_area_km2"].sum()
-agri_km2   = stats_tile.loc[stats_tile["label"].isin([6, 7]),       "total_area_km2"].sum()
-water_km2  = stats_tile.loc[stats_tile["label"] == 10,              "total_area_km2"].sum()
+import pandas as pd
+
+sealed_km2 = stats_tile.loc[stats_tile["label"] == 1,             "total_area_km2"].sum()
+forest_km2 = stats_tile.loc[stats_tile["label"].isin([2, 3, 4]),  "total_area_km2"].sum()
+agri_km2   = stats_tile.loc[stats_tile["label"].isin([6, 7]),      "total_area_km2"].sum()
+water_km2  = stats_tile.loc[stats_tile["label"] == 10,             "total_area_km2"].sum()
+
+summary_df = pd.DataFrame({
+    "Group":    ["Sealed (built-up)", "Forest", "Agricultural", "Water"],
+    "area_km2": [sealed_km2, forest_km2, agri_km2, water_km2],
+    "share_pct": [
+        sealed_km2 / total_km2 * 100,
+        forest_km2 / total_km2 * 100,
+        agri_km2   / total_km2 * 100,
+        water_km2  / total_km2 * 100,
+    ],
+})
+(
+    GT(summary_df, rowname_col="Group")
+    .tab_header(title="Key land-cover groups — single tile (LU000, 2024)")
+    .cols_label(area_km2="Area (km²)", share_pct="Share (%)")
+    .fmt_number(columns=["area_km2"], decimals=2)
+    .fmt_number(columns=["share_pct"], decimals=1)
+    .data_color(columns=["share_pct"], palette=["white", "#FF0100"])
+)
 ```
 :::
 
 ```{python}
 #| eval: true
 #| echo: false
-print(f"Sealed (built-up)  : {sealed_km2:.2f} km²  ({sealed_km2 / total_km2 * 100:.1f} %)")
-print(f"Forest             : {forest_km2:.2f} km²  ({forest_km2 / total_km2 * 100:.1f} %)")
-print(f"Agricultural       : {agri_km2:.2f}  km²  ({agri_km2  / total_km2 * 100:.1f} %)")
-print(f"Water              : {water_km2:.2f} km²  ({water_km2 / total_km2 * 100:.1f} %)")
+(
+    GT(summary_df, rowname_col="Group")
+    .tab_header(title="Key land-cover groups — single tile (LU000, 2024)")
+    .cols_label(area_km2="Area (km²)", share_pct="Share (%)")
+    .fmt_number(columns=["area_km2"], decimals=2)
+    .fmt_number(columns=["share_pct"], decimals=1)
+    .data_color(columns=["share_pct"], palette=["white", "#FF0100"])
+)
 ```
 
 ## Visualise the distribution
@@ -233,14 +324,16 @@ land-cover class for the single tile.
 
 ```{python}
 #| eval: false
+import matplotlib.pyplot as plt
+
 fig, ax = plt.subplots(figsize=(8, 4))
 
 stats_tile.set_index("__")["__"].sort_values().plot(  # TODO: index column, value column
     kind="barh", ax=ax, color="steelblue"
 )
 
-ax.set_xlabel("__")   # TODO: axis label (str)
-ax.set_title("__")    # TODO: chart title (str)
+ax.set_xlabel("__")  # TODO: axis label (str)
+ax.set_title("__")   # TODO: chart title (str)
 plt.tight_layout()
 plt.show()
 ```
@@ -259,6 +352,8 @@ plt.show()
 #| eval: true
 #| echo: true
 #| results: hide
+import matplotlib.pyplot as plt
+
 fig, ax = plt.subplots(figsize=(8, 4))
 
 stats_tile.set_index("class_name")["total_area_km2"].sort_values().plot(
@@ -268,12 +363,22 @@ stats_tile.set_index("class_name")["total_area_km2"].sort_values().plot(
 ax.set_xlabel("Area (km²)")
 ax.set_title("Land-cover distribution — single tile (LU000, 2024)")
 plt.tight_layout()
+plt.show()
 ```
 :::
 
 ```{python}
 #| eval: true
 #| echo: false
+fig, ax = plt.subplots(figsize=(8, 4))
+
+stats_tile.set_index("class_name")["total_area_km2"].sort_values().plot(
+    kind="barh", ax=ax, color="steelblue"
+)
+
+ax.set_xlabel("Area (km²)")
+ax.set_title("Land-cover distribution — single tile (LU000, 2024)")
+plt.tight_layout()
 plt.show()
 ```
 
@@ -288,7 +393,7 @@ with the individual tile analysed above.
 ```{python}
 #| eval: true
 nuts_id = "LU000"
-year    = 2024
+year = 2024
 
 response_nuts = requests.get(
     f"{api_url}/predict_nuts",
@@ -310,17 +415,17 @@ gdf_nuts["class_name"] = gdf_nuts["label"].map(class_names)
 ::: {.callout-caution}
 ## Exercise 4 — Compute land-cover statistics for the full NUTS3 region
 
-**Goal:** Apply the same aggregation as Exercise 1, but this time on
-`gdf_nuts` which covers the entire NUTS3 region. Then compare the class
-shares between the single tile and the full region.
+**Goal:** Apply the same aggregation as Exercise 1, but on `gdf_nuts`.
+Then compare class shares between the single tile and the full region in a
+`GT` table.
 
 **Steps:**
 
 1. Repeat the `.groupby().agg()` pattern from Exercise 1 on `gdf_nuts`
 2. Compute `total_nuts_km2` and add `share_pct`
-3. Print the result
-4. Build a side-by-side comparison of tile vs. NUTS3 shares using
-   `pd.concat()`
+3. Display the stats table with `GT`
+4. Build a side-by-side comparison of tile vs. NUTS3 shares and display
+   with `GT`
 :::
 
 ```{python}
@@ -340,22 +445,43 @@ stats_nuts = (
 total_nuts_km2 = __  # TODO: sum of total_area_km2
 stats_nuts["share_pct"] = (__ / total_nuts_km2 * 100).round(2)  # TODO: column
 
-print(stats_nuts.to_string(index=False))
+(
+    GT(stats_nuts, rowname_col="class_name")
+    .tab_header(title="Land-cover statistics — LU000 NUTS3 (2024)")
+    .cols_label(
+        label                = "Label",
+        n_polygons           = "N polygons",
+        total_area_km2       = "Total area (km²)",
+        mean_polygon_area_m2 = "Mean area (m²)",
+        max_polygon_area_m2  = "Max area (m²)",
+        share_pct            = "Share (%)",
+    )
+    .fmt_number(columns=["total_area_km2"], decimals=2)
+    .fmt_number(columns=["mean_polygon_area_m2", "max_polygon_area_m2"], decimals=0)
+    .fmt_number(columns=["share_pct"], decimals=1)
+    .data_color(columns=["share_pct"], palette=["white", "steelblue"])
+)
 
-tile_shares = stats_tile.set_index("class_name")["share_pct"].rename("__")   # TODO: column name
-nuts_shares = stats_nuts.set_index("class_name")["share_pct"].rename("__")   # TODO: column name
+tile_shares = stats_tile.set_index("class_name")["share_pct"].rename("__")  # TODO: column name
+nuts_shares = stats_nuts.set_index("class_name")["share_pct"].rename("__")  # TODO: column name
 
-comparison = pd.concat([__, __], axis=1).fillna(0)  # TODO: tile_shares, nuts_shares
-print(comparison.sort_values("__", ascending=False).to_string())  # TODO: sort column
+comparison = pd.concat([__, __], axis=1).fillna(0).reset_index()  # TODO: tile_shares, nuts_shares
+
+(
+    GT(comparison, rowname_col="class_name")
+    .tab_header(title="Land-cover share — tile vs. NUTS3 (2024)")
+    .cols_label(**{"tile_share_pct": "Tile (%)", "nuts3_share_pct": "NUTS3 (%)"})
+    .fmt_number(decimals=1)
+    .data_color(palette=["white", "steelblue"])
+)
 ```
 
 ::: {.callout-tip collapse="true"}
 ## Hint
 
 - Same pattern as Exercise 1 — just replace `gdf_tile` with `gdf_nuts`.
-- Rename the share columns `"tile_share_pct"` and `"nuts3_share_pct"` for
-  clarity.
-- Sort by `"nuts3_share_pct"` to see dominant classes at the NUTS3 level.
+- Rename the share columns `"tile_share_pct"` and `"nuts3_share_pct"`.
+- Call `.reset_index()` on the comparison DataFrame before passing to `GT()`.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -380,17 +506,68 @@ stats_nuts = (
 total_nuts_km2 = stats_nuts["total_area_km2"].sum()
 stats_nuts["share_pct"] = (stats_nuts["total_area_km2"] / total_nuts_km2 * 100).round(2)
 
+(
+    GT(stats_nuts, rowname_col="class_name")
+    .tab_header(title="Land-cover statistics — LU000 NUTS3 (2024)")
+    .cols_label(
+        label                = "Label",
+        n_polygons           = "N polygons",
+        total_area_km2       = "Total area (km²)",
+        mean_polygon_area_m2 = "Mean area (m²)",
+        max_polygon_area_m2  = "Max area (m²)",
+        share_pct            = "Share (%)",
+    )
+    .fmt_number(columns=["total_area_km2"], decimals=2)
+    .fmt_number(columns=["mean_polygon_area_m2", "max_polygon_area_m2"], decimals=0)
+    .fmt_number(columns=["share_pct"], decimals=1)
+    .data_color(columns=["share_pct"], palette=["white", "steelblue"])
+)
+
 tile_shares = stats_tile.set_index("class_name")["share_pct"].rename("tile_share_pct")
 nuts_shares = stats_nuts.set_index("class_name")["share_pct"].rename("nuts3_share_pct")
-comparison  = pd.concat([tile_shares, nuts_shares], axis=1).fillna(0)
+comparison  = pd.concat([tile_shares, nuts_shares], axis=1).fillna(0).reset_index()
+
+(
+    GT(comparison, rowname_col="class_name")
+    .tab_header(title="Land-cover share — tile vs. NUTS3 (2024)")
+    .cols_label(**{"tile_share_pct": "Tile (%)", "nuts3_share_pct": "NUTS3 (%)"})
+    .fmt_number(decimals=1)
+    .data_color(palette=["white", "steelblue"])
+)
 ```
 :::
 
 ```{python}
 #| eval: true
 #| echo: false
-print(stats_nuts.to_string(index=False))
-print(comparison.sort_values("nuts3_share_pct", ascending=False).to_string())
+(
+    GT(stats_nuts, rowname_col="class_name")
+    .tab_header(title="Land-cover statistics — LU000 NUTS3 (2024)")
+    .cols_label(
+        label                = "Label",
+        n_polygons           = "N polygons",
+        total_area_km2       = "Total area (km²)",
+        mean_polygon_area_m2 = "Mean area (m²)",
+        max_polygon_area_m2  = "Max area (m²)",
+        share_pct            = "Share (%)",
+    )
+    .fmt_number(columns=["total_area_km2"], decimals=2)
+    .fmt_number(columns=["mean_polygon_area_m2", "max_polygon_area_m2"], decimals=0)
+    .fmt_number(columns=["share_pct"], decimals=1)
+    .data_color(columns=["share_pct"], palette=["white", "steelblue"])
+)
+```
+
+```{python}
+#| eval: true
+#| echo: false
+(
+    GT(comparison, rowname_col="class_name")
+    .tab_header(title="Land-cover share — tile vs. NUTS3 (2024)")
+    .cols_label(**{"tile_share_pct": "Tile (%)", "nuts3_share_pct": "NUTS3 (%)"})
+    .fmt_number(decimals=1)
+    .data_color(palette=["white", "steelblue"])
+)
 ```
 
 ## Visualise the NUTS3 distribution
@@ -416,14 +593,14 @@ fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 stats_nuts.set_index("class_name")["__"].sort_values().plot(  # TODO: column for left panel
     kind="barh", ax=axes[0], color="steelblue"
 )
-axes[0].set_xlabel("__")   # TODO: axis label
-axes[0].set_title("__")    # TODO: title
+axes[0].set_xlabel("__")  # TODO: axis label
+axes[0].set_title("__")   # TODO: title
 
 stats_nuts.set_index("class_name")["__"].sort_values().plot(  # TODO: column for right panel
     kind="barh", ax=axes[1], color="darkorange"
 )
-axes[1].set_xlabel("__")   # TODO: axis label
-axes[1].set_title("__")    # TODO: title
+axes[1].set_xlabel("__")  # TODO: axis label
+axes[1].set_title("__")   # TODO: title
 
 plt.tight_layout()
 plt.show()
@@ -458,12 +635,28 @@ axes[1].set_xlabel("Share (%)")
 axes[1].set_title("Land-cover share — LU000 (2024)")
 
 plt.tight_layout()
+plt.show()
 ```
 :::
 
 ```{python}
 #| eval: true
 #| echo: false
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+stats_nuts.set_index("class_name")["total_area_km2"].sort_values().plot(
+    kind="barh", ax=axes[0], color="steelblue"
+)
+axes[0].set_xlabel("Area (km²)")
+axes[0].set_title("Land-cover area — LU000 (2024)")
+
+stats_nuts.set_index("class_name")["share_pct"].sort_values().plot(
+    kind="barh", ax=axes[1], color="darkorange"
+)
+axes[1].set_xlabel("Share (%)")
+axes[1].set_title("Land-cover share — LU000 (2024)")
+
+plt.tight_layout()
 plt.show()
 ```
 
@@ -474,22 +667,22 @@ plt.show()
 
 **Goal:** Display all predicted polygons for the NUTS3 region on an
 interactive Folium map. Sealed polygons (label 1) should stand out with
-higher opacity so that built-up zones are immediately visible. Hovering
-over a polygon should show its class name and area.
+higher opacity. Hovering over a polygon should show its class name and area.
 
 **Steps:**
 
 1. Reproject `gdf_nuts` to EPSG:4326
 2. Compute the centroid to centre the map
 3. Create a `folium.Map` at zoom level 10
-4. Add a `GeoJson` layer with a `style_function` that colours each polygon
-   using `label_to_color` and sets `fillOpacity` to `0.7` for sealed
-   (label 1) and `0.4` otherwise
+4. Add a `GeoJson` layer with `fillOpacity` set to `0.7` for sealed
+   (label 1) and `0.4` otherwise, coloured with `label_to_color`
 5. Add a `GeoJsonTooltip` showing `class_name` and `area_km2`
 :::
 
 ```{python}
 #| eval: false
+import folium
+
 label_to_color = {
     1: "#FF0100", 2: "#238B23", 3: "#80FF00", 4: "#00FF00", 5: "#804000",
     6: "#CCF24E", 7: "#FEFF80", 8: "#FF81FF", 9: "#BFBFBF", 10: "#0080FF",
@@ -503,13 +696,13 @@ m = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=__)  # TODO: 
 folium.GeoJson(
     __,  # TODO: reprojected GeoDataFrame
     style_function=lambda feature: {
-        "fillColor":   label_to_color.get(feature["properties"]["__"], "#808080"),  # TODO: property key
+        "fillColor":   label_to_color.get(feature["properties"]["__"], "#808080"),  # TODO: key
         "color":       "black",
         "weight":      0.3,
         "fillOpacity": __ if feature["properties"]["label"] == 1 else __,  # TODO: opacities
     },
     tooltip=folium.GeoJsonTooltip(
-        fields=["__", "__"],          # TODO: fields to display
+        fields=["__", "__"],  # TODO: fields to display
         aliases=["Class:", "Area (km²):"],
         localize=True,
     ),
@@ -535,6 +728,8 @@ m
 #| eval: true
 #| echo: true
 #| results: hide
+import folium
+
 label_to_color = {
     1: "#FF0100", 2: "#238B23", 3: "#80FF00", 4: "#00FF00", 5: "#804000",
     6: "#CCF24E", 7: "#FEFF80", 8: "#FF81FF", 9: "#BFBFBF", 10: "#0080FF",
@@ -559,6 +754,8 @@ folium.GeoJson(
         localize=True,
     ),
 ).add_to(m)
+
+m
 ```
 :::
 
@@ -573,7 +770,8 @@ m
 Comparing predictions across two years reveals how land cover has evolved.
 This section fetches predictions for both 2021 and 2024 — first for a single
 tile, then for the full NUTS3 region — and quantifies the change in class
-shares (in percentage points).
+shares (in percentage points). The `change (pp)` column is colour-coded:
+green for gains, red for losses.
 
 ## Single tile — 2021 vs 2024
 
@@ -581,8 +779,8 @@ shares (in percentage points).
 ## Exercise 7 — Compare land-cover on a single tile between 2021 and 2024
 
 **Goal:** Fetch the 2021 prediction for the same tile, compute per-class
-statistics, and compare shares with the 2024 results using a grouped
-horizontal bar chart.
+statistics, compare shares with 2024, and display the result as a `GT` table
+with colour-coded `change (pp)` and a grouped bar chart.
 
 **Steps:**
 
@@ -591,7 +789,8 @@ horizontal bar chart.
 3. Define `compute_stats()` and apply it to both years
 4. Build `tile_comparison` with columns `"2021 (%)"`, `"2024 (%)"`,
    `"change (pp)"`
-5. Plot a grouped horizontal bar chart with both years side by side
+5. Display with `GT` — colour `change (pp)` red-white-green
+6. Plot a grouped horizontal bar chart
 :::
 
 ```{python}
@@ -643,8 +842,21 @@ tile_2024 = stats_tile_2024.set_index("class_name")["share_pct"].rename("2024 (%
 tile_comparison = pd.concat([tile_2021, tile_2024], axis=1).fillna(0)
 tile_comparison["change (pp)"] = (tile_comparison["__"] - tile_comparison["__"]).round(2)
 
-print(tile_comparison.sort_values("change (pp)", ascending=False).to_string())
+(
+    GT(tile_comparison.reset_index(), rowname_col="class_name")
+    .tab_header(title="Land-cover share — single tile, 2021 → 2024")
+    .fmt_number(decimals=1)
+    .data_color(
+        columns=["change (pp)"],
+        palette=["red", "white", "green"],
+        domain=[-5, 5],
+    )
+    .data_color(columns=["2021 (%)", "2024 (%)"], palette=["white", "steelblue"])
+)
+```
 
+```{python}
+#| eval: false
 fig, ax = plt.subplots(figsize=(9, 5))
 x     = range(len(tile_comparison))
 width = 0.35
@@ -668,6 +880,8 @@ plt.show()
   the total.
 - `change (pp) = "2024 (%)" - "2021 (%)"` — positive means the class gained
   area share.
+- `data_color(columns=["change (pp)"], palette=["red", "white", "green"],
+  domain=[-5, 5])` colours losses red and gains green automatically.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -724,6 +938,18 @@ tile_2024 = stats_tile_2024.set_index("class_name")["share_pct"].rename("2024 (%
 tile_comparison = pd.concat([tile_2021, tile_2024], axis=1).fillna(0)
 tile_comparison["change (pp)"] = (tile_comparison["2024 (%)"] - tile_comparison["2021 (%)"]).round(2)
 
+(
+    GT(tile_comparison.reset_index(), rowname_col="class_name")
+    .tab_header(title="Land-cover share — single tile, 2021 → 2024")
+    .fmt_number(decimals=1)
+    .data_color(
+        columns=["change (pp)"],
+        palette=["red", "white", "green"],
+        domain=[-5, 5],
+    )
+    .data_color(columns=["2021 (%)", "2024 (%)"], palette=["white", "steelblue"])
+)
+
 fig, ax = plt.subplots(figsize=(9, 5))
 x     = range(len(tile_comparison))
 width = 0.35
@@ -735,13 +961,40 @@ ax.set_xlabel("Share (%)")
 ax.set_title("Land-cover share — single tile, 2021 vs 2024")
 ax.legend()
 plt.tight_layout()
+plt.show()
 ```
 :::
 
 ```{python}
 #| eval: true
 #| echo: false
-print(tile_comparison.sort_values("change (pp)", ascending=False).to_string())
+(
+    GT(tile_comparison.reset_index(), rowname_col="class_name")
+    .tab_header(title="Land-cover share — single tile, 2021 → 2024")
+    .fmt_number(decimals=1)
+    .data_color(
+        columns=["change (pp)"],
+        palette=["red", "white", "green"],
+        domain=[-5, 5],
+    )
+    .data_color(columns=["2021 (%)", "2024 (%)"], palette=["white", "steelblue"])
+)
+```
+
+```{python}
+#| eval: true
+#| echo: false
+fig, ax = plt.subplots(figsize=(9, 5))
+x     = range(len(tile_comparison))
+width = 0.35
+ax.barh([i + width / 2 for i in x], tile_comparison["2021 (%)"], width, label="2021", color="steelblue")
+ax.barh([i - width / 2 for i in x], tile_comparison["2024 (%)"], width, label="2024", color="darkorange")
+ax.set_yticks(list(x))
+ax.set_yticklabels(tile_comparison.index.tolist())
+ax.set_xlabel("Share (%)")
+ax.set_title("Land-cover share — single tile, 2021 vs 2024")
+ax.legend()
+plt.tight_layout()
 plt.show()
 ```
 
@@ -751,8 +1004,9 @@ plt.show()
 ## Exercise 8 — Compare NUTS3 land-cover between 2021 and 2024
 
 **Goal:** Scale up the temporal comparison to the full NUTS3 region. Fetch
-2021 predictions from `/predict_nuts`, compute statistics, and produce a
-printed change table, an absolute area summary, and a two-panel figure.
+2021 predictions from `/predict_nuts`, compute statistics, display a `GT`
+comparison table with colour-coded changes, an absolute area summary table,
+and a two-panel figure.
 
 **Steps:**
 
@@ -760,8 +1014,9 @@ printed change table, an absolute area summary, and a two-panel figure.
 2. Build `gdf_nuts_2021` with area and class name columns
 3. Apply `compute_stats()` to both years
 4. Build `nuts_comparison` with `"2021 (%)"`, `"2024 (%)"`, `"change (pp)"`
-5. Print the absolute area change for Sealed, Forest, Agricultural, Water
-6. Plot the two-panel figure (grouped bars + change bars coloured green/red)
+5. Display with `GT` — colour `change (pp)` red-white-green
+6. Build and display an absolute area summary table for the four key groups
+7. Plot the two-panel figure
 :::
 
 ```{python}
@@ -789,21 +1044,50 @@ nuts_2024 = stats_nuts_2024.set_index("class_name")["share_pct"].rename("2024 (%
 nuts_comparison = pd.concat([nuts_2021, nuts_2024], axis=1).fillna(0)
 nuts_comparison["change (pp)"] = (nuts_comparison["__"] - nuts_comparison["__"]).round(2)
 
-print(nuts_comparison.sort_values("change (pp)", ascending=False).to_string())
+(
+    GT(nuts_comparison.reset_index(), rowname_col="class_name")
+    .tab_header(title="Land-cover share — LU000 NUTS3, 2021 → 2024")
+    .fmt_number(decimals=1)
+    .data_color(
+        columns=["change (pp)"],
+        palette=["red", "white", "green"],
+        domain=[-5, 5],
+    )
+    .data_color(columns=["2021 (%)", "2024 (%)"], palette=["white", "steelblue"])
+)
+```
 
+```{python}
+#| eval: false
+rows = []
 for label, category in [
     (1,         "Sealed"),
     ([2, 3, 4], "Forest"),
     ([6, 7],    "Agricultural"),
     (10,        "Water"),
 ]:
-    labels   = [label] if isinstance(label, int) else label
-    km2_2021 = stats_nuts_2021.loc[stats_nuts_2021["label"].isin(labels), "total_area_km2"].sum()
-    km2_2024 = stats_nuts_2024.loc[stats_nuts_2024["label"].isin(labels), "total_area_km2"].sum()
-    delta    = km2_2024 - km2_2021
-    sign     = "+" if delta >= 0 else ""
-    print(f"{category:<20}: {km2_2021:.2f} km² (2021) → {km2_2024:.2f} km² (2024)  Δ {sign}{delta:.2f} km²")
+    labels_list = [label] if isinstance(label, int) else label
+    km2_2021 = stats_nuts_2021.loc[stats_nuts_2021["label"].isin(labels_list), "total_area_km2"].sum()
+    km2_2024 = stats_nuts_2024.loc[stats_nuts_2024["label"].isin(labels_list), "total_area_km2"].sum()
+    rows.append({"Group": category, "2021 (km²)": round(km2_2021, 2),
+                 "2024 (km²)": round(km2_2024, 2), "Δ (km²)": round(km2_2024 - km2_2021, 2)})
 
+area_summary = pd.DataFrame(rows)
+
+(
+    GT(area_summary, rowname_col="Group")
+    .tab_header(title="Absolute area change — LU000, 2021 → 2024")
+    .fmt_number(decimals=2)
+    .data_color(
+        columns=["Δ (km²)"],
+        palette=["red", "white", "green"],
+        domain=[-10, 10],
+    )
+)
+```
+
+```{python}
+#| eval: false
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 x      = range(len(nuts_comparison))
 width  = 0.35
@@ -830,6 +1114,8 @@ plt.show()
 - The response key for `/predict_nuts` is `"predictions"`.
 - `compute_stats()` is already defined in Exercise 7 — reuse it directly.
 - `change (pp) = "2024 (%)" - "2021 (%)"`.
+- Build the absolute area summary as a `pd.DataFrame` with a loop over the
+  four groups, then pass it to `GT()`.
 - For the change bar chart: `colors = ["green" if v >= 0 else "red" for v in ...]`.
 :::
 
@@ -863,6 +1149,44 @@ nuts_2024 = stats_nuts_2024.set_index("class_name")["share_pct"].rename("2024 (%
 nuts_comparison = pd.concat([nuts_2021, nuts_2024], axis=1).fillna(0)
 nuts_comparison["change (pp)"] = (nuts_comparison["2024 (%)"] - nuts_comparison["2021 (%)"]).round(2)
 
+(
+    GT(nuts_comparison.reset_index(), rowname_col="class_name")
+    .tab_header(title="Land-cover share — LU000 NUTS3, 2021 → 2024")
+    .fmt_number(decimals=1)
+    .data_color(
+        columns=["change (pp)"],
+        palette=["red", "white", "green"],
+        domain=[-5, 5],
+    )
+    .data_color(columns=["2021 (%)", "2024 (%)"], palette=["white", "steelblue"])
+)
+
+rows = []
+for label, category in [
+    (1,         "Sealed"),
+    ([2, 3, 4], "Forest"),
+    ([6, 7],    "Agricultural"),
+    (10,        "Water"),
+]:
+    labels_list = [label] if isinstance(label, int) else label
+    km2_2021 = stats_nuts_2021.loc[stats_nuts_2021["label"].isin(labels_list), "total_area_km2"].sum()
+    km2_2024 = stats_nuts_2024.loc[stats_nuts_2024["label"].isin(labels_list), "total_area_km2"].sum()
+    rows.append({"Group": category, "2021 (km²)": round(km2_2021, 2),
+                 "2024 (km²)": round(km2_2024, 2), "Δ (km²)": round(km2_2024 - km2_2021, 2)})
+
+area_summary = pd.DataFrame(rows)
+
+(
+    GT(area_summary, rowname_col="Group")
+    .tab_header(title="Absolute area change — LU000, 2021 → 2024")
+    .fmt_number(decimals=2)
+    .data_color(
+        columns=["Δ (km²)"],
+        palette=["red", "white", "green"],
+        domain=[-10, 10],
+    )
+)
+
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 x      = range(len(nuts_comparison))
 width  = 0.35
@@ -880,27 +1204,61 @@ axes[1].axvline(0, color="black", linewidth=0.8)
 axes[1].set_xlabel("Change (percentage points)")
 axes[1].set_title("Land-cover change 2021 → 2024 — LU000")
 plt.tight_layout()
+plt.show()
 ```
 :::
 
 ```{python}
 #| eval: true
 #| echo: false
-print(nuts_comparison.sort_values("change (pp)", ascending=False).to_string())
+(
+    GT(nuts_comparison.reset_index(), rowname_col="class_name")
+    .tab_header(title="Land-cover share — LU000 NUTS3, 2021 → 2024")
+    .fmt_number(decimals=1)
+    .data_color(
+        columns=["change (pp)"],
+        palette=["red", "white", "green"],
+        domain=[-5, 5],
+    )
+    .data_color(columns=["2021 (%)", "2024 (%)"], palette=["white", "steelblue"])
+)
+```
 
-for label, category in [
-    (1,         "Sealed"),
-    ([2, 3, 4], "Forest"),
-    ([6, 7],    "Agricultural"),
-    (10,        "Water"),
-]:
-    labels_list = [label] if isinstance(label, int) else label
-    km2_2021 = stats_nuts_2021.loc[stats_nuts_2021["label"].isin(labels_list), "total_area_km2"].sum()
-    km2_2024 = stats_nuts_2024.loc[stats_nuts_2024["label"].isin(labels_list), "total_area_km2"].sum()
-    delta    = km2_2024 - km2_2021
-    sign     = "+" if delta >= 0 else ""
-    print(f"{category:<20}: {km2_2021:.2f} km² (2021) → {km2_2024:.2f} km² (2024)  Δ {sign}{delta:.2f} km²")
+```{python}
+#| eval: true
+#| echo: false
+(
+    GT(area_summary, rowname_col="Group")
+    .tab_header(title="Absolute area change — LU000, 2021 → 2024")
+    .fmt_number(decimals=2)
+    .data_color(
+        columns=["Δ (km²)"],
+        palette=["red", "white", "green"],
+        domain=[-10, 10],
+    )
+)
+```
 
+```{python}
+#| eval: true
+#| echo: false
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+x      = range(len(nuts_comparison))
+width  = 0.35
+labels = nuts_comparison.index.tolist()
+axes[0].barh([i + width / 2 for i in x], nuts_comparison["2021 (%)"], width, label="2021", color="steelblue")
+axes[0].barh([i - width / 2 for i in x], nuts_comparison["2024 (%)"], width, label="2024", color="darkorange")
+axes[0].set_yticks(list(x))
+axes[0].set_yticklabels(labels)
+axes[0].set_xlabel("Share (%)")
+axes[0].set_title("Land-cover share — LU000, 2021 vs 2024")
+axes[0].legend()
+colors = ["green" if v >= 0 else "red" for v in nuts_comparison["change (pp)"]]
+axes[1].barh(labels, nuts_comparison["change (pp)"], color=colors)
+axes[1].axvline(0, color="black", linewidth=0.8)
+axes[1].set_xlabel("Change (percentage points)")
+axes[1].set_title("Land-cover change 2021 → 2024 — LU000")
+plt.tight_layout()
 plt.show()
 ```
 

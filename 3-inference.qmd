@@ -1076,7 +1076,7 @@ plt.show()
 ## Hint
 
 - The S3 path follows the pattern:
-  `"projet-funathon/2026/project3/data/images/{nuts_id}/{year}/"`.
+  `"projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_id}/{year}/"`.
 - The endpoint name is `"predict_image"`.
 - Set `polygons=True` to include GeoJSON polygons in the response.
 - `response_pred.json()` returns a GeoJSON string; `json.loads()` parses it
@@ -1097,7 +1097,7 @@ plt.show()
 import geopandas as gpd
 
 s3_base_url = (
-    "projet-funathon/2026/project3/"
+    "projet-formation/diffusion/funathon/2026/project3/"
     "data/images/LU000/2024/"
 )
 

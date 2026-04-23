@@ -699,7 +699,7 @@ print(f"Image found: {image_filename}")
 # ============================================================
 
 s3_base_url = (
-    "projet-funathon/2026/project3/"
+    "projet-formation/diffusion/funathon/2026/project3/"
     "data/images/__/__/"  # TODO: fill in nuts_id and year
 )
 
@@ -754,7 +754,7 @@ plt.show()
 # HINT — Exercise 7
 # ------------------------------------------------------------
 # - The S3 path follows the pattern:
-#   "projet-funathon/2026/project3/data/images/{nuts_id}/{year}/"
+#   "projet-formation/diffusion/funathon/2026/project3/data/images/{nuts_id}/{year}/"
 # - The endpoint name is "predict_image".
 # - Set polygons=True to include GeoJSON polygons in the response.
 # - response_pred.json() returns a GeoJSON string;
@@ -769,7 +769,7 @@ plt.show()
 # SOLUTION — Exercise 7
 # ------------------------------------------------------------
 # s3_base_url = (
-#     "projet-funathon/2026/project3/"
+#     "projet-formation/diffusion/funathon/2026/project3/"
 #     "data/images/LU000/2024/"
 # )
 

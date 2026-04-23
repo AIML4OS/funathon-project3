@@ -2737,73 +2737,77 @@ The exercises above worked with individual tiles — one image, one label at a t
 Building a production-ready training dataset means repeating this process for every
 tile that covers a NUTS3 region: hundreds of image/label pairs, aligned pixel-for-pixel.
 
-The tile index you already know — `filename2bbox.parquet` — maps every patch filename to
-its EPSG:3035 bounding box. For a NUTS3 region and a given year, the index file lives at:
+Starting from scratch, the script must:
 
-```
-https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project3/data/
-images/{NUTS}/{year}/filename2bbox.parquet
-```
-
-Rather than making one Sentinel Hub Processing API request per patch (which would mean
-thousands of individual HTTP calls for a single region), a more efficient approach is to:
-
-1. **Discover products** — use the [OData catalogue API](https://documentation.dataspace.copernicus.eu/APIs/OData.html)
+1. **Define the tile grid** — load the NUTS3 boundary from the Eurostat GISCO API and
+   overlay a regular 2 500 m × 2 500 m grid (250 px at 10 m resolution), keeping only
+   patches that intersect the region boundary.
+2. **Discover products** — use the [OData catalogue API](https://documentation.dataspace.copernicus.eu/APIs/OData.html)
    to find the Sentinel-2 L2A product tiles (roughly 100 km × 100 km each) that cover the region.
-2. **Stream band data from EO S3** — the [CDSE EO S3 bucket](https://documentation.dataspace.copernicus.eu/APIs/S3.html)
+3. **Stream band data from EO S3** — the [CDSE EO S3 bucket](https://documentation.dataspace.copernicus.eu/APIs/S3.html)
    (`eodata.dataspace.copernicus.eu`) stores the raw `.SAFE` archives. Individual JP2 band files can
    be window-read via GDAL's `/vsis3/` virtual filesystem: only the bytes covering each patch are
    transferred, with automatic resampling across the 10 m / 20 m / 60 m band resolutions.
-3. **Download labels** — for each patch, query the CLC+ ImageServer as shown in the exercises above.
-4. **Upload to personal S3** — store images as 14-band GeoTIFFs and labels as `.npy` files,
-   mirroring the folder layout of the pre-processed training data.
+4. **Download labels** — for each patch, query the CLC+ ImageServer as shown in the exercises above.
+5. **Upload to personal S3** — store images as 14-band GeoTIFFs and labels as `.npy` files,
+   then write a `filename2bbox.parquet` index matching the format used in this tutorial.
 
 ::: {.callout-note}
 ## Something to think about — before looking at the solution
 
-1. **Unit of download** — should you request data patch by patch, or download a full Sentinel-2
+1. **Defining the tile grid** — the NUTS3 boundary is an irregular polygon. How do you cover it
+   with a regular grid of 2 500 m × 2 500 m patches? What do you do with patches that extend
+   beyond the boundary?
+2. **Unit of download** — should you request data patch by patch, or download a full Sentinel-2
    product tile (100 km × 100 km) and cut patches from it? What are the bandwidth trade-offs?
-2. **Multi-resolution bands** — the 14 bands live in different JP2 files at 10 m, 20 m, and 60 m.
+3. **Multi-resolution bands** — the 14 bands live in different JP2 files at 10 m, 20 m, and 60 m.
    How do you bring them all to the same 10 m grid when extracting a patch?
-3. **Multiple product tiles** — a NUTS3 region can span several Sentinel-2 product tiles.
+4. **Multiple product tiles** — a NUTS3 region can span several Sentinel-2 product tiles.
    How do you determine which product covers which patch?
-4. **Two S3 accounts** — EO S3 (`eodata.dataspace.copernicus.eu`) and your personal SSP Cloud
+5. **Two S3 accounts** — EO S3 (`eodata.dataspace.copernicus.eu`) and your personal SSP Cloud
    bucket use different endpoints and different credentials. How can the script handle both
    simultaneously without them interfering?
-5. **Resumability** — if the script is interrupted after 300 of 600 tiles, how do you avoid
+6. **Resumability** — if the script is interrupted after 300 of 600 tiles, how do you avoid
    re-downloading everything from scratch on the next run?
 :::
 
 ::: {.callout-tip collapse="true"}
 ## Answers
 
-1. **Unit of download** — downloading per product tile is far more efficient. A single Sentinel-2
+1. **Defining the tile grid** — load the NUTS3 boundary as a shapely geometry (in EPSG:3035),
+   snap a regular grid to the nearest multiple of 2 500 m below the bounding box origin, then
+   iterate over all candidate 2 500 m × 2 500 m cells and keep only those whose `box` intersects
+   the NUTS3 polygon. Patches that partially extend beyond the boundary are kept — they will simply
+   contain pixels with no CLC+ class label (nodata = 0) at the edges. After processing, filename
+   and bbox for every patch are written to `filename2bbox.parquet` on personal S3.
+
+2. **Unit of download** — downloading per product tile is far more efficient. A single Sentinel-2
    product (100 km × 100 km) contains 14 JP2 band files shared by hundreds of 2.5 km patches. The
    CDSE EO S3 supports *range requests* via GDAL's `/vsis3/` virtual filesystem, so you can
    window-read just the bytes that fall within each patch's bounding box — no need to download the
    entire JP2. The overhead per patch drops from one full HTTP round-trip to a few kilobytes of
    partial reads from already-open file handles.
 
-2. **Multi-resolution bands** — rasterio's `read()` method accepts an `out_shape=(H, W)` argument.
+3. **Multi-resolution bands** — rasterio's `read()` method accepts an `out_shape=(H, W)` argument.
    When the requested window spans more (or fewer) source pixels than the output shape, rasterio
    resamples on the fly. Using `out_shape=(250, 250)` for every band regardless of native
    resolution automatically brings 20 m and 60 m bands up to the 10 m grid — no explicit
    `reproject` or `resize` step is needed.
 
-3. **Multiple product tiles** — the OData API returns each product's geographic footprint as a
+4. **Multiple product tiles** — the OData API returns each product's geographic footprint as a
    GeoJSON polygon. After querying for all products covering the region, you intersect each patch's
    WGS84 bounding box with every product footprint using `shapely`. Only patches that intersect a
    given product are processed when reading that product's JP2 files, so no patch is extracted from
    a product that doesn't cover it.
 
-4. **Two S3 accounts** — `s3fs` and GDAL maintain their S3 configuration independently. The
+5. **Two S3 accounts** — `s3fs` and GDAL maintain their S3 configuration independently. The
    personal S3 credentials live in system environment variables (`AWS_S3_ENDPOINT`, etc.) and are
    read by `s3fs`. EO S3 credentials are injected into GDAL's configuration exclusively through a
    `rasterio.env.Env(...)` context manager — they override GDAL's S3 settings only for the
    duration of the window-read, then the context restores the previous state. The two credential
    sets never collide.
 
-5. **Resumability** — before starting any download work for a tile, the script checks whether both
+6. **Resumability** — before starting any download work for a tile, the script checks whether both
    the image and label files already exist on personal S3 with `fs.exists()`. If they do, the tile
    is skipped. This means the script can be re-run after any interruption and will pick up exactly
    where it left off without re-transferring data.

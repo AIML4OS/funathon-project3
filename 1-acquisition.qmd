@@ -6,6 +6,23 @@ format:
   html:
     number-sections: true
 ---
+::: {.callout-note}
+## Where this chapter fits
+
+Training a segmentation model needs a dataset of `(image, label)` pairs — satellite tiles on one side, land-cover maps on the other. **This chapter builds that dataset.** By the end, you'll know how to pull a Sentinel-2 tile for any European city, fetch its matching CLC+ label, and confirm the two are perfectly aligned pixel-for-pixel.
+
+```{mermaid}
+flowchart LR
+    C1["Chapter 1Build the(image, label) dataset"]:::current
+    C2["Chapter 2 (optional)Train a modelon the dataset"]
+    C3["Chapter 3Use a trained modelto predict new masks"]
+    C4["Chapter 4Compute regionalland-cover statistics"]
+    C1 --> C2 --> C3 --> C4
+    classDef current fill:#fde68a,stroke:#b45309,stroke-width:2px;
+```
+
+You don't need any machine learning knowledge to complete this chapter — it's all about reading satellite rasters, handling geographic coordinates, and pairing images with their labels.
+:::
 
 ::: {.callout-note}
 ## What you will learn in this chapter

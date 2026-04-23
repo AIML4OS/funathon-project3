@@ -9,6 +9,7 @@
 #   "pyarrow>=15",
 #   "s3fs>=2024.2",
 #   "shapely>=2.0",
+#   "tqdm>=4.66",
 # ]
 # ///
 """
@@ -20,10 +21,12 @@ Workflow
 1. Load the NUTS3 region boundary from the Eurostat GISCO API.
 2. Tile the region with a regular 2 500 m × 2 500 m grid (250 px at 10 m).
 3. Query the CDSE OData catalogue to find cloud-free Sentinel-2 L2A products.
-4. For each product, window-read 14 JP2 band files from CDSE EO S3 via GDAL
-   /vsis3/, resampling all bands to 10 m on the fly.
+4. For each product: download all 13 JP2 band files from CDSE EO S3 into
+   memory via s3fs, open them as rasterio datasets, then window-read each
+   patch (resampling all bands to 10 m on the fly).
+   (B10/cirrus is excluded — it is not delivered in L2A products.)
 5. Download the matching CLC+ label from the Copernicus ImageServer API.
-6. Upload images (14-band GeoTIFF) and labels (.npy) to personal S3.
+6. Upload images (13-band GeoTIFF) and labels (.npy) to personal S3.
 7. Write a filename2bbox.parquet index to personal S3.
 
 Usage
@@ -33,9 +36,16 @@ Usage
         --year 2021 \\
         --s3-bucket my-bucket \\
         [--s3-prefix sentinel2] \\
-        [--workers 4] \\
+        [--label-year 2021] \\
         [--eo-s3-key KEY] \\
         [--eo-s3-secret SECRET]
+
+    # Use 2024 Sentinel-2 imagery with 2021 CLC+ labels (no 2024 edition exists):
+    uv run final_solution/download_region.py \\
+        --nuts FR101 \\
+        --year 2024 \\
+        --label-year 2021 \\
+        --s3-bucket my-bucket
 
 Required environment variables (personal S3 credentials):
     AWS_S3_ENDPOINT
@@ -51,19 +61,18 @@ EO S3 credentials (from https://eodata-s3keysmanager.dataspace.copernicus.eu/):
 import argparse
 import io
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
 import pandas as pd
 import requests
 import rasterio
 import s3fs
-from rasterio.env import Env as RasterioEnv
 from rasterio.io import MemoryFile
 from rasterio.transform import from_bounds
 from rasterio.warp import transform_bounds
 from rasterio.windows import from_bounds as window_from_bounds
 from shapely.geometry import box, shape
+from tqdm.auto import tqdm
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -95,7 +104,6 @@ BAND_MAP: dict[str, tuple[str, str]] = {
     "B08": ("R10m", "B08_10m"),
     "B8A": ("R20m", "B8A_20m"),
     "B09": ("R60m", "B09_60m"),
-    "B10": ("R60m", "B10_60m"),
     "B11": ("R20m", "B11_20m"),
     "B12": ("R20m", "B12_20m"),
     "SCL": ("R20m", "SCL_20m"),
@@ -141,10 +149,11 @@ def build_tile_grid(nuts_geom, patch_size_m: int = PATCH_SIZE_M) -> pd.DataFrame
     while x < maxx:
         y = origin_y
         while y < maxy:
-            patch_box = box(x, y, x + patch_size_m, y + patch_size_m)
-            if patch_box.intersects(nuts_geom):
-                patches.append({"xmin": x, "ymin": y,
-                                 "xmax": x + patch_size_m, "ymax": y + patch_size_m})
+            if box(x, y, x + patch_size_m, y + patch_size_m).intersects(nuts_geom):
+                patches.append({
+                    "xmin": x, "ymin": y,
+                    "xmax": x + patch_size_m, "ymax": y + patch_size_m,
+                })
             y += patch_size_m
         x += patch_size_m
 
@@ -168,11 +177,6 @@ def bbox_3035_to_wgs84(bbox: list) -> list[float]:
     return [left, bottom, right, top]
 
 
-def union_bbox_3035(bboxes: list[list]) -> list:
-    arr = np.array(bboxes)
-    return [arr[:, 0].min(), arr[:, 1].min(), arr[:, 2].max(), arr[:, 3].max()]
-
-
 # ---------------------------------------------------------------------------
 # Product discovery (OData API)
 # ---------------------------------------------------------------------------
@@ -180,8 +184,10 @@ def union_bbox_3035(bboxes: list[list]) -> list:
 
 def find_s2_products(wgs84_bbox: list[float], year: int, max_cloud: int = 30) -> list[dict]:
     """
-    Query OData for Sentinel-2 L2A products that intersect the WGS84 bbox
-    and have cloud cover ≤ max_cloud during May–September of year.
+    Query OData for Sentinel-2 L2A products intersecting the WGS84 bbox
+    with cloud cover ≤ max_cloud during May–September of year.
+    Results are sorted by cloud cover ascending in Python (OData does not
+    support $orderby on embedded attribute fields).
     """
     w, s, e, n = wgs84_bbox
     polygon_wkt = f"POLYGON(({w} {s},{e} {s},{e} {n},{w} {n},{w} {s}))"
@@ -195,22 +201,25 @@ def find_s2_products(wgs84_bbox: list[float], year: int, max_cloud: int = 30) ->
         f"att:att/Name eq 'cloudCover' "
         f"and att/OData.CSC.DoubleAttribute/Value le {max_cloud}.0) "
         f"and ContentDate/Start ge {year}-05-01T00:00:00.000Z "
-        f"and ContentDate/Start le {year}-09-30T23:59:59.999Z"
+        f"and ContentDate/Start le {year}-09-30T23:59:59.999Z "
+        f"and Online eq true"
     )
     resp = requests.get(
         ODATA_URL,
-        params={"$filter": odata_filter, "$orderby": "cloudCover asc", "$top": 200},
+        params={"$filter": odata_filter, "$top": 200},
         timeout=60,
     )
     resp.raise_for_status()
-    return [
+    results = [
         {
             "Name": item["Name"],
             "cloudCover": item.get("cloudCover", 0),
             "GeoFootprint": item.get("GeoFootprint", {}),
+            "S3Path": item.get("S3Path", ""),
         }
         for item in resp.json().get("value", [])
     ]
+    return sorted(results, key=lambda p: p["cloudCover"])
 
 
 # ---------------------------------------------------------------------------
@@ -219,7 +228,7 @@ def find_s2_products(wgs84_bbox: list[float], year: int, max_cloud: int = 30) ->
 
 
 def build_eo_fs(key: str, secret: str) -> s3fs.S3FileSystem:
-    """S3FileSystem for the CDSE EO data bucket (used for directory listing)."""
+    """S3FileSystem for the CDSE EO data bucket."""
     return s3fs.S3FileSystem(
         client_kwargs={"endpoint_url": EO_S3_ENDPOINT},
         key=key,
@@ -227,15 +236,26 @@ def build_eo_fs(key: str, secret: str) -> s3fs.S3FileSystem:
     )
 
 
-def product_s3_prefix(product_name: str) -> str:
+def product_s3_prefix(product_name: str, s3path: str = "") -> str:
     """
-    Derive the EO S3 directory prefix from a product name.
+    Return the EO S3 directory prefix for a product (always ends with .SAFE/).
 
-    Example input:
-        S2A_MSIL2A_20210615T102021_N0300_R065_T32TLT_20210615T135501.SAFE
-    Returns:
-        eodata/Sentinel-2/MSI/L2A/2021/06/15/S2A_MSIL2A_.../
+    Uses the OData S3Path when available — reliable for reprocessed products
+    stored under L2A_N0500/… instead of L2A/….  The S3Path may point deeper
+    than .SAFE (e.g. it sometimes ends with /GRANULE), so we truncate it at
+    the .SAFE boundary.  Falls back to constructing the path from the product
+    name's sensing date when S3Path is absent.
     """
+    if s3path:
+        # OData is the source of truth: reprocessed products (e.g. N0500) live
+        # under prefixes that cannot be derived from the product name alone.
+        path = s3path.lstrip("/")
+        safe_end = path.find(".SAFE")
+        if safe_end >= 0:
+            path = path[: safe_end + len(".SAFE")]
+        return path + "/"
+    # Fallback for the rare case where OData does not return S3Path: assume
+    # the standard layout organised by sensing date.
     date_compact = product_name.split("_")[2]   # e.g. "20210615T102021"
     yyyy, mm, dd = date_compact[:4], date_compact[4:6], date_compact[6:8]
     return f"eodata/Sentinel-2/MSI/L2A/{yyyy}/{mm}/{dd}/{product_name}/"
@@ -243,96 +263,144 @@ def product_s3_prefix(product_name: str) -> str:
 
 def find_band_paths(eo_fs: s3fs.S3FileSystem, s3_prefix: str) -> dict[str, str]:
     """
-    Navigate the .SAFE directory tree and return /vsis3/ paths for all 14 bands.
+    Navigate the .SAFE directory tree and return s3fs-compatible paths for
+    all 14 bands (relative to the EO S3 endpoint, including the bucket name).
 
-    Granule directory name structure: L2A_{tile_id}_{orbit}_{date_compact}
-    JP2 filenames:  {tile_id}_{date_compact}_{band_suffix}.jp2
+    Lists each resolution sub-directory rather than constructing filenames
+    from the granule timestamp, because newer processing baselines (N0500+)
+    embed a different timestamp in JP2 filenames than in the granule directory name.
     """
-    granule_entries = eo_fs.ls(s3_prefix + "GRANULE/", detail=False)
-    if not granule_entries:
-        raise RuntimeError(f"No granule found under {s3_prefix}GRANULE/")
-    granule_id = granule_entries[0].rstrip("/").split("/")[-1]
+    # Why glob and not ls? On the CDSE MinIO backend, `ls("SAFE/GRANULE/")`
+    # sometimes returns the parent prefix itself as an entry (trailing slash
+    # and all), which would then be parsed as a spurious granule_id called
+    # "GRANULE" and produce a double-GRANULE path downstream. Real granule
+    # directories always start with "L2A_", so globbing on that prefix is a
+    # robust filter.
+    granule_matches = eo_fs.glob(f"{s3_prefix}GRANULE/L2A_*")
+    if not granule_matches:
+        raise RuntimeError(f"No L2A_* granule directory under {s3_prefix}GRANULE/")
+    img_base = f"{granule_matches[0].rstrip('/')}/IMG_DATA"
 
-    parts = granule_id.split("_")   # ['L2A', 'T32TLT', 'A031234', '20210615T102021']
-    tile_id = parts[1]              # 'T32TLT'
-    date_compact = parts[3]         # '20210615T102021'
+    res_dirs = {res_dir for res_dir, _ in BAND_MAP.values()}
+    dir_listings: dict[str, list[str]] = {
+        res_dir: eo_fs.ls(f"{img_base}/{res_dir}/", detail=False)
+        for res_dir in res_dirs
+    }
 
-    img_base = f"{s3_prefix}GRANULE/{granule_id}/IMG_DATA"
     band_paths: dict[str, str] = {}
     for band_name, (res_dir, suffix) in BAND_MAP.items():
-        jp2_name = f"{tile_id}_{date_compact}_{suffix}.jp2"
-        band_paths[band_name] = f"/vsis3/eodata/{img_base}/{res_dir}/{jp2_name}"
+        matches = [f for f in dir_listings[res_dir] if f.endswith(f"_{suffix}.jp2")]
+        if not matches:
+            raise RuntimeError(f"No JP2 file for band {band_name} in {img_base}/{res_dir}/")
+        band_paths[band_name] = matches[0]
     return band_paths
 
 
 # ---------------------------------------------------------------------------
-# Patch extraction
+# Band file loading and patch extraction
 # ---------------------------------------------------------------------------
 
 
-def extract_patch(
-    band_paths: dict[str, str],
-    bbox_3035: list,
-    eo_s3_key: str,
-    eo_s3_secret: str,
+def open_band_readers(
+    eo_fs: s3fs.S3FileSystem, band_paths: dict[str, str]
+) -> tuple[list[MemoryFile], dict[str, rasterio.DatasetReader]]:
+    """
+    Download all 13 JP2 band files from EO S3 into memory via s3fs and open
+    them as rasterio dataset readers.
+
+    Keeping the readers open for the duration of a product's patch loop avoids
+    repeated MemoryFile allocations and lets GDAL cache the file structure.
+    Returns (mem_files, readers) — callers must close both when done.
+    """
+    mem_files: list[MemoryFile] = []
+    readers: dict[str, rasterio.DatasetReader] = {}
+    band_bar = tqdm(
+        band_paths.items(), desc="    bands", unit="band",
+        leave=False, total=len(band_paths),
+    )
+    for band_name, s3_path in band_bar:
+        band_bar.set_postfix_str(s3_path.split("/")[-1])
+        # Eagerly stream the whole JP2 (~50 MB) into RAM. We pay this cost
+        # once per product, then read hundreds of cheap windows from the
+        # in-memory reader — far cheaper than per-patch HTTP round-trips.
+        data = eo_fs.cat(s3_path)
+        mf = MemoryFile(data)
+        mem_files.append(mf)
+        readers[band_name] = mf.open()
+    return mem_files, readers
+
+
+def close_band_readers(
+    mem_files: list[MemoryFile],
+    readers: dict[str, rasterio.DatasetReader],
+) -> None:
+    for r in readers.values():
+        r.close()
+    for mf in mem_files:
+        mf.close()
+
+
+def read_patch(
+    readers: dict[str, rasterio.DatasetReader], bbox_3035: list
 ) -> np.ndarray:
     """
-    Window-read a (14, H, W) uint16 patch from the EO S3 JP2 band files.
-
-    Uses rasterio.env.Env to inject EO S3 credentials into GDAL without
-    touching the system env vars used by s3fs for the personal bucket.
-    All bands are resampled to 10 m via out_shape.
+    Window-read a (13, H, W) uint16 patch from already-open band readers.
+    All bands are resampled to 10 m by specifying out_shape.
     """
     xmin, ymin, xmax, ymax = bbox_3035
     h = int((ymax - ymin) / 10)
     w = int((xmax - xmin) / 10)
 
-    env_vars = {
-        "AWS_S3_ENDPOINT": "eodata.dataspace.copernicus.eu",
-        "AWS_ACCESS_KEY_ID": eo_s3_key,
-        "AWS_SECRET_ACCESS_KEY": eo_s3_secret,
-        "AWS_HTTPS": "YES",
-        "AWS_VIRTUAL_HOSTING": "FALSE",
-    }
+    # CRITICAL: tile bboxes are stored in EPSG:3035 (metres, ~3 500 000 range)
+    # but Sentinel-2 JP2s are in UTM (EPSG:326xx, ~200 000–800 000 range).
+    # Passing 3035 coords to window_from_bounds with a UTM transform would
+    # compute a window entirely outside the image → every pixel comes back as
+    # fill_value=0. Reproject once here (all bands share the same UTM zone).
+    any_src = next(iter(readers.values()))
+    left, bottom, right, top = transform_bounds(
+        "EPSG:3035", any_src.crs, xmin, ymin, xmax, ymax
+    )
 
     bands_list: list[np.ndarray] = []
-    with RasterioEnv(**env_vars):
-        for band_name in BAND_MAP:
-            with rasterio.open(band_paths[band_name]) as src:
-                window = window_from_bounds(xmin, ymin, xmax, ymax, src.transform)
-                data = src.read(
-                    1,
-                    window=window,
-                    out_shape=(h, w),
-                    resampling=rasterio.enums.Resampling.nearest,
-                    boundless=True,
-                    fill_value=0,
-                )
-            bands_list.append(data)
+    for band_name in BAND_MAP:
+        src = readers[band_name]
+        window = window_from_bounds(left, bottom, right, top, src.transform)
+        data = src.read(
+            1,
+            window=window,
+            out_shape=(h, w),
+            resampling=rasterio.enums.Resampling.nearest,
+            boundless=True,
+            fill_value=0,
+        )
+        bands_list.append(data)
 
     return np.stack(bands_list, axis=0).astype(np.uint16)
 
 
 def patch_array_to_tiff_bytes(array: np.ndarray, bbox_3035: list) -> bytes:
-    """Encode a (14, H, W) uint16 array as a georeferenced GeoTIFF in EPSG:3035."""
-    _, h, w = array.shape
+    """Encode a (C, H, W) uint16 array as a georeferenced GeoTIFF in EPSG:3035."""
+    c, h, w = array.shape
     xmin, ymin, xmax, ymax = bbox_3035
     profile = {
         "driver": "GTiff",
         "dtype": "uint16",
         "width": w,
         "height": h,
-        "count": 14,
+        "count": c,
         "crs": "EPSG:3035",
         "transform": from_bounds(xmin, ymin, xmax, ymax, w, h),
         "compress": "deflate",
     }
-    buf = io.BytesIO()
-    with MemoryFile(buf) as memfile:
+    # rasterio writes into GDAL's /vsimem/ buffer via the outer MemoryFile.
+    # The inner context flushes the dataset on close; memfile.read() must be
+    # called *after* the inner block and *inside* the outer one to recover
+    # the encoded GeoTIFF bytes. (MemoryFile(some_bytesio) would NOT write
+    # into that BytesIO — a common gotcha worth remembering.)
+    with MemoryFile() as memfile:
         with memfile.open(**profile) as dst:
             dst.write(array)
-    buf.seek(0)
-    return buf.read()
+        return memfile.read()
 
 
 # ---------------------------------------------------------------------------
@@ -388,50 +456,6 @@ def build_personal_fs() -> s3fs.S3FileSystem:
 
 
 # ---------------------------------------------------------------------------
-# Per-tile task
-# ---------------------------------------------------------------------------
-
-
-def process_tile(
-    personal_fs: s3fs.S3FileSystem,
-    band_paths: dict[str, str],
-    year: int,
-    filename: str,
-    bbox: list,
-    img_s3_path: str,
-    lbl_s3_path: str,
-    eo_s3_key: str,
-    eo_s3_secret: str,
-) -> tuple[str, bool, str]:
-    """
-    Extract one Sentinel-2 patch from EO S3 and its CLC+ label, upload both
-    to the personal S3 bucket.  Already-uploaded tiles are skipped.
-    """
-    patch_id = filename.replace(".tif", "")
-
-    if personal_fs.exists(img_s3_path) and personal_fs.exists(lbl_s3_path):
-        return patch_id, True, "skipped"
-
-    try:
-        array = extract_patch(band_paths, bbox, eo_s3_key, eo_s3_secret)
-        tiff_bytes = patch_array_to_tiff_bytes(array, bbox)
-        with personal_fs.open(img_s3_path, "wb") as f:
-            f.write(tiff_bytes)
-
-        label = download_label_array(bbox, year)
-        buf = io.BytesIO()
-        np.save(buf, label)
-        buf.seek(0)
-        with personal_fs.open(lbl_s3_path, "wb") as f:
-            f.write(buf.read())
-
-        return patch_id, True, "uploaded"
-
-    except Exception as exc:
-        return patch_id, False, str(exc)
-
-
-# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -446,16 +470,20 @@ def main() -> None:
     parser.add_argument("--nuts", required=True, help="NUTS3 region code, e.g. FR101")
     parser.add_argument(
         "--year", type=int, default=2021,
-        help="Acquisition year — must match an available CLC+ edition (default: 2021)",
+        help="Sentinel-2 acquisition year (default: 2021)",
+    )
+    parser.add_argument(
+        "--label-year", type=int, default=None,
+        help=(
+            "CLC+ Backbone label year (default: same as --year). "
+            "Available editions: 2018, 2021. Use this when --year has no "
+            "matching CLC+ edition (e.g. --year 2024 --label-year 2021)."
+        ),
     )
     parser.add_argument("--s3-bucket", required=True, help="Destination S3 bucket name")
     parser.add_argument(
         "--s3-prefix", default="sentinel2",
         help="Key prefix inside the bucket (default: sentinel2)",
-    )
-    parser.add_argument(
-        "--workers", type=int, default=4,
-        help="Parallel download threads (default: 4)",
     )
     parser.add_argument(
         "--eo-s3-key",
@@ -476,19 +504,33 @@ def main() -> None:
             "Generate credentials at https://eodata-s3keysmanager.dataspace.copernicus.eu/"
         )
 
+    label_year = args.label_year or args.year
+    if label_year != args.year:
+        print(f"Note: using CLC+ labels from {label_year} for {args.year} imagery.\n")
+
     prefix = f"{args.s3_bucket}/{args.s3_prefix}"
 
-    # ---- Step 1: Build the tile grid from the NUTS3 boundary ---------------
+    # ---- Step 1: Build tile grid from NUTS3 boundary -----------------------
+    # Fetch the EPSG:3035 polygon of the NUTS3 region from Eurostat GISCO and
+    # cover it with a regular 2 500 m × 2 500 m grid (→ 250 px at 10 m). The
+    # filename of every tile (xmin_ymin_seq.tif) is deterministic, which is
+    # what makes the resumability check in step 4 cheap and correct.
     nuts_geom = load_nuts3_boundary(args.nuts)
     tiles = build_tile_grid(nuts_geom)
     print(f"→ {len(tiles)} patches in the {args.nuts} grid\n")
 
     # ---- Step 2: Find covering Sentinel-2 products -------------------------
+    # Query CDSE OData for L2A products intersecting the region's WGS84
+    # bounding box over the May–September window of `year` (peak vegetation
+    # season, lowest cloud risk). OData lets us combine several filters in
+    # one HTTP request: product type, footprint intersection, cloud cover
+    # threshold, date range, and online-availability — so the result list
+    # only contains products we can actually download.
     all_bboxes = list(tiles["bbox"])
-    nuts_bbox_wgs84 = bbox_3035_to_wgs84(
-        [min(b[0] for b in all_bboxes), min(b[1] for b in all_bboxes),
-         max(b[2] for b in all_bboxes), max(b[3] for b in all_bboxes)]
-    )
+    nuts_bbox_wgs84 = bbox_3035_to_wgs84([
+        min(b[0] for b in all_bboxes), min(b[1] for b in all_bboxes),
+        max(b[2] for b in all_bboxes), max(b[3] for b in all_bboxes),
+    ])
     print(
         f"Region WGS84 bbox: W={nuts_bbox_wgs84[0]:.4f}, S={nuts_bbox_wgs84[1]:.4f}, "
         f"E={nuts_bbox_wgs84[2]:.4f}, N={nuts_bbox_wgs84[3]:.4f}"
@@ -502,96 +544,143 @@ def main() -> None:
         return
 
     # ---- Step 3: Build filesystems -----------------------------------------
+    # Two independent S3 clients with different endpoints and different
+    # credentials: one read-only for CDSE EO S3, one read/write for the
+    # personal SSP Cloud bucket. Using two dedicated S3FileSystem instances
+    # (rather than reconfiguring a single one) avoids any credential-set
+    # cross-talk during the product loop.
     personal_fs = build_personal_fs()
     eo_fs = build_eo_fs(args.eo_s3_key, args.eo_s3_secret)
 
     uploaded = skipped = errors = 0
 
     # ---- Step 4: Process each product --------------------------------------
-    for product in products:
+    # Product-first, tile-second ordering: each product's 13 JP2 bands are
+    # shared by hundreds of patches, so we download them *once* per product
+    # (`open_band_readers`), then loop over every covered tile reading cheap
+    # in-memory windows. Tiles already on personal S3 are skipped here (the
+    # resumability mechanism — see the `personal_fs.exists(...)` check below).
+    product_bar = tqdm(products, desc="Products", unit="prod")
+
+    def _refresh_totals() -> None:
+        product_bar.set_postfix(up=uploaded, skip=skipped, err=errors)
+
+    _refresh_totals()
+
+    for product in product_bar:
         product_name = product["Name"]
         geo_footprint = product.get("GeoFootprint", {})
+        product_bar.set_description(f"Products [{product_name[:40]}]")
 
-        # Determine which tiles fall within this product's footprint
+        # Filter tiles covered by this product's footprint
         if geo_footprint:
             try:
                 product_geom = shape(geo_footprint)
-                covered_mask = [
+                mask = [
                     box(*bbox_3035_to_wgs84(row["bbox"])).intersects(product_geom)
                     for _, row in tiles.iterrows()
                 ]
-                covered_tiles = tiles[covered_mask]
+                covered = tiles[mask]
             except Exception:
-                covered_tiles = tiles  # fallback: try all tiles
+                covered = tiles
         else:
-            covered_tiles = tiles
+            covered = tiles
 
-        to_process = covered_tiles[
-            [
-                not (
-                    personal_fs.exists(
-                        f"{prefix}/images/{args.nuts}/{args.year}/{row['filename']}"
-                    )
-                    and personal_fs.exists(
-                        f"{prefix}/labels/{args.nuts}/{args.year}/"
-                        f"{row['filename'].replace('.tif', '.npy')}"
-                    )
+        # Resumability check: a tile is considered "done" iff BOTH the image
+        # and the label already exist on personal S3. This lets the script be
+        # stopped and restarted freely. Caveat: a present-but-corrupt file
+        # (e.g. a tile generated before a bug fix) is treated as done — delete
+        # it explicitly to force regeneration.
+        to_process = covered[[
+            not (
+                personal_fs.exists(
+                    f"{prefix}/images/{args.nuts}/{args.year}/{row['filename']}"
                 )
-                for _, row in covered_tiles.iterrows()
-            ]
-        ]
+                and personal_fs.exists(
+                    f"{prefix}/labels/{args.nuts}/{args.year}/"
+                    f"{row['filename'].replace('.tif', '.npy')}"
+                )
+            )
+            for _, row in covered.iterrows()
+        ]]
 
         if to_process.empty:
-            print(f"  [skip] {product_name[:60]}… — all tiles already uploaded")
-            skipped += len(covered_tiles)
+            tqdm.write(f"  [skip] {product_name[:60]}… — all tiles already uploaded")
+            skipped += len(covered)
+            _refresh_totals()
             continue
 
-        print(
-            f"  Product {product_name[:60]}…\n"
-            f"  cloud={product['cloudCover']:.1f}%  →  {len(to_process)} tiles"
+        tqdm.write(
+            f"  Product {product_name[:60]}…  "
+            f"cloud={product['cloudCover']:.1f}%  →  {len(to_process)} tiles"
         )
 
         try:
-            band_paths = find_band_paths(eo_fs, product_s3_prefix(product_name))
+            band_paths = find_band_paths(
+                eo_fs, product_s3_prefix(product_name, product.get("S3Path", ""))
+            )
         except Exception as exc:
-            print(f"  ✗  Could not resolve band paths: {exc}")
+            tqdm.write(f"  ✗  Could not resolve band paths: {exc}")
             errors += len(to_process)
+            _refresh_totals()
             continue
 
-        tasks = [
-            dict(
-                personal_fs=personal_fs,
-                band_paths=band_paths,
-                year=args.year,
-                filename=row["filename"],
-                bbox=row["bbox"],
-                img_s3_path=(
-                    f"{prefix}/images/{args.nuts}/{args.year}/{row['filename']}"
-                ),
-                lbl_s3_path=(
-                    f"{prefix}/labels/{args.nuts}/{args.year}/"
-                    f"{row['filename'].replace('.tif', '.npy')}"
-                ),
-                eo_s3_key=args.eo_s3_key,
-                eo_s3_secret=args.eo_s3_secret,
-            )
-            for _, row in to_process.iterrows()
-        ]
+        try:
+            mem_files, readers = open_band_readers(eo_fs, band_paths)
+        except Exception as exc:
+            tqdm.write(f"  ✗  Band download failed: {exc}")
+            errors += len(to_process)
+            _refresh_totals()
+            continue
 
-        with ThreadPoolExecutor(max_workers=args.workers) as executor:
-            futures = {executor.submit(process_tile, **t): t["filename"] for t in tasks}
-            for future in as_completed(futures):
-                patch_id, success, msg = future.result()
-                if not success:
-                    errors += 1
-                    print(f"    ✗  {patch_id}  —  {msg}")
-                elif msg == "skipped":
-                    skipped += 1
-                else:
+        try:
+            tile_bar = tqdm(
+                to_process.iterrows(), desc="    tiles", unit="tile",
+                total=len(to_process), leave=False,
+            )
+            for _, row in tile_bar:
+                filename = row["filename"]
+                bbox = row["bbox"]
+                patch_id = filename.replace(".tif", "")
+                img_path = f"{prefix}/images/{args.nuts}/{args.year}/{filename}"
+                lbl_path = (
+                    f"{prefix}/labels/{args.nuts}/{args.year}/"
+                    f"{filename.replace('.tif', '.npy')}"
+                )
+
+                try:
+                    array = read_patch(readers, bbox)
+                    tiff_bytes = patch_array_to_tiff_bytes(array, bbox)
+                    with personal_fs.open(img_path, "wb") as f:
+                        f.write(tiff_bytes)
+
+                    label = download_label_array(bbox, label_year)
+                    buf = io.BytesIO()
+                    np.save(buf, label)
+                    buf.seek(0)
+                    with personal_fs.open(lbl_path, "wb") as f:
+                        f.write(buf.read())
+
                     uploaded += 1
-                    print(f"    ✓  {patch_id}")
+
+                except Exception as exc:
+                    errors += 1
+                    tqdm.write(f"    ✗  {patch_id}  —  {exc}")
+
+                _refresh_totals()
+
+        finally:
+            close_band_readers(mem_files, readers)
+
+    product_bar.close()
 
     # ---- Step 5: Write filename2bbox.parquet index -------------------------
+    # The index is computed entirely from the deterministic grid (step 1),
+    # not from whatever subset of tiles was actually uploaded this run — so
+    # re-running the script later (even after a partial interruption) still
+    # produces an index that lists every patch in the region. Downstream
+    # code uses this parquet to map a tile filename to its EPSG:3035 bbox
+    # without needing to parse filenames.
     parquet_path = f"{prefix}/images/{args.nuts}/{args.year}/filename2bbox.parquet"
     parquet_buf = io.BytesIO()
     tiles[["filename", "bbox"]].to_parquet(parquet_buf, index=False)

@@ -210,31 +210,27 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-
-&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
-      
-=======
-      
-&gt;&gt;&gt;&gt;&gt;&gt;&gt; main
-    <table>
-  <thead>
-    <tr>
-      <th>Technical level</th>
-      <th>Tasks</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><span class="level-button level-beginner">Beginner</span></td>
-      <td>Doing the exercises of steps 1, 3 and 4, relying on clues and solutions if needed.</td>
-    </tr>
-    <tr>
-      <td><span class="level-button level-intermediate">Intermediate</span></td>
-      <td>Doing the exercises of steps 1 to 4 </td>
-    </tr>
-    <tr>
-      <td><span class="level-button level-expert">Expert</span></td><td>Doing the exercises of steps 1 to 4, without relying on clues and solutions.</td><td>Doing the exercises of steps 1 to 4, without relying on clues and solutions</td></tr>
-  </tbody>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th">Technical level</th>
+<th data-quarto-table-cell-role="th">Tasks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="level-button level-beginner">Beginner</span></td>
+<td>Doing the exercises of steps 1, 3 and 4, relying on clues and solutions if needed.</td>
+</tr>
+<tr class="even">
+<td><span class="level-button level-intermediate">Intermediate</span></td>
+<td>Doing the exercises of steps 1 to 4</td>
+</tr>
+<tr class="odd">
+<td><span class="level-button level-expert">Expert</span></td>
+<td>Doing the exercises of steps 1 to 4, without relying on clues and solutions.</td>
+</tr>
+</tbody>
 </table>
 <section id="introduction" class="level2 unnumbered">
 <h2 class="unnumbered anchored" data-anchor-id="introduction">Introduction</h2>
@@ -300,13 +296,10 @@ ul.task-list li input[type="checkbox"] {
 <h1>Structure of the project</h1>
 <p>This project has four sections (listed in the banner at the top of the page):</p>
 <ol type="1">
-<li><strong>Data Acquisition &amp; Manipulation</strong> – Download Sentinel-2 images and CLC+ labels, visualise and manipulate raster data. &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</li>
-<li><strong>Model Training</strong> <em>(optional)</em> – Understand the SegFormer architecture and how the segmentation model was trained.</li>
-<li><strong>Inference</strong> – Use a pre-trained model to produce land-cover maps.</li>
-<li><h1 id="statistics-optional-compute-regional-statistics-based-on-the-predictions."><strong>Statistics</strong> <em>(optional)</em> – Compute regional statistics based on the predictions.</h1></li>
+<li><strong>Data Acquisition &amp; Manipulation</strong> – Download Sentinel-2 images and CLC+ labels, visualise and manipulate raster data.</li>
 <li><strong>Model Training</strong> <em>(optional)</em> – Understand the SegFormer architecture and how the segmentation model was trained (and train a model by yourself)</li>
 <li><strong>Inference</strong> – Use a pre-trained model to produce land-cover maps.</li>
-<li><strong>Statistics</strong> – Use the predictions to compute regional statistics. &gt;&gt;&gt;&gt;&gt;&gt;&gt; main</li>
+<li><strong>Statistics</strong> – Use the predictions to compute regional statistics.</li>
 </ol>
 </section>
 <section id="initialization-of-the-project" class="level1">

@@ -34,10 +34,10 @@ website:
         href: 1-acquisition.qmd
       - text: "Model Training (Optional)"
         href: 2-model.qmd
-      - text: "Inference and Statistics"
+      - text: "Inference"
         href: 3-inference.qmd
-      - text: "Deployment (Optional)"
-        href: 4-deployment.qmd
+      - text: "Statistics"
+        href: 4-statistics.qmd
       - text: "Demonstration App"
         href: "https://inseefrlab.github.io/satellite-images-webapp/"
 

@@ -2,6 +2,10 @@
 *.tif
 *.tiff
 *.npy
+*.parquet
+*.csv
+*.png
+mlflow.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

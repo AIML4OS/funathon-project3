@@ -38,7 +38,7 @@ format:
     </tr>
     <tr>
       <td><span class="level-button level-expert">Expert</span></td>
-      <td>Doing the exercises of steps 1 to 4, without relying on clues and solutions</td>
+      <td>Doing the exercises of steps 1 to 4, without relying on clues and solutions.</td>
     </tr>
   </tbody>
 </table>
@@ -118,13 +118,7 @@ Structure of the project:
 Install the project dependencies by running the following command in the terminal:
 
 ```
-uv sync
-```
-
-If you want to work on the optional model-training section, install the training extras:
-
-```
-uv sync --extra training
+source ./init.sh
 ```
 
 ## Working on the exercises

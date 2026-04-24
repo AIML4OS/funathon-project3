@@ -38,11 +38,7 @@ format:
     </tr>
     <tr>
       <td><span class="level-button level-expert">Expert</span></td>
-<<<<<<< HEAD
       <td>Doing the exercises of steps 1 to 4, without relying on clues and solutions.</td>
-=======
-      <td>Doing the exercises of steps 1 to 4, without relying on clues and solutions</td>
->>>>>>> main
     </tr>
   </tbody>
 </table>
@@ -73,15 +69,9 @@ By completing this project you will learn to:
 This project has four sections (listed in the banner at the top of the page):
 
 1.  **Data Acquisition & Manipulation** -- Download Sentinel-2 images and CLC+ labels, visualise and manipulate raster data.
-<<<<<<< HEAD
-2.  **Model Training** *(optional)* -- Understand the SegFormer architecture and how the segmentation model was trained.
-3.  **Inference** -- Use a pre-trained model to produce land-cover maps.
-4.  **Statistics** *(optional)* -- Compute regional statistics based on the predictions.
-=======
 2.  **Model Training** *(optional)* -- Understand the SegFormer architecture and how the segmentation model was trained (and train a model by yourself)
 3.  **Inference** -- Use a pre-trained model to produce land-cover maps.
 4.  **Statistics** -- Use the predictions to compute regional statistics.
->>>>>>> main
 
 # Initialization of the project
 

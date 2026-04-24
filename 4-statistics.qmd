@@ -688,6 +688,7 @@ centroid of a sealed polygon, weighted by its area.
 
 ```{python}
 #| eval: false
+import folium
 from folium.plugins import HeatMap
 
 gdf_nuts_wgs84 = gdf_nuts.to_crs("__")  # TODO: target CRS for Folium (str)
@@ -734,6 +735,7 @@ m
 #| eval: true
 #| echo: true
 #| results: hide
+import folium
 from folium.plugins import HeatMap
 
 gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")

@@ -1,6 +1,6 @@
 ---
 lang: en-US
-title: Model Training
+title: Model Explanation
 
 format:
   html:
@@ -469,120 +469,6 @@ print(f"Building rate: {building_rate:.4f}  (fraction of pixels predicted as bui
 During early training, the model often collapses to predicting the majority class everywhere. Monitoring the fraction of pixels predicted as "building" helps detect this: if `building_rate ≈ 0` after a few epochs, the model is ignoring the minority class and something is wrong (learning rate too high, class imbalance, etc.).
 :::
 
-# The Full Training Pipeline
-
-The training script `intermediate_solutions/solution_step2/main.py` wires everything together:
-
-```{python}
-#| eval: false
-
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-
-callbacks = [
-    EarlyStopping(monitor="val_loss", patience=5, mode="min"),
-    ModelCheckpoint(
-        monitor="val_loss",
-        mode="min",
-        save_top_k=1,
-        filename="best-model",
-    ),
-]
-
-trainer = pl.Trainer(
-    max_epochs=20,
-    accelerator="auto",   # uses GPU if available, CPU otherwise
-    devices="auto",
-    callbacks=callbacks,
-    log_every_n_steps=10,
-)
-
-trainer.fit(module, train_loader, val_loader)
-```
-
-Two callbacks are used:
-
-- **`EarlyStopping`**: halts training if the validation loss does not improve for 5 consecutive epochs, preventing over-fitting.
-- **`ModelCheckpoint`**: saves only the checkpoint with the best validation loss, keeping storage requirements low.
-
-::: {.callout-caution}
-## Exercise 3 — Training a toy model
-
-To avoid downloading the full pre-trained weights, we can build a small SegFormer from a minimal config and run a few training steps on random data.
-
-1. Create a `SegformerConfig` with `num_channels=14`, `num_labels=3`, and `depths=[1, 1, 1, 1]` (one transformer block per stage instead of the usual `[3, 6, 40, 3]` for B5).
-2. Instantiate a `SemanticSegmentationSegformer` from this config (no pre-trained weights — just call the constructor directly).
-3. Wrap it in a `SegmentationModule` with `CrossEntropyLoss` and `AdamW`.
-4. Run 3 training steps manually (without a `Trainer`) by calling `module.training_step(batch, 0)` on a random batch.
-
-```{python}
-#| eval: false
-
-from transformers import SegformerConfig
-from models.model import SemanticSegmentationSegformer
-from models.module import SegmentationModule
-from torch import nn, optim
-
-# 1. Minimal config
-config = SegformerConfig(
-    num_channels=___,   # TODO
-    num_labels=___,     # TODO
-    depths=___,         # TODO: [1, 1, 1, 1]
-    id2label={0: "background", 1: "building", 2: "vegetation"},
-    label2id={"background": 0, "building": 1, "vegetation": 2},
-)
-
-# 2. Model without pre-trained weights
-tiny_model = SemanticSegmentationSegformer(config)
-
-# 3. Lightning module
-tiny_module = SegmentationModule(
-    model=tiny_model,
-    loss=___,               # TODO: CrossEntropyLoss
-    optimizer=optim.AdamW,
-    optimizer_params={"lr": 1e-3},
-    scheduler=optim.lr_scheduler.ReduceLROnPlateau,
-    scheduler_params={"mode": "min", "patience": 3, "monitor": "val_loss"},
-    scheduler_interval="epoch",
-)
-
-```
-:::
-
-::: {.callout-tip collapse="true"}
-## Solution — Exercise 3
-
-```{python}
-#| eval: false
-
-import torch
-from transformers import SegformerConfig
-from models.model import SemanticSegmentationSegformer
-from models.module import SegmentationModule
-from torch import nn, optim
-
-config = SegformerConfig(
-    num_channels=14,
-    num_labels=3,
-    depths=[1, 1, 1, 1],
-    id2label={0: "background", 1: "building", 2: "vegetation"},
-    label2id={"background": 0, "building": 1, "vegetation": 2},
-)
-
-tiny_model = SemanticSegmentationSegformer(config)
-
-tiny_module = SegmentationModule(
-    model=tiny_model,
-    loss=nn.CrossEntropyLoss(ignore_index=255),
-    optimizer=optim.AdamW,
-    optimizer_params={"lr": 1e-3},
-    scheduler=optim.lr_scheduler.ReduceLROnPlateau,
-    scheduler_params={"mode": "min", "patience": 3, "monitor": "val_loss"},
-    scheduler_interval="epoch",
-)
-```
-:::
-
 # Summary
 
 In this section you have:
@@ -591,6 +477,6 @@ In this section you have:
 - Learned how to **instantiate and inspect** the model, count parameters, and see the encoder/decoder split.
 - Traced a **forward pass** from a raw `(B, 14, H, W)` tensor through the four encoder stages to the final `(B, num_classes, H/4, W/4)` logits, and upsampled them to label resolution.
 - Seen how **freezing** the encoder reduces trainable parameters from ~86 M to ~4 M, which is useful when fine-tuning with limited data.
-- Wrapped the model in a **PyTorch Lightning module** with cross-entropy loss and IoU metrics, ready for a full training loop.
+- Wrapped the model in a **PyTorch Lightning module** with cross-entropy loss and IoU metrics.
 
-The next section covers **inference and statistics**: using a pre-trained model checkpoint to produce land-cover maps over new regions and computing summary statistics with administrative boundaries.
+The next step is either the **(optional) Model Training** section — if you want to train the model yourself — or directly **Inference**, which uses a pre-trained checkpoint to produce land-cover maps.

@@ -82,16 +82,17 @@ By completing this project you will learn to:
 - Manipulate geodata and associate it to maps
 - Run inference with a pre-trained SegFormer model to produce land-cover maps
 - Compute regional statistics (area by class, artificialization rates) using administrative boundaries
-- *(Optional)* Train a segmentation model from scratch
+- *(Optional)* Train a segmentation model from scratch and track experiments with MLflow
 
 # Structure of the project
 
-This project has four sections (listed in the banner at the top of the page):
+This project has five sections (listed in the banner at the top of the page):
 
-1.  **Data Acquisition & Manipulation** -- Download Sentinel-2 images and CLC+ labels, visualise and manipulate raster data.
-2.  **Model Training** *(optional)* -- Understand the SegFormer architecture and how the segmentation model was trained (and train a model by yourself)
-3.  **Inference** -- Use a pre-trained model to produce land-cover maps.
-4.  **Statistics** -- Use the predictions to compute regional statistics.
+1. **Data Acquisition & Manipulation** — Download Sentinel-2 images and CLC+ labels, visualise and manipulate raster data.
+2. **Model Explanation** — Understand the SegFormer architecture, inspect its parameters, and trace a forward pass.
+3. **Model Training** *(optional)* — Train the model yourself, configure callbacks, and track experiments with MLflow.
+4. **Inference** — Use a pre-trained model checkpoint to produce land-cover maps.
+5. **Statistics** — Compute regional statistics from the predictions using administrative boundaries.
 
 # Initialization of the project
 

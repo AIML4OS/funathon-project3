@@ -138,7 +138,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
   <li class="nav-item">
     <a class="nav-link active" href="./3-training.html" aria-current="page"> 
-<span class="menu-text">Model Explanation</span></a>
+<span class="menu-text">Model Training</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="./4-inference.html"> 
@@ -231,7 +231,7 @@ Note
 <section id="callbacks-early-stopping-and-checkpointing" class="level2" data-number="1.1">
 <h2 data-number="1.1" class="anchored" data-anchor-id="callbacks-early-stopping-and-checkpointing"><span class="header-section-number">1.1</span> Callbacks: early stopping and checkpointing</h2>
 <p>Two callbacks guard the training run:</p>
-<div id="98685a23" class="cell" data-execution_count="1">
+<div id="11973b9e" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pytorch_lightning <span class="im">as</span> pl</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pytorch_lightning.callbacks <span class="im">import</span> EarlyStopping, ModelCheckpoint</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -252,7 +252,7 @@ Note
 </section>
 <section id="trainer-and-training-loop" class="level2" data-number="1.2">
 <h2 data-number="1.2" class="anchored" data-anchor-id="trainer-and-training-loop"><span class="header-section-number">1.2</span> Trainer and training loop</h2>
-<div id="11a0c789" class="cell" data-execution_count="2">
+<div id="875757d2" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> pl.Trainer(</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    max_epochs<span class="op">=</span><span class="dv">20</span>,</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    accelerator<span class="op">=</span><span class="st">"auto"</span>,   <span class="co"># uses GPU if available, CPU otherwise</span></span>
@@ -281,7 +281,7 @@ Note
 <li>Wrap it in a <code>SegmentationModule</code> with <code>CrossEntropyLoss</code> and <code>AdamW</code>.</li>
 <li>Run 3 training steps manually (without a <code>Trainer</code>) by calling <code>module.training_step(batch, batch_idx)</code> on a random batch.</li>
 </ol>
-<div id="51825419" class="cell" data-execution_count="3">
+<div id="e50fa4a1" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> SegformerConfig</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
@@ -341,7 +341,7 @@ Note
 </div>
 <div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="028a68db" class="cell" data-execution_count="4">
+<div id="9f0e4836" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> SegformerConfig</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
@@ -394,7 +394,7 @@ Note
 <section id="setting-up-the-mlflow-logger" class="level2" data-number="2.1">
 <h2 data-number="2.1" class="anchored" data-anchor-id="setting-up-the-mlflow-logger"><span class="header-section-number">2.1</span> Setting up the MLflow logger</h2>
 <p>PyTorch Lightning integrates with MLflow through <code>MLFlowLogger</code>. On SSP Cloud, an MLflow tracking server is available as a separate service you can launch from the catalogue.</p>
-<div id="945ab551" class="cell" data-execution_count="5">
+<div id="710f686e" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pytorch_lightning.loggers <span class="im">import</span> MLFlowLogger</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Replace with the URL of your MLflow service on SSP Cloud</span></span>
@@ -422,7 +422,7 @@ Note
 </section>
 <section id="passing-the-logger-to-the-trainer" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="passing-the-logger-to-the-trainer"><span class="header-section-number">2.2</span> Passing the logger to the Trainer</h2>
-<div id="0130e231" class="cell" data-execution_count="6">
+<div id="517091dd" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> pl.Trainer(</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    max_epochs<span class="op">=</span><span class="dv">20</span>,</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    accelerator<span class="op">=</span><span class="st">"auto"</span>,</span>
@@ -499,7 +499,7 @@ Note
 <section id="logging-hyperparameters-manually" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="logging-hyperparameters-manually"><span class="header-section-number">2.4</span> Logging hyperparameters manually</h2>
 <p>You can log any scalar or string value as an MLflow parameter before training starts:</p>
-<div id="883fae1d" class="cell" data-execution_count="7">
+<div id="b968c69b" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>mlf_logger.log_hyperparams({</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"lr"</span>: CONFIG[<span class="st">"lr"</span>],</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"batch_size"</span>: CONFIG[<span class="st">"batch_size"</span>],</span>
@@ -538,7 +538,7 @@ Note
 <li>Build minimal <code>DataLoader</code> objects from the random <code>dummy_batch</code> and call <code>trainer.fit</code>.</li>
 <li>Open the local MLflow UI (<code>mlflow ui --backend-store-uri mlruns</code>) and inspect the logged metrics.</li>
 </ol>
-<div id="6dee435b" class="cell" data-execution_count="8">
+<div id="cca48ab3" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data <span class="im">import</span> DataLoader, TensorDataset</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pytorch_lightning <span class="im">as</span> pl</span>
@@ -591,7 +591,7 @@ Note
 </div>
 <div id="callout-7" class="callout-7-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="b837fc18" class="cell" data-execution_count="9">
+<div id="8ab86c3b" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data <span class="im">import</span> DataLoader</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pytorch_lightning <span class="im">as</span> pl</span>
@@ -668,7 +668,7 @@ Note
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> intermediate_solutions/solution_step2</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python main.py</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>To add MLflow tracking, pass a logger to the <code>Trainer</code> as shown in the previous section:</p>
-<div id="af8d8b91" class="cell" data-execution_count="10">
+<div id="7ed58639" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pytorch_lightning.loggers <span class="im">import</span> MLFlowLogger</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>mlf_logger <span class="op">=</span> MLFlowLogger(</span>

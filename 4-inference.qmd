@@ -181,7 +181,7 @@ fs = s3fs.S3FileSystem(
 )
 
 s3_run_path = __ # TODO: S3 path to the run directory
-s3_model_path   = s3_run_path + "model"   
+s3_model_path   = s3_run_path + "model"
 local_model_dir = Path(tempfile.mkdtemp()) / "model"
 
 fs.get(__, __, recursive=__)  # TODO: download the model directory recursively
@@ -336,20 +336,20 @@ print(f"Classes found : {set(predictions.flatten().tolist())}")
 ## Solution
 ```{python}
 #| eval: true
-#| echo: false
+#| echo: true
 # Hidden
 from intermediate_solutions.solution_step3.utils import (
     get_satellite_image,
     predict,
     get_satellite_image,
-    create_geojson_from_mask
+    create_geojson_from_mask,
 )
 ```
 
 ```{python}
 #| eval: true
 #| echo: true
-#| include: false
+#| include: true
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
 image_path = (
@@ -471,13 +471,11 @@ plt.show()
 ## Solution
 
 ```{python}
-#| eval: true
+#| eval: false
 #| echo: true
-#| include: false
-satellite_img_array = satellite_img["array"] 
-rgb = np.transpose(
-    satellite_img_array[[3, 2, 1]], (1, 2, 0)
-).astype(np.float32)
+#| include: true
+satellite_img_array = satellite_img["array"]
+rgb = np.transpose(satellite_img_array[[3, 2, 1]], (1, 2, 0)).astype(np.float32)
 p98 = np.percentile(rgb, 98)
 rgb = np.clip(rgb / p98, 0, 1)
 
@@ -498,14 +496,18 @@ fig.legend(
     bbox_to_anchor=(1.0, 0.5),
     frameon=True,
 )
-plt.tight_layout()
-plt.show()
 ```
 :::
 
 ```{python}
 #| eval: true
 #| echo: false
+
+satellite_img_array = satellite_img["array"]
+rgb = np.transpose(satellite_img_array[[3, 2, 1]], (1, 2, 0)).astype(np.float32)
+p98 = np.percentile(rgb, 98)
+rgb = np.clip(rgb / p98, 0, 1)
+
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 
 axes[0].imshow(rgb)
@@ -603,7 +605,7 @@ plt.show()
 ```{python}
 #| eval: true
 #| echo: true
-#| include: false
+#| include: true
 gdf_pred = create_geojson_from_mask(satellite_img, predictions)
 
 print(f"{len(gdf_pred)} polygons extracted")
@@ -702,9 +704,33 @@ Folium map as two independent toggleable layers.
 #| eval: false
 import folium
 from folium.raster_layers import ImageOverlay
-from rasterio.warp import transform_bounds
+from rasterio.warp import transform_bounds, reproject, Resampling, calculate_default_transform
+from rasterio.crs import CRS
 
-west, south, east, north = transform_bounds(si["crs"], "EPSG:4326", *si["bounds"])
+src_crs = si["crs"]
+src_transform = si["transform"]
+src_bounds = si["bounds"]
+dst_crs = CRS.from_epsg(4326)
+
+raw_bands = si["array"][[3, 2, 1]].astype(np.float32)
+h, w = raw_bands.shape[1], raw_bands.shape[2]
+dst_transform, dst_w, dst_h = calculate_default_transform(
+    src_crs, dst_crs, w, h, *src_bounds
+)
+rgb_wgs84_bands = np.zeros((3, dst_h, dst_w), dtype=np.float32)
+for i in range(3):
+    reproject(
+        source=raw_bands[i], destination=rgb_wgs84_bands[i],
+        src_transform=src_transform, src_crs=src_crs,
+        dst_transform=dst_transform, dst_crs=dst_crs,
+        resampling=Resampling.bilinear,
+    )
+p98 = np.percentile(rgb_wgs84_bands[rgb_wgs84_bands > 0], 98)
+rgb_wgs84 = np.clip(np.transpose(rgb_wgs84_bands, (1, 2, 0)) / p98, 0, 1)
+alpha = (rgb_wgs84_bands.max(axis=0) > 0).astype(np.float32)
+rgba_wgs84 = np.dstack([rgb_wgs84, alpha])
+
+west, south, east, north = transform_bounds(src_crs, dst_crs, *src_bounds)
 center_lat = (south + north) / 2
 center_lon = (west + east) / 2
 
@@ -713,7 +739,7 @@ m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
 # Layer 1 — RGB image
 fg_image = folium.FeatureGroup(name="__", show=__)  # TODO: layer name (str), show by default (bool)
 ImageOverlay(
-    image=__,                              # TODO: normalised RGB array
+    image=__,                              # TODO: warped RGBA array (rgba_wgs84)
     bounds=[[south, west], [north, east]],
     opacity=0.7,
 ).add_to(__)  # TODO: add to fg_image
@@ -746,7 +772,7 @@ m
 - `transform_bounds(src_crs, "EPSG:4326", *bounds)` returns
   `(west, south, east, north)` in decimal degrees.
 - Folium always expects coordinates in EPSG:4326.
-- Pass `rgb` (the normalised `float32` array) to `ImageOverlay`.
+- Pass `rgba_wgs84` (the EPSG:4326-warped RGBA array) to `ImageOverlay`. The alpha channel makes the triangular corners from the reprojection transparent rather than black.
 - `feature["properties"]["label"]` gives the integer class ID;
   use `label_to_color.get(..., "#808080")` for a safe fallback.
 - Each layer goes into a `folium.FeatureGroup(name="...", show=True)`;
@@ -763,16 +789,38 @@ In Exercise 8 (API section), `si` will be loaded via `get_satellite_image()`.
 ## Solution
 
 ```{python}
-#| eval: true
+#| eval: false
 #| echo: true
-#| include: false
+#| include: true
 import folium
 from folium.raster_layers import ImageOverlay
-from rasterio.warp import transform_bounds
+from rasterio.warp import transform_bounds, reproject, Resampling, calculate_default_transform
+from rasterio.crs import CRS
 
-west, south, east, north = transform_bounds(
-    satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"]
+src_crs = satellite_img["crs"]
+src_transform = satellite_img["transform"]
+src_bounds = satellite_img["bounds"]
+dst_crs = CRS.from_epsg(4326)
+
+raw_bands = satellite_img_array[[3, 2, 1]].astype(np.float32)
+h, w = raw_bands.shape[1], raw_bands.shape[2]
+dst_transform, dst_w, dst_h = calculate_default_transform(
+    src_crs, dst_crs, w, h, *src_bounds
 )
+rgb_wgs84_bands = np.zeros((3, dst_h, dst_w), dtype=np.float32)
+for i in range(3):
+    reproject(
+        source=raw_bands[i], destination=rgb_wgs84_bands[i],
+        src_transform=src_transform, src_crs=src_crs,
+        dst_transform=dst_transform, dst_crs=dst_crs,
+        resampling=Resampling.bilinear,
+    )
+p98 = np.percentile(rgb_wgs84_bands[rgb_wgs84_bands > 0], 98)
+rgb_wgs84 = np.clip(np.transpose(rgb_wgs84_bands, (1, 2, 0)) / p98, 0, 1)
+alpha = (rgb_wgs84_bands.max(axis=0) > 0).astype(np.float32)
+rgba_wgs84 = np.dstack([rgb_wgs84, alpha])
+
+west, south, east, north = transform_bounds(src_crs, dst_crs, *src_bounds)
 center_lat = (south + north) / 2
 center_lon = (west + east) / 2
 
@@ -780,7 +828,7 @@ m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
 
 fg_image = folium.FeatureGroup(name="Sentinel-2 RGB", show=True)
 ImageOverlay(
-    image=rgb,
+    image=rgba_wgs84,
     bounds=[[south, west], [north, east]],
     opacity=0.7,
 ).add_to(fg_image)
@@ -811,11 +859,33 @@ To avoid overloading the web page, the map displaying only the prediction layer 
 #| echo: false
 import folium
 from folium.raster_layers import ImageOverlay
-from rasterio.warp import transform_bounds
+from rasterio.warp import transform_bounds, reproject, Resampling, calculate_default_transform
+from rasterio.crs import CRS
 
-west, south, east, north = transform_bounds(
-    satellite_img["crs"], "EPSG:4326", *satellite_img["bounds"]
+src_crs = satellite_img["crs"]
+src_transform = satellite_img["transform"]
+src_bounds = satellite_img["bounds"]
+dst_crs = CRS.from_epsg(4326)
+
+raw_bands = satellite_img_array[[3, 2, 1]].astype(np.float32)
+h, w = raw_bands.shape[1], raw_bands.shape[2]
+dst_transform, dst_w, dst_h = calculate_default_transform(
+    src_crs, dst_crs, w, h, *src_bounds
 )
+rgb_wgs84_bands = np.zeros((3, dst_h, dst_w), dtype=np.float32)
+for i in range(3):
+    reproject(
+        source=raw_bands[i], destination=rgb_wgs84_bands[i],
+        src_transform=src_transform, src_crs=src_crs,
+        dst_transform=dst_transform, dst_crs=dst_crs,
+        resampling=Resampling.bilinear,
+    )
+p98 = np.percentile(rgb_wgs84_bands[rgb_wgs84_bands > 0], 98)
+rgb_wgs84 = np.clip(np.transpose(rgb_wgs84_bands, (1, 2, 0)) / p98, 0, 1)
+alpha = (rgb_wgs84_bands.max(axis=0) > 0).astype(np.float32)
+rgba_wgs84 = np.dstack([rgb_wgs84, alpha])
+
+west, south, east, north = transform_bounds(src_crs, dst_crs, *src_bounds)
 center_lat = (south + north) / 2
 center_lon = (west + east) / 2
 
@@ -823,7 +893,7 @@ m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
 
 fg_image = folium.FeatureGroup(name="Sentinel-2 RGB", show=True)
 ImageOverlay(
-    image=rgb,
+    image=rgba_wgs84,
     bounds=[[south, west], [north, east]],
     opacity=0.7,
 ).add_to(fg_image)
@@ -852,7 +922,7 @@ m
 
 Running inference locally works well for a single tile, but scaling to an
 entire NUTS3 region — which may contain dozens of tiles — requires more
-infrastructure. A **REST API** has been deployed for this purpose.  
+infrastructure. A **REST API** has been deployed for this purpose.
 The API's interactive documentation is available at
 [https://funathon-2026-project3-api.lab.sspcloud.fr/docs](https://funathon-2026-project3-api.lab.sspcloud.fr/docs).
 It lists all available endpoints and lets you test them directly from your browser.

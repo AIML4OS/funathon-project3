@@ -135,7 +135,7 @@ stats_tile["share_pct"] = (__ / total_km2 * 100).round(2)  # TODO: column to nor
 ```{python}
 #| eval: true
 #| echo: true
-#| include: false
+#| include: true
 from great_tables import GT, style, loc
 
 stats_tile = (
@@ -264,24 +264,26 @@ summary_df = pd.DataFrame({
 ```{python}
 #| eval: true
 #| echo: true
-#| include: false
+#| include: true
 import pandas as pd
 
-sealed_km2 = stats_tile.loc[stats_tile["label"] == 1,             "total_area_km2"].sum()
-forest_km2 = stats_tile.loc[stats_tile["label"].isin([2, 3, 4]),  "total_area_km2"].sum()
-agri_km2   = stats_tile.loc[stats_tile["label"].isin([6, 7]),      "total_area_km2"].sum()
-water_km2  = stats_tile.loc[stats_tile["label"] == 10,             "total_area_km2"].sum()
+sealed_km2 = stats_tile.loc[stats_tile["label"] == 1, "total_area_km2"].sum()
+forest_km2 = stats_tile.loc[stats_tile["label"].isin([2, 3, 4]), "total_area_km2"].sum()
+agri_km2 = stats_tile.loc[stats_tile["label"].isin([6, 7]), "total_area_km2"].sum()
+water_km2 = stats_tile.loc[stats_tile["label"] == 10, "total_area_km2"].sum()
 
-summary_df = pd.DataFrame({
-    "Group":    ["Sealed (built-up)", "Forest", "Agricultural", "Water"],
-    "area_km2": [sealed_km2, forest_km2, agri_km2, water_km2],
-    "share_pct": [
-        sealed_km2 / total_km2 * 100,
-        forest_km2 / total_km2 * 100,
-        agri_km2   / total_km2 * 100,
-        water_km2  / total_km2 * 100,
-    ],
-})
+summary_df = pd.DataFrame(
+    {
+        "Group": ["Sealed (built-up)", "Forest", "Agricultural", "Water"],
+        "area_km2": [sealed_km2, forest_km2, agri_km2, water_km2],
+        "share_pct": [
+            sealed_km2 / total_km2 * 100,
+            forest_km2 / total_km2 * 100,
+            agri_km2 / total_km2 * 100,
+            water_km2 / total_km2 * 100,
+        ],
+    }
+)
 (
     GT(summary_df, rowname_col="Group")
     .tab_header(title="Key land-cover groups — single tile (LU000, 2024)")
@@ -351,7 +353,7 @@ plt.show()
 ```{python}
 #| eval: true
 #| echo: true
-#| include: false
+#| include: true
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots(figsize=(8, 4))
@@ -490,7 +492,7 @@ comparison = pd.concat([__, __], axis=1).fillna(0).reset_index()  # TODO: tile_s
 ```{python}
 #| eval: true
 #| echo: true
-#| include: false
+#| include: true
 stats_nuts = (
     gdf_nuts.groupby(["label", "class_name"])
     .agg(
@@ -619,7 +621,7 @@ plt.show()
 ```{python}
 #| eval: true
 #| echo: true
-#| include: false
+#| include: true
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
 stats_nuts.set_index("class_name")["total_area_km2"].sort_values().plot(
@@ -658,6 +660,115 @@ axes[1].set_title("Land-cover share — LU000 (2024)")
 
 plt.tight_layout()
 plt.show()
+```
+
+
+## Interactive map — sealed surface density
+
+Rather than displaying individual predicted polygons, this map aggregates
+sealed surfaces into a **heatmap**. Each sealed polygon contributes a point
+at its centroid, weighted by its area in km². Zones with many large sealed
+polygons (dense urban areas) appear in red, while isolated or small sealed
+patches appear in blue or yellow.
+
+::: {.callout-caution}
+## Exercise 6 — Build a heatmap of sealed surface density
+
+**Goal:** Display the spatial density of sealed surfaces (label 1) across
+the NUTS3 region using a `folium.plugins.HeatMap`. Each point represents the
+centroid of a sealed polygon, weighted by its area.
+
+**Steps:**
+
+1. Reproject `gdf_nuts` to EPSG:4326 and compute the map centre
+2. Filter sealed polygons (label 1) from the reprojected GeoDataFrame
+3. Compute the centroid of each sealed polygon
+4. Build `heat_data` as a list of `[lat, lon, weight]` where weight is
+   `area_km2`
+5. Create a `folium.Map` and add a `HeatMap` layer with a red gradient
+:::
+
+```{python}
+#| eval: false
+import folium
+from folium.plugins import HeatMap
+
+gdf_nuts_wgs84 = gdf_nuts.to_crs("__")  # TODO: target CRS for Folium (str)
+nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
+
+gdf_sealed = gdf_nuts_wgs84[gdf_nuts_wgs84["label"] == __].copy()  # TODO: sealed label (int)
+gdf_sealed["centroid"] = gdf_sealed.geometry.centroid
+
+heat_data = [
+    [row.centroid.__, row.centroid.__, row.area_km2]  # TODO: lat/lon attributes
+    for _, row in gdf_sealed.iterrows()
+]
+
+m = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=__)  # TODO: zoom level
+
+HeatMap(
+    __,         # TODO: heat_data
+    radius=__,  # TODO: radius in pixels (int), e.g. 15
+    blur=__,    # TODO: blur in pixels (int), e.g. 20
+    max_zoom=13,
+    gradient={0.4: "blue", 0.6: "yellow", 0.8: "orange", 1.0: "red"},
+).add_to(m)
+
+m
+```
+
+::: {.callout-tip collapse="true"}
+## Hint
+
+- Reproject with `.to_crs("EPSG:4326")`.
+- Filter with `gdf_nuts_wgs84[gdf_nuts_wgs84["label"] == 1]`.
+- `geometry.centroid` gives a Point; access its coordinates with `.y`
+  (latitude) and `.x` (longitude).
+- `heat_data` must be a list of `[lat, lon, weight]` — use `area_km2` as
+  the weight so larger sealed polygons contribute more to the heatmap.
+- `radius=15` and `blur=20` are good starting values; increase `radius` to
+  smooth the map at lower zoom levels.
+:::
+
+::: {.callout-tip collapse="true"}
+## Solution
+
+```{python}
+#| eval: true
+#| echo: true
+#| include: true
+import folium
+from folium.plugins import HeatMap
+
+gdf_nuts_wgs84 = gdf_nuts.to_crs("EPSG:4326")
+nuts_center    = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
+
+gdf_sealed = gdf_nuts_wgs84[gdf_nuts_wgs84["label"] == 1].copy()
+gdf_sealed["centroid"] = gdf_sealed.geometry.centroid
+
+heat_data = [
+    [row.centroid.y, row.centroid.x, row.area_km2]
+    for _, row in gdf_sealed.iterrows()
+]
+
+m = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
+
+HeatMap(
+    heat_data,
+    radius=15,
+    blur=20,
+    max_zoom=13,
+    gradient={0.4: "blue", 0.6: "yellow", 0.8: "orange", 1.0: "red"},
+).add_to(m)
+
+m
+```
+:::
+
+```{python}
+#| eval: true
+#| echo: false
+m
 ```
 
 # Evolution — land-cover change between 2021 and 2024
@@ -785,7 +896,7 @@ plt.show()
 ```{python}
 #| eval: true
 #| echo: true
-#| include: false
+#| include: true
 image_filepath_2021 = (
     "projet-funathon/"
     "2026/project3/data/images/LU000/2021/"
@@ -1020,7 +1131,7 @@ plt.show()
 ```{python}
 #| eval: true
 #| echo: true
-#| include: false
+#| include: true
 response_nuts_2021 = requests.get(
     f"{api_url}/predict_nuts",
     params={"nuts_id": "LU000", "year": 2021},

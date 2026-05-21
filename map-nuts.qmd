@@ -1,0 +1,85 @@
+---
+lang: en-US
+title: "LU000 Land Cover Map (2024)"
+execute:
+  eval: true
+  warning: false
+format:
+  html:
+    toc: false
+---
+
+Predicted land-cover polygons for the Luxembourg NUTS3 region (`LU000`), year 2024.
+Polygons are coloured by CLC+ Backbone land-cover class.
+
+[← Back to Inference](4-inference.html)
+
+```{python}
+#| echo: false
+import folium
+import geopandas as gpd
+import requests
+import json
+import numpy as np
+
+api_url = "https://funathon-2026-project3-api.lab.sspcloud.fr"
+
+classes = [
+    ("Sealed (1)",                        "#FF0100"),
+    ("Woody – needle leaved trees (2)",   "#238B23"),
+    ("Woody – broadleaved deciduous (3)", "#80FF00"),
+    ("Woody – broadleaved evergreen (4)", "#00FF00"),
+    ("Low-growing woody plants (5)",      "#804000"),
+    ("Permanent herbaceous (6)",          "#CCF24E"),
+    ("Periodically herbaceous (7)",       "#FEFF80"),
+    ("Lichens and mosses (8)",            "#FF81FF"),
+    ("Non- and sparsely-vegetated (9)",   "#BFBFBF"),
+    ("Water (10)",                        "#0080FF"),
+]
+label_to_color = {i + 1: color for i, (_, color) in enumerate(classes)}
+
+nuts_id = "LU000"
+year = 2024
+
+response_nuts = requests.get(
+    f"{api_url}/predict_nuts",
+    params={"nuts_id": nuts_id, "year": year},
+)
+response_nuts.raise_for_status()
+
+gdf_nuts = gpd.GeoDataFrame.from_features(
+    json.loads(response_nuts.json()["predictions"])["features"],
+    crs="EPSG:3035",
+)
+
+gdf_nuts_wgs84 = gdf_nuts.dissolve(by="label").reset_index().to_crs("EPSG:4326")
+nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
+
+m_nuts = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
+
+folium.TileLayer(
+    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attr="Esri",
+    name="Satellite imagery",
+    show=True,
+    overlay=True,
+    control=True,
+).add_to(m_nuts)
+
+fg_pred = folium.FeatureGroup(name="Predicted polygons", show=True)
+folium.GeoJson(
+    gdf_nuts_wgs84,
+    style_function=lambda feature: {
+        "fillColor": label_to_color.get(feature["properties"]["label"], "#808080"),
+        "color": "black",
+        "weight": 0.3,
+        "fillOpacity": 0.6,
+    },
+    tooltip=folium.GeoJsonTooltip(fields=["label"], aliases=["Class:"]),
+).add_to(fg_pred)
+fg_pred.add_to(m_nuts)
+
+folium.LayerControl(collapsed=False).add_to(m_nuts)
+
+m_nuts
+```

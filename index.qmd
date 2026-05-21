@@ -108,8 +108,7 @@ Structure of the project:
 
 - The `.qmd` files and the `_quarto.yaml` file are necessary to build the website;
 - The file `pyproject.toml` describes the dependencies of the project;
-- The `starting_point/` folder contains exercise templates to complete.
-- final solutions are available in the `final_solution/` folder.
+- Final solutions are available in the `final_solution/` folder.
 :::
 
 
@@ -122,17 +121,38 @@ Install the project dependencies by running the following command in the termina
 source ./init.sh
 ```
 
+## Select the Python interpreter
+
+To enable interactive code execution, point VSCode at the project's virtual environment:
+
+1. Open the Command Palette with `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (Mac)
+2. Search for and run **`>Python: Select Interpreter`**
+3. Choose **Enter interpreter path…** and enter:
+   `/home/onyxia/work/funathon-project3/.venv/bin/python`
+
 ## Working on the exercises
 
-The exercise templates in `starting_point/` are Python files split into **cells** delimited by `# %%` comments. Each cell corresponds to one exercise from the tutorial pages.
+Create a file called `scratchpad.py` at the root of the repository and use `# %%` markers to divide your code into individually executable cells — just like Jupyter notebook cells, but in a plain `.py` file.
 
-To execute them interactively:
+```python
+# %%
+import rasterio
+# your code here …
 
-1. Open a `.py` file from `starting_point/` in VSCode
-2. VSCode recognises `# %%` markers and displays a **"Run Cell"** button above each one
-3. Click **Run Cell** (or press `Ctrl+Enter` / `Shift+Enter`) to execute a single cell in an interactive Python window
-4. Write your solution code under the corresponding `# %%` header, then run the cell to test it
+# %%
+# next exercise …
+```
+
+To run a cell:
+
+1. Open `scratchpad.py` in VSCode — a **Run Cell** button appears above each `# %%` marker
+2. Click **Run Cell** (or press `Shift+Enter`) to execute that block in an interactive Python window
+3. Outputs and plots appear inline next to the editor
 
 ::: {.callout-tip}
-The tutorial pages (`.qmd` files) contain the full exercise descriptions, hints, and solutions. Use them as reference while working in the `.py` files.
+The tutorial pages contain the full exercise descriptions, hints, and solutions. Write your code in `scratchpad.py` and use the tutorial pages as reference.
+:::
+
+::: {.callout-note}
+`scratchpad.py` is listed in `.gitignore`, so your scratch work will not be accidentally committed.
 :::

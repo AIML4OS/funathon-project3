@@ -328,24 +328,25 @@ Stage 4 features  ──┘             Concat → Linear → logits (H/4 × W/4
 </section>
 <section id="instantiating-the-model" class="level1" data-number="2">
 <h1 data-number="2"><span class="header-section-number">2</span> Instantiating the Model</h1>
-<p>The project wraps SegFormer in two classes defined in <code>intermediate_solutions/solution_step2/models/model.py</code>:</p>
+<p>The project wraps SegFormer in two classes defined in <code>src/models/model.py</code>:</p>
 <ul>
 <li><strong><code>SemanticSegmentationSegformer</code></strong>: a thin subclass of HuggingFace’s <code>SegformerPreTrainedModel</code> that adds freeze/unfreeze helpers and a cleaner forward method.</li>
 <li><strong><code>SegformerB5</code></strong>: a factory that fetches the label mapping from an S3 bucket, builds a <code>SegformerConfig</code>, and downloads the pre-trained <code>nvidia/mit-b5</code> weights.</li>
 </ul>
-<div id="5e7a8737" class="cell" data-execution_count="1">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">"intermediate_solutions/solution_step2"</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SegformerB5</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># This downloads ~330 MB of weights from HuggingFace on first run</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> SegformerB5(</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    n_bands<span class="op">=</span><span class="dv">14</span>,              <span class="co"># 14 Sentinel-2 bands</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    logits<span class="op">=</span><span class="va">True</span>,             <span class="co"># return raw logits (not probabilities)</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    freeze_encoder<span class="op">=</span><span class="va">False</span>,    <span class="co"># keep encoder trainable</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    type_labeler<span class="op">=</span><span class="st">"CLCplus-Backbone"</span>,</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="1ae3f40a" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.models.model <span class="im">import</span> SegformerB5</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># This downloads ~330 MB of weights from HuggingFace on first run</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> SegformerB5(</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 14 matches the band table in 1-acquisition.qmd § "Sentinel-2 bands". If you swap</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># in a different dataset (e.g. dropping B10 → 13 bands), this number, the</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># normalisation statistics, and `num_channels` in the SegformerConfig must all</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># change together — otherwise the first patch-embedding layer will mis-shape inputs.</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    n_bands<span class="op">=</span><span class="dv">14</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    logits<span class="op">=</span><span class="va">True</span>,             <span class="co"># return raw logits (not probabilities)</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    freeze_encoder<span class="op">=</span><span class="va">False</span>,    <span class="co"># keep encoder trainable</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    type_labeler<span class="op">=</span><span class="st">"CLCplus-Backbone"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -372,7 +373,7 @@ Stage 4 features  ──┘             Concat → Linear → logits (H/4 × W/4
 <section id="printing-the-architecture" class="level2" data-number="3.1">
 <h2 data-number="3.1" class="anchored" data-anchor-id="printing-the-architecture"><span class="header-section-number">3.1</span> Printing the architecture</h2>
 <p>The model object is a standard <code>torch.nn.Module</code>. You can print it to see every sub-module:</p>
-<div id="a71dca33" class="cell" data-execution_count="2">
+<div id="2b0706d9" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The output is long, but the top-level structure is clear:</p>
@@ -395,7 +396,7 @@ Stage 4 features  ──┘             Concat → Linear → logits (H/4 × W/4
 <section id="counting-parameters" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="counting-parameters"><span class="header-section-number">3.2</span> Counting parameters</h2>
 <p>A quick way to understand a model’s capacity is to count how many parameters it has, and how many are currently trainable (i.e.&nbsp;not frozen).</p>
-<div id="b10689dc" class="cell" data-execution_count="3">
+<div id="a00a7c9f" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> count_params(module):</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    total <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> module.parameters())</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    trainable <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> module.parameters() <span class="cf">if</span> p.requires_grad)</span>
@@ -422,7 +423,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <section id="freezing-the-encoder" class="level2" data-number="3.3">
 <h2 data-number="3.3" class="anchored" data-anchor-id="freezing-the-encoder"><span class="header-section-number">3.3</span> Freezing the encoder</h2>
 <p>When fine-tuning on a new domain (e.g.&nbsp;switching from RGB natural images to 14-band satellite imagery), a common strategy is to <strong>freeze the encoder</strong> at first and only train the decoder. This is much faster and prevents overfitting when labelled data is scarce.</p>
-<div id="840c56c2" class="cell" data-execution_count="4">
+<div id="5cb0181f" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Freeze all encoder parameters</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>model.freeze()</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -450,7 +451,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <li>Which stage has the most parameters? Does this match your intuition about deeper stages being wider?</li>
 <li>Count the parameters in the decoder’s <strong>four projection layers</strong> (<code>model.decode_head.linear_c</code>) and in the final <strong>classifier</strong> (<code>model.decode_head.classifier</code>). What fraction of decoder parameters does the classifier represent?</li>
 </ol>
-<div id="b0667261" class="cell" data-execution_count="5">
+<div id="4480a0c6" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Parameters per encoder stage</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, stage <span class="kw">in</span> <span class="bu">enumerate</span>(model.segformer.encoder.block):</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> ___  <span class="co"># </span><span class="al">TODO</span><span class="co">: count parameters in this stage</span></span>
@@ -494,21 +495,27 @@ Full model             86,247,968         86,247,968</code></pre>
 </div>
 <div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="2c14d25d" class="cell" data-execution_count="6">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Parameters per encoder stage</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, stage <span class="kw">in</span> <span class="bu">enumerate</span>(model.segformer.encoder.block):</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> stage.parameters())</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Stage </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n<span class="sc">:,}</span><span class="ss"> parameters"</span>)</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Decoder breakdown</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, proj <span class="kw">in</span> <span class="bu">enumerate</span>(model.decode_head.linear_c):</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> proj.parameters())</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Decoder projection </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n<span class="sc">:,}</span><span class="ss"> parameters"</span>)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>clf_params <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> model.decode_head.classifier.parameters())</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>dec_total <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> model.decode_head.parameters())</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Classifier: </span><span class="sc">{</span>clf_params<span class="sc">:,}</span><span class="ss"> / </span><span class="sc">{</span>dec_total<span class="sc">:,}</span><span class="ss"> decoder params "</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span><span class="dv">100</span><span class="op">*</span>clf_params<span class="op">/</span>dec_total<span class="sc">:.1f}</span><span class="ss">%)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="9f936f8f" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Parameters per encoder stage.</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Deeper stages have more channels (C₁ &lt; C₂ &lt; C₃ &lt; C₄), so even with fewer transformer</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># blocks they end up holding most of the encoder's capacity. This matters during</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># fine-tuning: freezing stages 3–4 alone already locks the bulk of the model's weights.</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, stage <span class="kw">in</span> <span class="bu">enumerate</span>(model.segformer.encoder.block):</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> stage.parameters())</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Stage </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n<span class="sc">:,}</span><span class="ss"> parameters"</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Decoder breakdown.</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co"># The four projection layers are tiny linear maps (one per encoder stage); the real</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co"># decoder cost lives in the linear_fuse + classifier. Seeing how light the head is</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># explains why training the decoder alone is fast and resistant to overfitting.</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, proj <span class="kw">in</span> <span class="bu">enumerate</span>(model.decode_head.linear_c):</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> proj.parameters())</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Decoder projection </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>n<span class="sc">:,}</span><span class="ss"> parameters"</span>)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>clf_params <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> model.decode_head.classifier.parameters())</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>dec_total <span class="op">=</span> <span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> model.decode_head.parameters())</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Classifier: </span><span class="sc">{</span>clf_params<span class="sc">:,}</span><span class="ss"> / </span><span class="sc">{</span>dec_total<span class="sc">:,}</span><span class="ss"> decoder params "</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"(</span><span class="sc">{</span><span class="dv">100</span><span class="op">*</span>clf_params<span class="op">/</span>dec_total<span class="sc">:.1f}</span><span class="ss">%)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -521,7 +528,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <section id="input-shape" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="input-shape"><span class="header-section-number">4.1</span> Input shape</h2>
 <p>Our dataset produces patches of shape <code>(14, H, W)</code> — 14 spectral bands. The DataLoader stacks them into batches <code>(B, 14, H, W)</code>. Let us create a random dummy batch:</p>
-<div id="7d63e369" class="cell" data-execution_count="7">
+<div id="71a3b1d3" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>B, C, H, W <span class="op">=</span> <span class="dv">2</span>, <span class="dv">14</span>, <span class="dv">512</span>, <span class="dv">512</span>   <span class="co"># batch size, channels, height, width</span></span>
@@ -535,7 +542,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <section id="output-shapes" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="output-shapes"><span class="header-section-number">4.2</span> Output shapes</h2>
 <p>The model has two calling modes depending on whether you pass <code>labels</code>:</p>
-<div id="54608758" class="cell" data-execution_count="8">
+<div id="7eaad6e6" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">eval</span>()</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad():</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Without labels → raw logits at H/4 × W/4</span></span>
@@ -565,7 +572,7 @@ Full model             86,247,968         86,247,968</code></pre>
 <section id="inspecting-intermediate-hidden-states" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="inspecting-intermediate-hidden-states"><span class="header-section-number">4.3</span> Inspecting intermediate hidden states</h2>
 <p>The encoder returns all four intermediate feature maps when <code>output_hidden_states=True</code>. This is exactly how the <code>forward</code> method feeds the decoder:</p>
-<div id="eba9ff8c" class="cell" data-execution_count="9">
+<div id="f49efe44" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>outputs <span class="op">=</span> model.segformer(</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    dummy_input,</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    output_hidden_states<span class="op">=</span><span class="va">True</span>,</span>
@@ -595,7 +602,7 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 <li>Apply <code>torch.softmax(logits, dim=1)</code> to the upsampled logits and call <code>torch.argmax(..., dim=1)</code> to obtain a predicted class map. What shape does it have? What do its values represent?</li>
 <li><em>(Bonus)</em> For each of the 4 hidden states, compute the ratio of spatial area to the original image: <code>(H_stage * W_stage) / (H * W)</code>. Does the pattern match the quarter-resolution rule?</li>
 </ol>
-<div id="e978f60f" class="cell" data-execution_count="10">
+<div id="a7000f4c" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn.functional <span class="im">as</span> F</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Manual upsampling</span></span>
@@ -632,35 +639,46 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 </div>
 <div id="callout-7" class="callout-7-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="d238fd0c" class="cell" data-execution_count="11">
+<div id="81802308" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn.functional <span class="im">as</span> F</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">eval</span>()</span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad():</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    logits <span class="op">=</span> model(dummy_input)           <span class="co"># (B, num_classes, H/4, W/4)</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    outputs <span class="op">=</span> model.segformer(</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>        dummy_input, output_hidden_states<span class="op">=</span><span class="va">True</span>, return_dict<span class="op">=</span><span class="va">True</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Manual upsampling</span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>logits_full <span class="op">=</span> F.interpolate(</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    logits,</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    size<span class="op">=</span>(H, W),</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"bilinear"</span>,</span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    align_corners<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Manually upsampled: </span><span class="sc">{</span><span class="bu">tuple</span>(logits_full.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Predicted class map</span></span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> torch.softmax(logits_full, dim<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>pred  <span class="op">=</span> torch.argmax(probs, dim<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted map shape: </span><span class="sc">{</span><span class="bu">tuple</span>(pred.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Unique predicted classes: </span><span class="sc">{</span>pred<span class="sc">.</span>unique()<span class="sc">.</span>tolist()<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Spatial area ratios</span></span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, hs <span class="kw">in</span> <span class="bu">enumerate</span>(outputs.hidden_states):</span>
-<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    ratio <span class="op">=</span> (hs.shape[<span class="op">-</span><span class="dv">2</span>] <span class="op">*</span> hs.shape[<span class="op">-</span><span class="dv">1</span>]) <span class="op">/</span> (H <span class="op">*</span> W)</span>
-<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Stage </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>ratio<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Logits = raw, unbounded per-class scores. They have shape (B, num_classes, H/4, W/4)</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># because the all-MLP decoder fuses everything at the finest encoder scale (H/4).</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    logits <span class="op">=</span> model(dummy_input)</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># output_hidden_states=True surfaces the four encoder feature maps. The decoder</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># combines all four — early stages (high resolution) carry local detail, late</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># stages (low resolution) carry semantic context. Returning them is what makes</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># multi-scale fusion possible.</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    outputs <span class="op">=</span> model.segformer(</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>        dummy_input, output_hidden_states<span class="op">=</span><span class="va">True</span>, return_dict<span class="op">=</span><span class="va">True</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Manual upsampling.</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Bilinear (not nearest-neighbour) because logits are continuous scores: interpolating</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co"># between two scores is meaningful, whereas a discrete class label is not.</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>logits_full <span class="op">=</span> F.interpolate(</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    logits,</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    size<span class="op">=</span>(H, W),</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    mode<span class="op">=</span><span class="st">"bilinear"</span>,</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    align_corners<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Manually upsampled: </span><span class="sc">{</span><span class="bu">tuple</span>(logits_full.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Predicted class map.</span></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="co"># softmax converts logits → probabilities; argmax picks the most likely class at each</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a><span class="co"># pixel. The class axis disappears: (B, num_classes, H, W) → (B, H, W), one int per pixel.</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>probs <span class="op">=</span> torch.softmax(logits_full, dim<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>pred  <span class="op">=</span> torch.argmax(probs, dim<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Predicted map shape: </span><span class="sc">{</span><span class="bu">tuple</span>(pred.shape)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Unique predicted classes: </span><span class="sc">{</span>pred<span class="sc">.</span>unique()<span class="sc">.</span>tolist()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Spatial area ratios — stage 1 is at H/4 × W/4 → 1/16 of the input area, and each</span></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a><span class="co"># next stage divides that by 4 again (1/64, 1/256, 1/1024).</span></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, hs <span class="kw">in</span> <span class="bu">enumerate</span>(outputs.hidden_states):</span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>    ratio <span class="op">=</span> (hs.shape[<span class="op">-</span><span class="dv">2</span>] <span class="op">*</span> hs.shape[<span class="op">-</span><span class="dv">1</span>]) <span class="op">/</span> (H <span class="op">*</span> W)</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Stage </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>ratio<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -672,8 +690,8 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 <p>PyTorch Lightning separates the model definition from the training logic. The <code>SegmentationModule</code> class in <code>intermediate_solutions/solution_step2/models/module.py</code> wraps <code>SemanticSegmentationSegformer</code> and implements the standard Lightning hooks.</p>
 <section id="structure-of-segmentationmodule" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="structure-of-segmentationmodule"><span class="header-section-number">5.1</span> Structure of <code>SegmentationModule</code></h2>
-<div id="10c02f1a" class="cell" data-execution_count="12">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.module <span class="im">import</span> SegmentationModule</span>
+<div id="89c2992f" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.models.module <span class="im">import</span> SegmentationModule</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn, optim</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>module <span class="op">=</span> SegmentationModule(</span>
@@ -728,7 +746,8 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 <p><span class="math display">\[
 \mathcal{L} = -\frac{1}{HW} \sum_{h,w} \log \hat{p}_{y_{h,w},h,w}
 \]</span></p>
-<p>where <span class="math inline">\(\hat{p}_{c,h,w}\)</span> is the softmax probability assigned to class <span class="math inline">\(c\)</span> at pixel <span class="math inline">\((h, w)\)</span>, and <span class="math inline">\(y_{h,w}\)</span> is the true class label. The <code>ignore_index=255</code> argument tells PyTorch to skip pixels labelled 255 (used here as a “no-data” sentinel).</p>
+<p>where <span class="math inline">\(\hat{p}_{c,h,w}\)</span> is the softmax probability assigned to class <span class="math inline">\(c\)</span> at pixel <span class="math inline">\((h, w)\)</span>, and <span class="math inline">\(y_{h,w}\)</span> is the true class label.</p>
+<p>The <code>ignore_index=255</code> argument tells PyTorch to drop pixels with label <code>255</code> from the sum. Satellite labels routinely contain such “no-data” pixels — clouds, cloud shadows, image borders, missing observations — and <code>255</code> is the conventional sentinel used by the CLC+ preprocessing pipeline. Without <code>ignore_index</code>, the loss would treat those pixels as if they belonged to a real class 255 (which doesn’t exist), pushing gradients in a meaningless direction and contaminating the trained weights.</p>
 </section>
 <section id="metrics-intersection-over-union-iou" class="level2" data-number="5.3">
 <h2 data-number="5.3" class="anchored" data-anchor-id="metrics-intersection-over-union-iou"><span class="header-section-number">5.3</span> Metrics: Intersection over Union (IoU)</h2>
@@ -737,23 +756,20 @@ Stage 4 hidden state: (2, 512,  16,  16)   # H/32 × W/32</code></pre>
 \text{IoU}_c = \frac{|\hat{M}_c \cap M_c|}{|\hat{M}_c \cup M_c|}
 \]</span></p>
 <p>where <span class="math inline">\(\hat{M}_c\)</span> is the set of pixels predicted as class <span class="math inline">\(c\)</span> and <span class="math inline">\(M_c\)</span> is the set of true pixels of class <span class="math inline">\(c\)</span>. An IoU of 1.0 means perfect overlap; 0.0 means no overlap at all. <strong>Mean IoU (mIoU)</strong> averages over all classes.</p>
-<div id="19b73a27" class="cell" data-execution_count="13">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">"intermediate_solutions/solution_step2"</span>)</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> training.metrics <span class="im">import</span> IOU, positive_rate</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate model output and labels</span></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>B, num_classes, H, W <span class="op">=</span> <span class="dv">2</span>, <span class="dv">11</span>, <span class="dv">512</span>, <span class="dv">512</span></span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>dummy_logits <span class="op">=</span> torch.randn(B, num_classes, H, W)</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>dummy_labels <span class="op">=</span> torch.randint(<span class="dv">0</span>, num_classes, (B, H, W))</span>
+<div id="f05c8506" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.training.metrics <span class="im">import</span> IOU, positive_rate</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate model output and labels</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>B, num_classes, H, W <span class="op">=</span> <span class="dv">2</span>, <span class="dv">11</span>, <span class="dv">512</span>, <span class="dv">512</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>dummy_logits <span class="op">=</span> torch.randn(B, num_classes, H, W)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>dummy_labels <span class="op">=</span> torch.randint(<span class="dv">0</span>, num_classes, (B, H, W))</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>iou_mean, iou_building <span class="op">=</span> IOU(dummy_logits, dummy_labels, logits<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>building_rate <span class="op">=</span> positive_rate(dummy_logits, logits<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>iou_mean, iou_building <span class="op">=</span> IOU(dummy_logits, dummy_labels, logits<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>building_rate <span class="op">=</span> positive_rate(dummy_logits, logits<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mean IoU:      </span><span class="sc">{</span>iou_mean<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Building IoU:  </span><span class="sc">{</span>iou_building<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Building rate: </span><span class="sc">{</span>building_rate<span class="sc">:.4f}</span><span class="ss">  (fraction of pixels predicted as building)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Mean IoU:      </span><span class="sc">{</span>iou_mean<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Building IoU:  </span><span class="sc">{</span>iou_building<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Building rate: </span><span class="sc">{</span>building_rate<span class="sc">:.4f}</span><span class="ss">  (fraction of pixels predicted as building)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">

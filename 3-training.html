@@ -228,11 +228,11 @@ Note
 </div>
 <section id="the-full-training-pipeline" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> The Full Training Pipeline</h1>
-<p>The training script <code>intermediate_solutions/solution_step2/main.py</code> wires together the data pipeline, the <code>SegmentationModule</code>, and a PyTorch Lightning <code>Trainer</code>. This section walks through the key pieces.</p>
+<p>The training script <code>src/main.py</code> wires together the data pipeline, the <code>SegmentationModule</code>, and a PyTorch Lightning <code>Trainer</code>. This section walks through the key pieces.</p>
 <section id="callbacks-early-stopping-and-checkpointing" class="level2" data-number="1.1">
 <h2 data-number="1.1" class="anchored" data-anchor-id="callbacks-early-stopping-and-checkpointing"><span class="header-section-number">1.1</span> Callbacks: early stopping and checkpointing</h2>
 <p>Two callbacks guard the training run:</p>
-<div id="fa83c109" class="cell" data-execution_count="1">
+<div id="12c219cd" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pytorch_lightning <span class="im">as</span> pl</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pytorch_lightning.callbacks <span class="im">import</span> EarlyStopping, ModelCheckpoint</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -253,7 +253,7 @@ Note
 </section>
 <section id="trainer-and-training-loop" class="level2" data-number="1.2">
 <h2 data-number="1.2" class="anchored" data-anchor-id="trainer-and-training-loop"><span class="header-section-number">1.2</span> Trainer and training loop</h2>
-<div id="e8c50cba" class="cell" data-execution_count="2">
+<div id="55bbd7ef" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> pl.Trainer(</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    max_epochs<span class="op">=</span><span class="dv">20</span>,</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    accelerator<span class="op">=</span><span class="st">"auto"</span>,   <span class="co"># uses GPU if available, CPU otherwise</span></span>
@@ -282,11 +282,11 @@ Note
 <li>Wrap it in a <code>SegmentationModule</code> with <code>CrossEntropyLoss</code> and <code>AdamW</code>.</li>
 <li>Run 3 training steps manually (without a <code>Trainer</code>) by calling <code>module.training_step(batch, batch_idx)</code> on a random batch.</li>
 </ol>
-<div id="d4e41c35" class="cell" data-execution_count="3">
+<div id="ba60ae7c" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> SegformerConfig</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.module <span class="im">import</span> SegmentationModule</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.models.module <span class="im">import</span> SegmentationModule</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn, optim</span>
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Minimal config</span></span>
@@ -342,11 +342,11 @@ Note
 </div>
 <div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="8217e5b2" class="cell" data-execution_count="4">
+<div id="306ade63" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> SegformerConfig</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.module <span class="im">import</span> SegmentationModule</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.models.module <span class="im">import</span> SegmentationModule</span>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn, optim</span>
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> SegformerConfig(</span>
@@ -363,26 +363,33 @@ Note
 <span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>tiny_model,</span>
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    loss<span class="op">=</span>nn.CrossEntropyLoss(ignore_index<span class="op">=</span><span class="dv">255</span>),</span>
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    optimizer<span class="op">=</span>optim.AdamW,</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    optimizer_params<span class="op">=</span>{<span class="st">"lr"</span>: <span class="fl">1e-3</span>},</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    scheduler<span class="op">=</span>optim.lr_scheduler.ReduceLROnPlateau,</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    scheduler_params<span class="op">=</span>{<span class="st">"mode"</span>: <span class="st">"min"</span>, <span class="st">"patience"</span>: <span class="dv">3</span>, <span class="st">"monitor"</span>: <span class="st">"validation_loss"</span>},</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    scheduler_interval<span class="op">=</span><span class="st">"epoch"</span>,</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>B, C, H, W <span class="op">=</span> <span class="dv">2</span>, <span class="dv">14</span>, <span class="dv">128</span>, <span class="dv">128</span></span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>dummy_batch <span class="op">=</span> {</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">"pixel_values"</span>: torch.randn(B, C, H, W),</span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">"labels"</span>: torch.randint(<span class="dv">0</span>, <span class="dv">3</span>, (B, H, W)),</span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>tiny_module.train()</span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>optimizer <span class="op">=</span> optim.AdamW(tiny_module.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>)</span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> step <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    optimizer.zero_grad()</span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>    loss <span class="op">=</span> tiny_module.training_step(dummy_batch, step)</span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>    loss.backward()</span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>    optimizer.step()</span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Step </span><span class="sc">{</span>step <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss"> loss: </span><span class="sc">{</span>loss<span class="sc">.</span>item()<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># weight_decay=1e-2 is the AdamW L2-regularisation strength used throughout</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># the project. On 14-band inputs this helps the encoder generalise instead of</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># memorising channel-specific quirks of the training tiles.</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    optimizer_params<span class="op">=</span>{<span class="st">"lr"</span>: <span class="fl">1e-3</span>, <span class="st">"weight_decay"</span>: <span class="fl">1e-2</span>},</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    scheduler<span class="op">=</span>optim.lr_scheduler.ReduceLROnPlateau,</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    scheduler_params<span class="op">=</span>{<span class="st">"mode"</span>: <span class="st">"min"</span>, <span class="st">"patience"</span>: <span class="dv">3</span>, <span class="st">"monitor"</span>: <span class="st">"validation_loss"</span>},</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    scheduler_interval<span class="op">=</span><span class="st">"epoch"</span>,</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>B, C, H, W <span class="op">=</span> <span class="dv">2</span>, <span class="dv">14</span>, <span class="dv">128</span>, <span class="dv">128</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>dummy_batch <span class="op">=</span> {</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">"pixel_values"</span>: torch.randn(B, C, H, W),</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">"labels"</span>: torch.randint(<span class="dv">0</span>, <span class="dv">3</span>, (B, H, W)),</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="co"># In a normal run, pl.Trainer.fit drives the four-step loop below for every batch:</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="co"># zero_grad → forward (training_step computes loss) → backward → optimizer.step.</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a><span class="co"># We unroll it by hand here just to see the mechanics. The loss won't drop much in</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="co"># three steps on random data — the point is to confirm the wiring, not to converge.</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>tiny_module.train()</span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>optimizer <span class="op">=</span> optim.AdamW(tiny_module.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>, weight_decay<span class="op">=</span><span class="fl">1e-2</span>)</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> step <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    optimizer.zero_grad()</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    loss <span class="op">=</span> tiny_module.training_step(dummy_batch, step)</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    loss.backward()</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    optimizer.step()</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Step </span><span class="sc">{</span>step <span class="op">+</span> <span class="dv">1</span><span class="sc">}</span><span class="ss"> loss: </span><span class="sc">{</span>loss<span class="sc">.</span>item()<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -411,7 +418,7 @@ Note
 MLFLOW_TRACKING_USERNAME=""
 MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <p>Those info can be found in the panel that opens when you launch your MLflow service on the SSPCloud.</p>
-<div id="9b9e3a3e" class="cell" data-execution_count="5">
+<div id="b39953a8" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dotenv <span class="im">import</span> load_dotenv</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pytorch_lightning.loggers <span class="im">import</span> MLFlowLogger</span>
@@ -443,7 +450,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </section>
 <section id="passing-the-logger-to-the-trainer" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="passing-the-logger-to-the-trainer"><span class="header-section-number">2.2</span> Passing the logger to the Trainer</h2>
-<div id="a75eeb12" class="cell" data-execution_count="6">
+<div id="040796a4" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> pl.Trainer(</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    max_epochs<span class="op">=</span><span class="dv">20</span>,</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    accelerator<span class="op">=</span><span class="st">"auto"</span>,</span>
@@ -520,7 +527,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <section id="logging-hyperparameters-manually" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="logging-hyperparameters-manually"><span class="header-section-number">2.4</span> Logging hyperparameters manually</h2>
 <p>You can log any scalar or string value as an MLflow parameter before training starts:</p>
-<div id="efd741ce" class="cell" data-execution_count="7">
+<div id="103b0ffc" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>mlf_logger.log_hyperparams({</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"lr"</span>: CONFIG[<span class="st">"lr"</span>],</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"batch_size"</span>: CONFIG[<span class="st">"batch_size"</span>],</span>
@@ -542,6 +549,24 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <p>During early training, models often collapse to predicting the majority class everywhere. Monitoring the fraction of pixels predicted as “building” helps detect this: if <code>building_rate ≈ 0</code> after a few epochs, the model is ignoring the minority class — likely a sign of too high a learning rate or severe class imbalance.</p>
 </div>
 </div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Class imbalance in CLC+
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>CLC+ classes are heavily imbalanced — <em>Permanent herbaceous</em> and <em>Woody</em> together cover the vast majority of European pixels, while <em>Sealed</em>, <em>Lichens and mosses</em> and <em>Water</em> are rare. The plain <code>CrossEntropyLoss</code> used here weighs every pixel equally, so the optimiser is implicitly rewarded for ignoring rare classes. If you find the minority classes are never predicted, common remedies are:</p>
+<ul>
+<li><strong>Weighted cross-entropy</strong>: pass <code>weight=class_weights</code> to <code>nn.CrossEntropyLoss</code>, with one weight per class inversely proportional to its frequency.</li>
+<li><strong>Focal loss</strong>: down-weights easy / majority pixels so gradients focus on hard ones.</li>
+<li><strong>Oversampling</strong>: build a sampler that draws tiles containing rare classes more often.</li>
+</ul>
+</div>
+</div>
 </section>
 <section id="registering-and-loading-the-best-model" class="level2" data-number="2.5">
 <h2 data-number="2.5" class="anchored" data-anchor-id="registering-and-loading-the-best-model"><span class="header-section-number">2.5</span> Registering and loading the best model</h2>
@@ -554,7 +579,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <li>Verify it appears in the <strong>Model Registry</strong>.</li>
 </ol>
 <p>Once registered, you can load the model directly from the registry:</p>
-<div id="9aad50fc" class="cell" data-execution_count="8">
+<div id="d700f3a7" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mlflow.pyfunc</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> mlflow.pyfunc.load_model(</span>
@@ -578,7 +603,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <li>Build minimal <code>DataLoader</code> objects from the random <code>dummy_batch</code> and call <code>trainer.fit</code>.</li>
 <li>Open the local MLflow UI (<code>mlflow ui --backend-store-uri mlruns</code>) and inspect the logged metrics.</li>
 </ol>
-<div id="528d3a3a" class="cell" data-execution_count="9">
+<div id="6c4d874c" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data <span class="im">import</span> DataLoader, TensorDataset</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pytorch_lightning <span class="im">as</span> pl</span>
@@ -620,7 +645,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -629,16 +654,16 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<div id="55354aec" class="cell" data-execution_count="10">
+<div id="da616edf" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data <span class="im">import</span> DataLoader</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pytorch_lightning <span class="im">as</span> pl</span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pytorch_lightning.loggers <span class="im">import</span> MLFlowLogger</span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> transformers <span class="im">import</span> SegformerConfig</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> models.module <span class="im">import</span> SegmentationModule</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.models.model <span class="im">import</span> SemanticSegmentationSegformer</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> src.models.module <span class="im">import</span> SegmentationModule</span>
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn, optim</span>
 <span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Rebuild the tiny model (or reuse from Exercise 3)</span></span>
@@ -652,41 +677,46 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span>tiny_model,</span>
 <span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    loss<span class="op">=</span>nn.CrossEntropyLoss(ignore_index<span class="op">=</span><span class="dv">255</span>),</span>
 <span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    optimizer<span class="op">=</span>optim.AdamW,</span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    optimizer_params<span class="op">=</span>{<span class="st">"lr"</span>: <span class="fl">1e-3</span>},</span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    scheduler<span class="op">=</span>optim.lr_scheduler.ReduceLROnPlateau,</span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    scheduler_params<span class="op">=</span>{<span class="st">"mode"</span>: <span class="st">"min"</span>, <span class="st">"patience"</span>: <span class="dv">3</span>, <span class="st">"monitor"</span>: <span class="st">"validation_loss"</span>},</span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    scheduler_interval<span class="op">=</span><span class="st">"epoch"</span>,</span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>mlf_logger <span class="op">=</span> MLFlowLogger(</span>
-<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>    experiment_name<span class="op">=</span><span class="st">"segformer-toy"</span>,</span>
-<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>    tracking_uri<span class="op">=</span><span class="st">"mlruns"</span>,</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    optimizer_params<span class="op">=</span>{<span class="st">"lr"</span>: <span class="fl">1e-3</span>, <span class="st">"weight_decay"</span>: <span class="fl">1e-2</span>},</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ReduceLROnPlateau divides the learning rate when a metric stops improving.</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># It needs to know *which* metric to watch (monitor="validation_loss"), and</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    <span class="co"># because validation runs once per epoch, the check has to happen at the same</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># cadence (scheduler_interval="epoch") — checking every step would compare</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># against stale values and trigger spurious LR drops.</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>    scheduler<span class="op">=</span>optim.lr_scheduler.ReduceLROnPlateau,</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>    scheduler_params<span class="op">=</span>{<span class="st">"mode"</span>: <span class="st">"min"</span>, <span class="st">"patience"</span>: <span class="dv">3</span>, <span class="st">"monitor"</span>: <span class="st">"validation_loss"</span>},</span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>    scheduler_interval<span class="op">=</span><span class="st">"epoch"</span>,</span>
 <span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>B, C, H, W <span class="op">=</span> <span class="dv">4</span>, <span class="dv">14</span>, <span class="dv">64</span>, <span class="dv">64</span></span>
-<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>images <span class="op">=</span> torch.randn(<span class="dv">16</span>, C, H, W)</span>
-<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> torch.randint(<span class="dv">0</span>, <span class="dv">3</span>, (<span class="dv">16</span>, H, W))</span>
-<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>dataset <span class="op">=</span> [{<span class="st">"pixel_values"</span>: images[i], <span class="st">"labels"</span>: labels[i]} <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">16</span>)]</span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>mlf_logger <span class="op">=</span> MLFlowLogger(</span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>    experiment_name<span class="op">=</span><span class="st">"segformer-toy"</span>,</span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    tracking_uri<span class="op">=</span><span class="st">"mlruns"</span>,</span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> collate(batch):</span>
-<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
-<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>        <span class="st">"pixel_values"</span>: torch.stack([x[<span class="st">"pixel_values"</span>] <span class="cf">for</span> x <span class="kw">in</span> batch]),</span>
-<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>        <span class="st">"labels"</span>: torch.stack([x[<span class="st">"labels"</span>] <span class="cf">for</span> x <span class="kw">in</span> batch]),</span>
-<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>train_dl <span class="op">=</span> DataLoader(dataset[:<span class="dv">12</span>], batch_size<span class="op">=</span><span class="dv">4</span>, collate_fn<span class="op">=</span>collate)</span>
-<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>val_dl   <span class="op">=</span> DataLoader(dataset[<span class="dv">12</span>:], batch_size<span class="op">=</span><span class="dv">4</span>, collate_fn<span class="op">=</span>collate)</span>
-<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> pl.Trainer(</span>
-<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>    max_epochs<span class="op">=</span><span class="dv">3</span>,</span>
-<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>    accelerator<span class="op">=</span><span class="st">"cpu"</span>,</span>
-<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>    logger<span class="op">=</span>mlf_logger,</span>
-<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>    log_every_n_steps<span class="op">=</span><span class="dv">1</span>,</span>
-<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>    enable_progress_bar<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a>trainer.fit(tiny_module, train_dl, val_dl)</span>
-<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Run logged to:"</span>, mlf_logger.run_id)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>B, C, H, W <span class="op">=</span> <span class="dv">4</span>, <span class="dv">14</span>, <span class="dv">64</span>, <span class="dv">64</span></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>images <span class="op">=</span> torch.randn(<span class="dv">16</span>, C, H, W)</span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>labels <span class="op">=</span> torch.randint(<span class="dv">0</span>, <span class="dv">3</span>, (<span class="dv">16</span>, H, W))</span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>dataset <span class="op">=</span> [{<span class="st">"pixel_values"</span>: images[i], <span class="st">"labels"</span>: labels[i]} <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">16</span>)]</span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> collate(batch):</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>        <span class="st">"pixel_values"</span>: torch.stack([x[<span class="st">"pixel_values"</span>] <span class="cf">for</span> x <span class="kw">in</span> batch]),</span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>        <span class="st">"labels"</span>: torch.stack([x[<span class="st">"labels"</span>] <span class="cf">for</span> x <span class="kw">in</span> batch]),</span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>train_dl <span class="op">=</span> DataLoader(dataset[:<span class="dv">12</span>], batch_size<span class="op">=</span><span class="dv">4</span>, collate_fn<span class="op">=</span>collate)</span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>val_dl   <span class="op">=</span> DataLoader(dataset[<span class="dv">12</span>:], batch_size<span class="op">=</span><span class="dv">4</span>, collate_fn<span class="op">=</span>collate)</span>
+<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> pl.Trainer(</span>
+<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>    max_epochs<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>    accelerator<span class="op">=</span><span class="st">"cpu"</span>,</span>
+<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a>    logger<span class="op">=</span>mlf_logger,</span>
+<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a>    log_every_n_steps<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a>    enable_progress_bar<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-58"><a href="#cb12-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-59"><a href="#cb12-59" aria-hidden="true" tabindex="-1"></a>trainer.fit(tiny_module, train_dl, val_dl)</span>
+<span id="cb12-60"><a href="#cb12-60" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Run logged to:"</span>, mlf_logger.run_id)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>To inspect the results:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mlflow</span> ui <span class="at">--backend-store-uri</span> mlruns</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -708,7 +738,7 @@ MLFLOW_TRACKING_PASSWORD=""</code></pre>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> intermediate_solutions/solution_step2</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> run python main.py</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>To add MLflow tracking, pass a logger to the <code>Trainer</code> as shown in the previous section:</p>
-<div id="dd83189e" class="cell" data-execution_count="11">
+<div id="18676b4c" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dotenv <span class="im">import</span> load_dotenv</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pytorch_lightning.loggers <span class="im">import</span> MLFlowLogger</span>

@@ -26,6 +26,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -154,6 +189,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#initialization-of-the-project" id="toc-initialization-of-the-project" class="nav-link" data-scroll-target="#initialization-of-the-project">Initialization of the project</a>
   <ul class="collapse">
   <li><a href="#installation-of-dependencies" id="toc-installation-of-dependencies" class="nav-link" data-scroll-target="#installation-of-dependencies">Installation of dependencies</a></li>
+  <li><a href="#select-the-python-interpreter" id="toc-select-the-python-interpreter" class="nav-link" data-scroll-target="#select-the-python-interpreter">Select the Python interpreter</a></li>
   <li><a href="#working-on-the-exercises" id="toc-working-on-the-exercises" class="nav-link" data-scroll-target="#working-on-the-exercises">Working on the exercises</a></li>
   </ul></li>
   </ul>
@@ -234,7 +270,7 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <section id="introduction" class="level2 unnumbered">
 <h2 class="unnumbered anchored" data-anchor-id="introduction">Introduction</h2>
-<p>Satellite imagery is one of the richest data sources available for understanding how land is used and how it changes over time. With this project, you will work with <strong>Sentinel-2</strong> multispectral images from the European Copernicus programme and use a <strong>deep learning model (SegFormer)</strong> to perform <strong>semantic segmentation</strong> : classifying every pixel in an image into a land-cover category.</p>
+<p>Satellite imagery is one of the richest data sources available for understanding how land is used and how it changes over time. With this project, you will work with <strong>Sentinel-2</strong> multispectral images from the European Copernicus programme and use a <strong>deep learning model (SegFormer)</strong> to perform <strong>semantic segmentation</strong> : classifying every pixel in an image into a land-cover category. SegFormer is a vision-transformer architecture that handles arbitrary input resolution and many input channels — well suited to Sentinel-2’s 14 spectral bands. CNN baselines such as U-Net would also work but are less effective at capturing the long-range context that helps land-cover classification.</p>
 </section>
 <section id="machine-learning-in-90-seconds" class="level2">
 <h2 class="anchored" data-anchor-id="machine-learning-in-90-seconds">Machine learning in 90 seconds</h2>
@@ -312,23 +348,36 @@ ul.task-list li input[type="checkbox"] {
 <ul>
 <li>The <code>.qmd</code> files and the <code>_quarto.yaml</code> file are necessary to build the website;</li>
 <li>The file <code>pyproject.toml</code> describes the dependencies of the project;</li>
-<li>The <code>starting_point/</code> folder contains exercise templates to complete.</li>
-<li>final solutions are available in the <code>final_solution/</code> folder. :::</li>
+<li>Final solutions are available in the <code>final_solution/</code> folder.</li>
 </ul>
 <section id="installation-of-dependencies" class="level2">
 <h2 class="anchored" data-anchor-id="installation-of-dependencies">Installation of dependencies</h2>
 <p>Install the project dependencies by running the following command in the terminal:</p>
 <pre><code>source ./init.sh</code></pre>
 </section>
+<section id="select-the-python-interpreter" class="level2">
+<h2 class="anchored" data-anchor-id="select-the-python-interpreter">Select the Python interpreter</h2>
+<p>To enable interactive code execution, point VSCode at the project’s virtual environment:</p>
+<ol type="1">
+<li>Open the Command Palette with <code>Ctrl+Shift+P</code> (Windows/Linux) or <code>Cmd+Shift+P</code> (Mac)</li>
+<li>Search for and run <strong><code>&gt;Python: Select Interpreter</code></strong></li>
+<li>Choose <strong>Enter interpreter path…</strong> and enter: <code>/home/onyxia/work/funathon-project3/.venv/bin/python</code></li>
+</ol>
+</section>
 <section id="working-on-the-exercises" class="level2">
 <h2 class="anchored" data-anchor-id="working-on-the-exercises">Working on the exercises</h2>
-<p>The exercise templates in <code>starting_point/</code> are Python files split into <strong>cells</strong> delimited by <code># %%</code> comments. Each cell corresponds to one exercise from the tutorial pages.</p>
-<p>To execute them interactively:</p>
+<p>Create a file called <code>scratchpad.py</code> at the root of the repository and use <code># %%</code> markers to divide your code into individually executable cells — just like Jupyter notebook cells, but in a plain <code>.py</code> file.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># %%</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> rasterio</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here …</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># %%</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># next exercise …</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>To run a cell:</p>
 <ol type="1">
-<li>Open a <code>.py</code> file from <code>starting_point/</code> in VSCode</li>
-<li>VSCode recognises <code># %%</code> markers and displays a <strong>“Run Cell”</strong> button above each one</li>
-<li>Click <strong>Run Cell</strong> (or press <code>Ctrl+Enter</code> / <code>Shift+Enter</code>) to execute a single cell in an interactive Python window</li>
-<li>Write your solution code under the corresponding <code># %%</code> header, then run the cell to test it</li>
+<li>Open <code>scratchpad.py</code> in VSCode — a <strong>Run Cell</strong> button appears above each <code># %%</code> marker</li>
+<li>Click <strong>Run Cell</strong> (or press <code>Shift+Enter</code>) to execute that block in an interactive Python window</li>
+<li>Outputs and plots appear inline next to the editor</li>
 </ol>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -340,7 +389,20 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The tutorial pages (<code>.qmd</code> files) contain the full exercise descriptions, hints, and solutions. Use them as reference while working in the <code>.py</code> files.</p>
+<p>The tutorial pages contain the full exercise descriptions, hints, and solutions. Write your code in <code>scratchpad.py</code> and use the tutorial pages as reference.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><code>scratchpad.py</code> is listed in <code>.gitignore</code>, so your scratch work will not be accidentally committed.</p>
 </div>
 </div>
 

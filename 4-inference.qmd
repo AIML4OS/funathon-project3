@@ -1375,8 +1375,10 @@ print(gdf_nuts.head())
 import folium
 import numpy as np
 
-# Dissolve by class to reduce from thousands of polygons to 10 (one per land-cover class)
-gdf_nuts_wgs84 = gdf_nuts.dissolve(by="label").reset_index().to_crs("EPSG:4326")
+# Dissolve by class and simplify geometry to keep the rendered HTML small
+gdf_nuts_dissolved = gdf_nuts.dissolve(by="label").reset_index()
+gdf_nuts_dissolved["geometry"] = gdf_nuts_dissolved.geometry.simplify(500, preserve_topology=True)
+gdf_nuts_wgs84 = gdf_nuts_dissolved.to_crs("EPSG:4326")
 nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 
 m_nuts = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)
@@ -1413,9 +1415,10 @@ m_nuts
 ::: {.callout-tip collapse="true"}
 ## Hint
 
-- `gdf_nuts.dissolve(by="label").reset_index().to_crs("EPSG:4326")` merges all polygons of
-  the same class into one multipolygon, reducing from thousands of features to 10. This is
-  necessary to avoid browser errors caused by Folium generating too many JavaScript entries.
+- Dissolve, then simplify, then reproject: `gdf_nuts.dissolve(by="label").reset_index()`,
+  then `gdf.geometry.simplify(500, preserve_topology=True)` (500 m tolerance in EPSG:3035),
+  then `.to_crs("EPSG:4326")`. The dissolve reduces features from thousands to 10; the
+  simplification reduces vertex count ~50× so the rendered HTML stays a few MB instead of 150 MB.
 - Use `folium.TileLayer(tiles=..., attr="Esri", name=..., show=True, overlay=True, control=True)`
   and call `.add_to(m_nuts)` directly — no `FeatureGroup` needed for a tile layer.
 - Use `FeatureGroup(name="Predicted polygons", show=True)` for the predictions,
@@ -1453,8 +1456,10 @@ print(gdf_nuts.head())
 import folium
 import numpy as np
 
-# Dissolve by class to reduce from thousands of polygons to 10 (one per land-cover class)
-gdf_nuts_wgs84 = gdf_nuts.dissolve(by="label").reset_index().to_crs("EPSG:4326")
+# Dissolve by class and simplify geometry to keep the rendered HTML small
+gdf_nuts_dissolved = gdf_nuts.dissolve(by="label").reset_index()
+gdf_nuts_dissolved["geometry"] = gdf_nuts_dissolved.geometry.simplify(500, preserve_topology=True)
+gdf_nuts_wgs84 = gdf_nuts_dissolved.to_crs("EPSG:4326")
 nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 
 m_nuts = folium.Map(location=[nuts_center.y, nuts_center.x], zoom_start=10)

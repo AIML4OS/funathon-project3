@@ -44,6 +44,8 @@ gdf_tile = gpd.GeoDataFrame.from_features(
 
 ```{python}
 #| eval: true
+# Same 10 CLC+ Backbone classes as in 1-acquisition.qmd / 4-inference.qmd —
+# trimmed to the short names used in tables and bar-chart labels.
 class_names = {
     1:  "Sealed",
     2:  "Woody – needle leaved",

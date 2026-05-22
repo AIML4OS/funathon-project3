@@ -19,7 +19,7 @@ uv sync --extra training
 
 # The Full Training Pipeline
 
-The training script `intermediate_solutions/solution_step2/main.py` wires together the data pipeline, the `SegmentationModule`, and a PyTorch Lightning `Trainer`. This section walks through the key pieces.
+The training script `src/main.py` wires together the data pipeline, the `SegmentationModule`, and a PyTorch Lightning `Trainer`. This section walks through the key pieces.
 
 ## Callbacks: early stopping and checkpointing
 
@@ -78,8 +78,8 @@ To avoid downloading the full pre-trained weights (~330 MB), we can build a smal
 
 import torch
 from transformers import SegformerConfig
-from models.model import SemanticSegmentationSegformer
-from models.module import SegmentationModule
+from src.models.model import SemanticSegmentationSegformer
+from src.models.module import SegmentationModule
 from torch import nn, optim
 
 # 1. Minimal config
@@ -131,8 +131,8 @@ for step in range(3):
 
 import torch
 from transformers import SegformerConfig
-from models.model import SemanticSegmentationSegformer
-from models.module import SegmentationModule
+from src.models.model import SemanticSegmentationSegformer
+from src.models.module import SegmentationModule
 from torch import nn, optim
 
 config = SegformerConfig(
@@ -149,7 +149,10 @@ tiny_module = SegmentationModule(
     model=tiny_model,
     loss=nn.CrossEntropyLoss(ignore_index=255),
     optimizer=optim.AdamW,
-    optimizer_params={"lr": 1e-3},
+    # weight_decay=1e-2 is the AdamW L2-regularisation strength used throughout
+    # the project. On 14-band inputs this helps the encoder generalise instead of
+    # memorising channel-specific quirks of the training tiles.
+    optimizer_params={"lr": 1e-3, "weight_decay": 1e-2},
     scheduler=optim.lr_scheduler.ReduceLROnPlateau,
     scheduler_params={"mode": "min", "patience": 3, "monitor": "validation_loss"},
     scheduler_interval="epoch",
@@ -161,8 +164,12 @@ dummy_batch = {
     "labels": torch.randint(0, 3, (B, H, W)),
 }
 
+# In a normal run, pl.Trainer.fit drives the four-step loop below for every batch:
+# zero_grad → forward (training_step computes loss) → backward → optimizer.step.
+# We unroll it by hand here just to see the mechanics. The loss won't drop much in
+# three steps on random data — the point is to confirm the wiring, not to converge.
 tiny_module.train()
-optimizer = optim.AdamW(tiny_module.parameters(), lr=1e-3)
+optimizer = optim.AdamW(tiny_module.parameters(), lr=1e-3, weight_decay=1e-2)
 for step in range(3):
     optimizer.zero_grad()
     loss = tiny_module.training_step(dummy_batch, step)
@@ -210,7 +217,7 @@ mlf_logger = MLFlowLogger(
     log_model=True,   # upload the best checkpoint as an MLflow artifact
 )
 ```
-::: 
+:::
 
 
 ::: {.callout-note}
@@ -275,6 +282,16 @@ mlf_logger.log_hyperparams({
 ## Why watch `building_rate`?
 
 During early training, models often collapse to predicting the majority class everywhere. Monitoring the fraction of pixels predicted as "building" helps detect this: if `building_rate ≈ 0` after a few epochs, the model is ignoring the minority class — likely a sign of too high a learning rate or severe class imbalance.
+:::
+
+::: {.callout-note}
+## Class imbalance in CLC+
+
+CLC+ classes are heavily imbalanced — *Permanent herbaceous* and *Woody* together cover the vast majority of European pixels, while *Sealed*, *Lichens and mosses* and *Water* are rare. The plain `CrossEntropyLoss` used here weighs every pixel equally, so the optimiser is implicitly rewarded for ignoring rare classes. If you find the minority classes are never predicted, common remedies are:
+
+- **Weighted cross-entropy**: pass `weight=class_weights` to `nn.CrossEntropyLoss`, with one weight per class inversely proportional to its frequency.
+- **Focal loss**: down-weights easy / majority pixels so gradients focus on hard ones.
+- **Oversampling**: build a sampler that draws tiles containing rare classes more often.
 :::
 
 ## Registering and loading the best model
@@ -363,8 +380,8 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import MLFlowLogger
 from transformers import SegformerConfig
-from models.model import SemanticSegmentationSegformer
-from models.module import SegmentationModule
+from src.models.model import SemanticSegmentationSegformer
+from src.models.module import SegmentationModule
 from torch import nn, optim
 
 # Rebuild the tiny model (or reuse from Exercise 3)
@@ -378,7 +395,12 @@ tiny_module = SegmentationModule(
     model=tiny_model,
     loss=nn.CrossEntropyLoss(ignore_index=255),
     optimizer=optim.AdamW,
-    optimizer_params={"lr": 1e-3},
+    optimizer_params={"lr": 1e-3, "weight_decay": 1e-2},
+    # ReduceLROnPlateau divides the learning rate when a metric stops improving.
+    # It needs to know *which* metric to watch (monitor="validation_loss"), and
+    # because validation runs once per epoch, the check has to happen at the same
+    # cadence (scheduler_interval="epoch") — checking every step would compare
+    # against stale values and trigger spurious LR drops.
     scheduler=optim.lr_scheduler.ReduceLROnPlateau,
     scheduler_params={"mode": "min", "patience": 3, "monitor": "validation_loss"},
     scheduler_interval="epoch",

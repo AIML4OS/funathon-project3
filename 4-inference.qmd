@@ -223,7 +223,7 @@ print(f"std={normalization_std}")
 ## Solution
 
 ```{python}
-#| eval: true
+#| eval: false
 import s3fs
 import mlflow
 import requests
@@ -263,6 +263,33 @@ print(f"std={normalization_std}")
 ```
 :::
 
+```{python}
+#| eval: true
+#| echo: false
+import s3fs
+import mlflow
+import requests
+import tempfile
+import numpy as np
+from pathlib import Path
+
+fs = s3fs.S3FileSystem(anon=True, endpoint_url="https://minio.lab.sspcloud.fr")
+s3_run_path = "projet-funathon/mlflow-artifacts/1/a2cc538d334b474389efcc54115ef13d/artifacts/"
+s3_model_path = s3_run_path + "model"
+local_model_dir = Path(tempfile.mkdtemp()) / "model"
+fs.get(s3_model_path, str(local_model_dir), recursive=True)
+model = mlflow.pyfunc.load_model(str(local_model_dir))
+
+response = requests.get("https://minio.lab.sspcloud.fr/" + s3_run_path + "params.json")
+run_params = response.json()
+n_bands = int(run_params["n_bands"])
+tiles_size = int(run_params["tiles_size"])
+augment_size = int(run_params["augment_size"])
+module_name = run_params["module_name"]
+normalization_mean = run_params["normalization_mean"][:n_bands]
+normalization_std = run_params["normalization_std"][:n_bands]
+```
+
 # Apply the Model Locally
 
 This section shows how to run inference locally — loading the image directly
@@ -270,17 +297,78 @@ from MinIO over HTTPS, running the model, and post-processing the output.
 
 ## Predict on a single Sentinel-2 image
 
-The `predict()` utility handles the full pipeline — loading the image,
-preprocessing, tiling if needed, and assembling the result. It returns a tuple
-`(satellite_img dict, predictions array)` where `predictions` is a 2D integer
-array of shape `(H, W)` with class IDs from 1 to 10.
+The `predict()` utility (in `src/utils.py`) handles the full pipeline — loading
+the image, preprocessing, tiling if needed, and assembling the result. It
+returns a tuple `(satellite_img dict, predictions array)` where `predictions`
+is a 2D integer array of shape `(H, W)` with class IDs from 1 to 10.
 
-Internally, `predict()`:
+### How `predict()` works
 
-1. Opens the image from HTTPS via `/vsicurl/` (no local download needed).
-2. Normalises and resizes the array with `albumentations`.
-3. Splits the image into tiles of `tiles_size × tiles_size` if the image is
-   larger, then reassembles predictions with `make_mosaic`.
+The SegFormer model was trained on fixed `tiles_size × tiles_size` patches.
+Real Sentinel-2 imagery is much larger, so `predict()` slices the input into
+model-sized pieces, predicts each piece, then stitches the per-pixel labels
+back into a single mask. The core branching looks like this:
+
+```python
+si = get_satellite_image(image_path, n_bands)
+if si["array"].shape[1] == tiles_size:        # already the right size
+    return make_prediction(si, model, ...)
+elif si["array"].shape[1] > tiles_size:       # larger → tile then mosaic
+    tile_images = split_image(si, tiles_size)
+    results = [make_prediction(t, model, ...) for t in tile_images]
+    return make_mosaic(...)
+```
+
+Step by step:
+
+1. **Load** — `get_satellite_image()` opens the GeoTIFF over HTTPS via GDAL's
+   `/vsicurl/` virtual file system (no local download) and returns the pixel
+   array together with its CRS, bounds and affine transform. Keeping the
+   geospatial metadata is what lets us turn pixel predictions back into
+   polygons with real-world coordinates later.
+
+2. **Tile** — `split_image()` slices the array into `tiles_size × tiles_size`
+   chunks. The full image must be an integer multiple of `tiles_size`,
+   otherwise `predict()` raises an error — the SegFormer head only knows how
+   to consume the exact patch size it saw at training time.
+
+3. **Preprocess** — `preprocess_image()` wraps Albumentations to (a)
+   normalise each band by subtracting `normalization_mean` and dividing by
+   `normalization_std` (the channel-wise statistics computed on the training
+   set), (b) optionally resize to `augment_size` if it differs from
+   `tiles_size`, and (c) transpose `(H, W, C) → (C, H, W)` and add a batch
+   dimension. Skipping normalisation is the most common cause of garbage
+   predictions: the network's weights only make sense for inputs in the
+   statistical range it was trained on.
+
+4. **Forward pass** — `model.predict(normalized.numpy())` runs the wrapped
+   PyTorch SegFormer (loaded via MLflow's `pyfunc` interface) and returns
+   raw **logits** of shape `(1, n_classes, H′, W′)`. Logits are the model's
+   unbounded per-class scores before any softmax — large positive values
+   mean "very likely this class".
+
+5. **Match resolution** — SegFormer's segmentation head emits logits at a
+   coarser resolution than the input (typically `tiles_size / 4`). The code
+   calls `torch.nn.functional.interpolate(..., mode="bilinear")` to upsample
+   back to `tiles_size`. Bilinear (not nearest-neighbour) interpolation is
+   used here because logits are continuous scores; we'll discretise to class
+   IDs only in the next step.
+
+6. **Argmax** — `np.argmax(prediction, axis=0)` collapses the class axis,
+   picking the highest-scoring class at each pixel. The result is a 2D
+   `int32` array of class IDs.
+
+7. **Mosaic** — when the image was tiled, `make_mosaic()` concatenates the
+   tile labels row-by-row into the full mask and reuses the corner tiles'
+   CRS/bounds/transform so the assembled output is still georeferenced.
+
+::: {.callout-note}
+This is why the metadata loaded from MLflow earlier — `tiles_size`,
+`augment_size`, `normalization_mean`, `normalization_std`, `module_name` —
+must travel **with** the model: inference has to reproduce the exact
+preprocessing used at training time. Mismatched values silently produce
+plausible-looking but incorrect predictions.
+:::
 
 ::: {.callout-caution}
 ## Exercise 2 — Run inference on a single Sentinel-2 image
@@ -298,7 +386,11 @@ it to produce a labelled mask.
 
 ```{python}
 #| eval: false
-from utils import predict, get_satellite_image
+from src.utils import (
+    get_satellite_image,
+    predict,
+    create_geojson_from_mask,
+)
 
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
@@ -309,14 +401,14 @@ image_path = (
 )
 
 satellite_img, predictions = predict(
-    images=__,             # TODO: full image URL
-    model=__,              # TODO: model loaded in Exercise 1
-    tiles_size=__,         # TODO: tile size from model metadata
-    augment_size=__,       # TODO: augmentation size from model metadata
-    n_bands=__,            # TODO: number of bands
-    normalization_mean=__, # TODO: normalisation mean
+    images=__,  # TODO: full image URL
+    model=__,  # TODO: model loaded in Exercise 1
+    tiles_size=__,  # TODO: tile size from model metadata
+    augment_size=__,  # TODO: augmentation size from model metadata
+    n_bands=__,  # TODO: number of bands
+    normalization_mean=__,  # TODO: normalisation mean
     normalization_std=__,  # TODO: normalisation std
-    module_name=__,        # TODO: module name
+    module_name=__,  # TODO: module name
 )
 
 print(f"Mask shape : {predictions.shape}")
@@ -335,29 +427,18 @@ print(f"Classes found : {set(predictions.flatten().tolist())}")
 ::: {.callout-tip collapse="true"}
 ## Solution
 ```{python}
-#| eval: true
-#| echo: true
-# Hidden
-from intermediate_solutions.solution_step3.utils import (
+#| eval: false
+from src.utils import (
     get_satellite_image,
     predict,
-    get_satellite_image,
     create_geojson_from_mask,
 )
-```
 
-```{python}
-#| eval: true
-#| echo: true
-#| include: true
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
-
 image_path = (
     "https://minio.lab.sspcloud.fr/projet-funathon/"
-    "2026/project3/data/images/"
-    + image_target
+    "2026/project3/data/images/" + image_target
 )
-
 satellite_img, predictions = predict(
     images=image_path,
     model=model,
@@ -373,6 +454,32 @@ print(f"Mask shape : {predictions.shape}")
 print(f"Classes found : {set(predictions.flatten().tolist())}")
 ```
 :::
+
+```{python}
+#| eval: true
+#| echo: false
+from src.utils import (
+    get_satellite_image,
+    predict,
+    create_geojson_from_mask,
+)
+
+image_target = "LU000/2024/4022000_2979190_0_354.tif"
+image_path = (
+    "https://minio.lab.sspcloud.fr/projet-funathon/"
+    "2026/project3/data/images/" + image_target
+)
+satellite_img, predictions = predict(
+    images=image_path,
+    model=model,
+    tiles_size=tiles_size,
+    augment_size=augment_size,
+    n_bands=n_bands,
+    normalization_mean=normalization_mean,
+    normalization_std=normalization_std,
+    module_name=module_name,
+)
+```
 
 ## Display the prediction
 
@@ -405,6 +512,9 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 
+# The 10 CLC+ Backbone classes — same set as defined in 1-acquisition.qmd § Exercise 10.
+# Keep the order, IDs and hex colours in sync with that file (and with 5-statistics.qmd
+# and map-nuts.qmd) so legends are consistent across the tutorial.
 classes = [
     ("Sealed (1)",                        "#FF0100"),
     ("Woody – needle leaved trees (2)",   "#238B23"),
@@ -460,10 +570,15 @@ plt.show()
 ::: {.callout-tip collapse="true"}
 ## Hint
 
-- `satellite_img["array"]` has shape `(n_bands, H, W)`; bands are 0-indexed
-  so B4=3, B3=2, B2=1.
-- `np.transpose(..., (1, 2, 0))` reshapes from `(3, H, W)` to `(H, W, 3)`.
+- Sentinel-2 bands B4 / B3 / B2 are the Red / Green / Blue bands — feeding
+  them to `imshow` produces a natural-colour ("true-colour") image. Bands are
+  named B1–B12 (1-indexed) but the array is 0-indexed, so B4=3, B3=2, B2=1.
+- `satellite_img["array"]` has shape `(n_bands, H, W)`.
+- `np.transpose(..., (1, 2, 0))` reshapes from `(3, H, W)` to `(H, W, 3)` —
+  matplotlib expects channels-last.
 - Normalise: divide by `np.percentile(rgb, 98)` then `np.clip(..., 0, 1)`.
+  Using the 98th percentile (instead of the max) caps the few brightest
+  outlier pixels and keeps the rest of the scene from looking washed out.
 - Use `vmin=1, vmax=10` on `imshow` so the colormap aligns with the 10 CLC+ classes.
 :::
 
@@ -475,7 +590,10 @@ plt.show()
 #| echo: true
 #| include: true
 satellite_img_array = satellite_img["array"]
+# Pick R/G/B (Sentinel-2 B4/B3/B2 → 0-indexed positions 3/2/1) and move
+# channels last so matplotlib can render the natural-colour composite.
 rgb = np.transpose(satellite_img_array[[3, 2, 1]], (1, 2, 0)).astype(np.float32)
+# Cap brightness at the 98th percentile to avoid a few hot pixels washing out the image.
 p98 = np.percentile(rgb, 98)
 rgb = np.clip(rgb / p98, 0, 1)
 
@@ -554,7 +672,7 @@ the three outputs side by side (RGB / mask / polygons), and save the result.
 
 ```{python}
 #| eval: false
-from utils import create_geojson_from_mask
+from src.utils import create_geojson_from_mask
 
 gdf_pred = create_geojson_from_mask(__, __)  # TODO: satellite_img, predictions
 
@@ -603,9 +721,7 @@ plt.show()
 ## Solution
 
 ```{python}
-#| eval: true
-#| echo: true
-#| include: true
+#| eval: false
 gdf_pred = create_geojson_from_mask(satellite_img, predictions)
 
 print(f"{len(gdf_pred)} polygons extracted")
@@ -642,6 +758,8 @@ fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5)
 ```{python}
 #| eval: true
 #| echo: false
+gdf_pred = create_geojson_from_mask(satellite_img, predictions)
+
 fig, axes = plt.subplots(1, 3, figsize=(20, 6))
 
 axes[0].imshow(rgb)
@@ -797,6 +915,9 @@ from folium.raster_layers import ImageOverlay
 from rasterio.warp import transform_bounds, reproject, Resampling, calculate_default_transform
 from rasterio.crs import CRS
 
+# Folium / Leaflet only render WGS84 (EPSG:4326, lat/lon). The Sentinel-2 tile
+# lives in EPSG:3035 (metric projection used across Europe), so both the raster
+# and the prediction polygons must be reprojected before they reach the map.
 src_crs = satellite_img["crs"]
 src_transform = satellite_img["transform"]
 src_bounds = satellite_img["bounds"]
@@ -804,6 +925,8 @@ dst_crs = CRS.from_epsg(4326)
 
 raw_bands = satellite_img_array[[3, 2, 1]].astype(np.float32)
 h, w = raw_bands.shape[1], raw_bands.shape[2]
+# calculate_default_transform picks an output grid in EPSG:4326 that covers the
+# same area; reproject() then resamples each band onto that grid.
 dst_transform, dst_w, dst_h = calculate_default_transform(
     src_crs, dst_crs, w, h, *src_bounds
 )
@@ -813,10 +936,12 @@ for i in range(3):
         source=raw_bands[i], destination=rgb_wgs84_bands[i],
         src_transform=src_transform, src_crs=src_crs,
         dst_transform=dst_transform, dst_crs=dst_crs,
-        resampling=Resampling.bilinear,
+        resampling=Resampling.bilinear,  # bilinear for continuous reflectance values
     )
 p98 = np.percentile(rgb_wgs84_bands[rgb_wgs84_bands > 0], 98)
 rgb_wgs84 = np.clip(np.transpose(rgb_wgs84_bands, (1, 2, 0)) / p98, 0, 1)
+# Reprojection from a tilted source produces empty triangular corners. Build an
+# alpha channel from "where was there any data?" so those corners stay transparent.
 alpha = (rgb_wgs84_bands.max(axis=0) > 0).astype(np.float32)
 rgba_wgs84 = np.dstack([rgb_wgs84, alpha])
 
@@ -835,7 +960,7 @@ ImageOverlay(
 fg_image.add_to(m)
 
 fg_pred = folium.FeatureGroup(name="Predicted polygons", show=True)
-gdf_pred_wgs84 = gdf_pred.to_crs("EPSG:4326")
+gdf_pred_wgs84 = gdf_pred.to_crs("EPSG:4326")  # vector polygons reprojected for Folium
 folium.GeoJson(
     gdf_pred_wgs84,
     style_function=lambda feature: {
@@ -1090,9 +1215,7 @@ print(f"NUTS3 region found: {nuts_id}")
 ## Solution
 
 ```{python}
-#| eval: true
-#| echo: true
-#| results: hide
+#| eval: false
 import requests
 
 api_url = "https://funathon-2026-project3-api.lab.sspcloud.fr"
@@ -1111,6 +1234,15 @@ nuts_id = response_nuts.json()
 print(f"NUTS3 region found: {nuts_id}")
 ```
 :::
+
+```{python}
+#| eval: true
+#| echo: false
+import requests
+
+api_url = "https://funathon-2026-project3-api.lab.sspcloud.fr"
+gps_point = [49.63339525016761, 6.1689982433356025]
+```
 
 ## Find a satellite image from a GPS point
 
@@ -1163,9 +1295,7 @@ print(f"Image found: {image_filename}")
 ## Solution
 
 ```{python}
-#| eval: true
-#| echo: true
-#| include: true
+#| eval: false
 import json
 import requests
 
@@ -1187,6 +1317,20 @@ image_filepath = response_find.json()
 print(f"Image found: {image_filepath}")
 ```
 :::
+
+```{python}
+#| eval: true
+#| echo: false
+import json
+
+year = 2024
+response_find = requests.get(
+    f"{api_url}/find_image",
+    params={"gps_point": gps_point, "year": year},
+)
+response_find.raise_for_status()
+image_filepath = response_find.json()
+```
 
 ## Predict a single image via the API
 
@@ -1273,9 +1417,7 @@ plt.show()
 ## Solution
 
 ```{python}
-#| eval: true
-#| echo: true
-#| include: true
+#| eval: false
 import geopandas as gpd
 
 response_pred = requests.get(
@@ -1316,6 +1458,27 @@ fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5)
 ```{python}
 #| eval: true
 #| echo: false
+import geopandas as gpd
+
+response_pred = requests.get(
+    f"{api_url}/predict_image",
+    params={"image": image_filepath, "polygons": True},
+)
+response_pred.raise_for_status()
+gdf_pred = gpd.GeoDataFrame.from_features(
+    json.loads(response_pred.json())["features"],
+    crs="EPSG:3035",
+)
+
+N_BANDS = 14
+minio_url = "https://minio.lab.sspcloud.fr/"
+image_url = minio_url + image_filepath
+si = get_satellite_image(image_url, n_bands=N_BANDS)
+
+rgb = np.transpose(si["array"][[3, 2, 1]], (1, 2, 0)).astype(np.float32)
+p98 = np.percentile(rgb, 98)
+rgb = np.clip(rgb / p98, 0, 1)
+
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 axes[0].imshow(rgb)
 axes[0].set_title("Sentinel-2 RGB (B4, B3, B2)")
@@ -1362,7 +1525,7 @@ response_nuts = requests.get(
 response_nuts.raise_for_status()
 
 gdf_nuts = gpd.GeoDataFrame.from_features(
-    json.loads(response_nuts.json())["features"],  # parse GeoJSON string → dict → features
+    json.loads(response_nuts.json()["predictions"])["features"],  # parse GeoJSON string → dict → features
     crs="EPSG:3035",
 )
 
@@ -1375,9 +1538,17 @@ print(gdf_nuts.head())
 import folium
 import numpy as np
 
-# Dissolve by class and simplify geometry to keep the rendered HTML small
+# Folium embeds every polygon coordinate into the HTML, so a NUTS3-scale prediction
+# (tens of thousands of polygons at 10 m resolution) can balloon to 150+ MB. Two
+# operations keep the output tractable:
+#  - dissolve(by="label"): merge same-class polygons into one multipolygon per class
+#    (≈ thousands → 10 features), avoiding Leaflet's per-feature JavaScript overhead;
+#  - simplify(500): drop vertices within 500 m in EPSG:3035 (metric CRS, so 500 = 500 m).
+#    At country zoom level this is invisible but cuts vertex count by ~50×.
 gdf_nuts_dissolved = gdf_nuts.dissolve(by="label").reset_index()
 gdf_nuts_dissolved["geometry"] = gdf_nuts_dissolved.geometry.simplify(500, preserve_topology=True)
+# Reproject only after simplification: simplify works on the metric CRS (where 500 = 500 m),
+# whereas in EPSG:4326 a tolerance of 500 would be in degrees (~55 km, useless).
 gdf_nuts_wgs84 = gdf_nuts_dissolved.to_crs("EPSG:4326")
 nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 
@@ -1431,9 +1602,7 @@ m_nuts
 ## Solution
 
 ```{python}
-#| eval: true
-#| echo: true
-#| include: false
+#| eval: false
 nuts_id = "LU000"
 year = 2024
 
@@ -1456,9 +1625,17 @@ print(gdf_nuts.head())
 import folium
 import numpy as np
 
-# Dissolve by class and simplify geometry to keep the rendered HTML small
+# Folium embeds every polygon coordinate into the HTML, so a NUTS3-scale prediction
+# (tens of thousands of polygons at 10 m resolution) can balloon to 150+ MB. Two
+# operations keep the output tractable:
+#  - dissolve(by="label"): merge same-class polygons into one multipolygon per class
+#    (≈ thousands → 10 features), avoiding Leaflet's per-feature JavaScript overhead;
+#  - simplify(500): drop vertices within 500 m in EPSG:3035 (metric CRS, so 500 = 500 m).
+#    At country zoom level this is invisible but cuts vertex count by ~50×.
 gdf_nuts_dissolved = gdf_nuts.dissolve(by="label").reset_index()
 gdf_nuts_dissolved["geometry"] = gdf_nuts_dissolved.geometry.simplify(500, preserve_topology=True)
+# Reproject only after simplification: simplify works on the metric CRS (where 500 = 500 m),
+# whereas in EPSG:4326 a tolerance of 500 would be in degrees (~55 km, useless).
 gdf_nuts_wgs84 = gdf_nuts_dissolved.to_crs("EPSG:4326")
 nuts_center = gdf_nuts_wgs84.geometry.centroid.union_all().centroid
 

@@ -199,7 +199,7 @@ plt.show()
 Without those three lines, the raw 16-bit data displays like this:
 
 ```{python}
-#| eval: true
+#| eval: false
 #| output: false
 
 import matplotlib.pyplot as plt
@@ -306,6 +306,36 @@ plt.show()
 ```
 :::
 
+```{python}
+#| eval: true
+#| echo: false
+
+import rasterio
+import numpy as np
+import matplotlib.pyplot as plt
+
+tile_url = (
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
+)
+
+with rasterio.open(tile_url) as src:
+    rgb_data = src.read([4, 3, 2])
+    tile_crs = src.crs
+    tile_bounds = src.bounds
+
+rgb = np.transpose(rgb_data, (1, 2, 0)).astype(np.float32)
+p98 = np.percentile(rgb, 98)
+rgb = np.clip(rgb / p98, 0, 1)
+
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.imshow(rgb)
+ax.set_title("Sentinel-2 RGB composite")
+ax.axis("off")
+plt.tight_layout()
+plt.show()
+```
 
 ## What are band composites?
 
@@ -418,7 +448,38 @@ plt.tight_layout()
 plt.show()
 ```
 :::
+```{python}
+#| eval: true
+#| echo: false
 
+import rasterio
+import numpy as np
+import matplotlib.pyplot as plt
+
+tile_url = (
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
+)
+
+with rasterio.open(tile_url) as src:
+    print(src.profile)
+    fc_data = src.read([8, 4, 3])
+
+fc = np.transpose(fc_data, (1, 2, 0)).astype(np.float32)
+p98 = np.percentile(fc, 98)
+fc = np.clip(fc / p98, 0, 1)
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+axes[0].imshow(rgb)
+axes[0].set_title("True colour (B4, B3, B2)")
+axes[0].axis("off")
+axes[1].imshow(fc)
+axes[1].set_title("False colour (B8, B4, B3)")
+axes[1].axis("off")
+plt.tight_layout()
+plt.show()
+```
 
 ::: {.callout-caution}
 ## Exercise 3 — Compute and display NDVI
@@ -503,12 +564,19 @@ tile_url = (
 )
 
 with rasterio.open(tile_url) as src:
+    # Healthy vegetation strongly reflects near-infrared (B8) and absorbs red (B4),
+    # so the ratio (NIR − Red) / (NIR + Red) gives a clean vegetation signal.
     nir = src.read(8).astype(np.float32)
     red = src.read(4).astype(np.float32)
 
+# np.where guards against pixels where NIR + Red is exactly 0 (water bodies,
+# nodata, deep shadow): the ratio would otherwise produce NaN and contaminate the
+# colormap. Substituting 0 keeps those pixels neutral on the red-yellow-green scale.
 ndvi = np.where(nir + red == 0, 0, (nir - red) / (nir + red))
 
 fig, ax = plt.subplots(figsize=(6, 5))
+# vmin=-1, vmax=1 anchors the colormap to NDVI's full theoretical range, so the
+# same colour means the same vegetation cover across tiles.
 im = ax.imshow(ndvi, cmap="RdYlGn", vmin=-1, vmax=1)
 ax.set_title("NDVI — LU000 (2024)")
 ax.axis("off")
@@ -518,6 +586,41 @@ plt.show()
 ```
 :::
 
+```{python}
+#| eval: true
+#| echo: false
+
+import rasterio
+import numpy as np
+import matplotlib.pyplot as plt
+
+tile_url = (
+    "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
+    "project3/data/images/LU000/"
+    "2024/4042000_2951690_0_637.tif"
+)
+
+with rasterio.open(tile_url) as src:
+    # Healthy vegetation strongly reflects near-infrared (B8) and absorbs red (B4),
+    # so the ratio (NIR − Red) / (NIR + Red) gives a clean vegetation signal.
+    nir = src.read(8).astype(np.float32)
+    red = src.read(4).astype(np.float32)
+
+# np.where guards against pixels where NIR + Red is exactly 0 (water bodies,
+# nodata, deep shadow): the ratio would otherwise produce NaN and contaminate the
+# colormap. Substituting 0 keeps those pixels neutral on the red-yellow-green scale.
+ndvi = np.where(nir + red == 0, 0, (nir - red) / (nir + red))
+
+fig, ax = plt.subplots(figsize=(6, 5))
+# vmin=-1, vmax=1 anchors the colormap to NDVI's full theoretical range, so the
+# same colour means the same vegetation cover across tiles.
+im = ax.imshow(ndvi, cmap="RdYlGn", vmin=-1, vmax=1)
+ax.set_title("NDVI — LU000 (2024)")
+ax.axis("off")
+fig.colorbar(im, ax=ax, shrink=0.8, label="NDVI")
+plt.tight_layout()
+plt.show()
+```
 
 # NUTS Regions and Finding Satellite Tiles
 
@@ -1076,7 +1179,7 @@ Satellite imagery is inherently geospatial: each pixel corresponds to a precise 
 
 ## Coordinate Reference Systems
 
-Every raster and vector dataset is tied to a **coordinate reference system (CRS)** that defines how coordinates map to locations on Earth. The two CRS you will encounter most often in this project are:
+Every raster and vector dataset is tied to a **coordinate reference system (CRS)** that defines how coordinates map to locations on Earth. **CRS mismatch is the single most common source of silent bugs in geospatial work** — a join, overlay or distance computation between two layers in different CRS will not raise an error; it will simply return wrong or empty results. The two CRS you will encounter most often in this project are:
 
 | CRS | EPSG Code | Units | Use case |
 |-----|-----------|-------|----------|
@@ -1284,11 +1387,19 @@ tile_gdf = gpd.GeoDataFrame(
     {"tile": ["LU000"]}, geometry=[tile_geom], crs=tile_crs
 )
 
+# Spatial join: for each tile geometry, attach the columns of every NUTS3 region
+# whose geometry satisfies the predicate. `predicate="intersects"` keeps any region
+# that touches the tile (even partially); alternatives are "within" (tile fully
+# inside region) or "contains" (region fully inside tile). A tile straddling a
+# border can therefore match several NUTS3 regions — hence the loop below.
 joined = gpd.sjoin(tile_gdf, nuts, predicate="intersects")
 
 for _, row in joined.iterrows():
     print(f"NUTS_ID: {row['NUTS_ID']}, NUTS_NAME: {row['NUTS_NAME']}")
 
+# tile_geom is in EPSG:3035 whose unit is the metre, so .area is in m². Divide by
+# 1e6 to get km². Computing area on a geographic CRS like EPSG:4326 (degrees) would
+# give a meaningless figure — always use a metric projection for measurements.
 area_km2 = tile_geom.area / 1e6
 print(f"Tile area: {area_km2:.2f} km²")
 ```
@@ -1695,6 +1806,8 @@ plt.show()
 :::
 
 
+Before training any model, it is good practice to **inspect the training data visually**: do the labels really correspond to what the imagery shows? Overlaying the CLC+ classification on top of the Sentinel-2 RGB tile makes mis-aligned, mis-classified or stale labels obvious in a few seconds of scrolling — much faster than computing summary statistics. An interactive map with toggleable layers lets you flip the labels on and off to check the boundary lines class by class.
+
 ::: {.callout-caution}
 ## Exercise 10 — Overlay the satellite image and CLC+ label on an interactive map
 
@@ -1844,7 +1957,7 @@ rgb_overlay = np.clip(rgb_overlay / np.percentile(rgb_overlay, 98), 0, 1)
 label_url = (
     "https://minio.lab.sspcloud.fr/projet-funathon/2026/"
     "project3/data/labels/LU000/"
-    "2021/4042000_2951690_0_637.npy"
+    "2021/4017000_2974190_0_402.npy"
 )
 with urllib.request.urlopen(label_url) as response:
     label = np.load(io.BytesIO(response.read()))
@@ -1905,8 +2018,9 @@ In this chapter you built the full data pipeline that feeds a land-cover segment
 
 You now have aligned **image / label pairs** — the raw material for supervised learning. You can continue with either:
 
-- **[Model Training](2-model.qmd)** *(optional)* — train a SegFormer segmentation model on the Sentinel-2 / CLC+ pairs you assembled here.
-- **[Inference](3-inference.qmd)** — run a pre-trained model on new tiles, to map land cover predictions on newer images.
+- **[Model Explanation](2-model.qmd)** — walk through the SegFormer architecture used for segmentation.
+- **[Model Training](3-training.qmd)** *(optional)* — train a SegFormer segmentation model on the Sentinel-2 / CLC+ pairs you assembled here.
+- **[Inference](4-inference.qmd)** — run a pre-trained model on new tiles, to map land cover predictions on newer images.
 
 If you're curious about where the pre-processed patches come from and how you would build them for a different region, the **[Appendix](#appendix-acquiring-data-from-source-apis)** walks through the full download pipeline from the original Copernicus APIs.
 
@@ -2101,7 +2215,7 @@ s3://projet-funathon/2026/project3/data/labels/{NUTS}/{year}/{patch_id}.npy
 #| eval: false
 
 import numpy as np
-from utils import get_file_system
+from src.utils import get_file_system
 
 # Step 1: Save the label array locally as .npy
 local_path = "3649890_2331750_0_937.npy"
@@ -2137,7 +2251,7 @@ print(fs.ls(___))  # TODO: S3 directory path (without filename)
 #| eval: false
 
 import numpy as np
-from utils import get_file_system
+from src.utils import get_file_system
 
 local_path = "3649890_2331750_0_937.npy"
 np.save(local_path, img_array)
@@ -2504,7 +2618,7 @@ Once you have downloaded a tile, you can **upload it to S3** to share it with yo
 ```{python}
 #| eval: false
 
-from utils import get_file_system
+from src.utils import get_file_system
 
 fs = get_file_system()
 
@@ -2528,7 +2642,7 @@ fs.put("./output.tif", "s3://my-bucket/sentinel2/output.tif")
 ```{python}
 #| eval: false
 
-from utils import get_file_system
+from src.utils import get_file_system
 
 # Step 1: Save the TIFF bytes from Exercise 13 to disk
 local_path = ___  # TODO: e.g. "paris_rgb.tif"
@@ -2561,7 +2675,7 @@ print(fs.ls(___))  # TODO: S3 directory (without filename)
 ```{python}
 #| eval: false
 
-from utils import get_file_system
+from src.utils import get_file_system
 
 local_path = "paris_rgb.tif"
 with open(local_path, "wb") as f:

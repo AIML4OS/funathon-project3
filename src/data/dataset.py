@@ -13,7 +13,7 @@ from albumentations import Compose
 from astrovision.data import SatelliteImage
 from torch.utils.data import Dataset
 
-from data.download import get_file_system
+from src.data.download import get_file_system
 
 
 class SegmentationDataset(Dataset):

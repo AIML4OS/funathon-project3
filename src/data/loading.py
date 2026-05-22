@@ -1,6 +1,13 @@
-# ==========================================================
-# data/loading.py
-# ==========================================================
+"""
+Discover and pair (image, label) tiles for training.
+
+`load_data()` resolves the S3 listing of available patches for the requested
+NUTS3 / year and applies `filter_indices_from_labels` to drop tiles whose
+labels are corrupt or fully no-data (CLC+ `255` sentinel). The pairing is
+positional: the i-th image file must match the i-th label file by path
+convention — a mismatch here would silently train the model on shifted
+labels, which is why the filter step is a hard prerequisite.
+"""
 
 import os
 from pathlib import Path
@@ -8,8 +15,8 @@ from typing import List, Tuple
 import pandas as pd
 import subprocess
 
-from data.download import download_data
-from data.filter import filter_indices_from_labels
+from src.data.download import download_data
+from src.data.filter import filter_indices_from_labels
 
 
 def get_patchs_labels(

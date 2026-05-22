@@ -1,13 +1,19 @@
-# ==========================================================
-# data/normalization.py
-# ==========================================================
+"""
+Compute per-band mean/std from the training tiles.
+
+These statistics must come from the training set (not from each batch) and be
+*frozen* afterwards: the same numbers are reused at inference, otherwise the
+model sees inputs in a different statistical range from what it learnt on and
+predictions degrade silently. The computed values are persisted alongside the
+model (MLflow run params) so inference code can restore them exactly.
+"""
 
 from typing import List, Tuple
 import numpy as np
 import yaml
 
-from data.loading import get_patchs_labels
-from data.filter import filter_indices_from_labels
+from src.data.loading import get_patchs_labels
+from src.data.filter import filter_indices_from_labels
 
 
 def normalization_params(

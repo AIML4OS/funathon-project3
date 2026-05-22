@@ -1,3 +1,13 @@
+"""
+S3 access for training/validation patches and labels.
+
+Uses MinIO (SSP Cloud's S3-compatible store) via `s3fs`. Credentials come from
+the standard `AWS_*` environment variables injected by the SSP Cloud runtime;
+the funathon's read-only inference data is also reachable anonymously, but the
+training pipeline writes back to the bucket and therefore needs the session
+token.
+"""
+
 import os
 from s3fs import S3FileSystem
 import subprocess

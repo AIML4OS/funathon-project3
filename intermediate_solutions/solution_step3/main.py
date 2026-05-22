@@ -25,7 +25,7 @@ import tempfile
 from pathlib import Path
 import pandas as pd
 
-from utils import (
+from src.utils import (
     create_geojson_from_mask,
     get_satellite_image,
     predict,

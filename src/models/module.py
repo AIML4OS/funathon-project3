@@ -1,4 +1,11 @@
-""" """
+"""
+PyTorch Lightning wrapper around `SemanticSegmentationSegformer`.
+
+Holds the training/validation/test hooks Lightning will call, plus the loss /
+optimiser / scheduler bundle. Cross-entropy is configured with
+`ignore_index=255` so no-data pixels (clouds, image borders, missing
+observations encoded as 255 in the CLC+ labels) are skipped by the loss.
+"""
 
 from typing import Dict, Optional, Union
 
@@ -6,13 +13,13 @@ import pytorch_lightning as pl
 import torch
 from torch import nn, optim
 
-from model import SemanticSegmentationSegformer
-from training.metrics import IOU, positive_rate
+from src.models.model import SemanticSegmentationSegformer
+from src.training.metrics import IOU, positive_rate
 
 
 class SegmentationModule(pl.LightningModule):
     """
-    Pytorch Lightning Module for DeepLabv3.
+    PyTorch Lightning module wrapping the SegFormer segmentation model.
     """
 
     def __init__(
@@ -179,6 +186,10 @@ class SegmentationModule(pl.LightningModule):
                 mode=self.scheduler_params["mode"],
                 patience=self.scheduler_params["patience"],
             )
+            # ReduceLROnPlateau needs to know *which* metric to watch and *when*
+            # the value will be fresh. `monitor` names the logged metric (typically
+            # "validation_loss"); `interval` must match the cadence at which the
+            # metric is updated — "epoch" because validation runs once per epoch.
             scheduler = {
                 "scheduler": scheduler,
                 "monitor": self.scheduler_params["monitor"],

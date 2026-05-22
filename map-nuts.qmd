@@ -24,6 +24,8 @@ import numpy as np
 
 api_url = "https://funathon-2026-project3-api.lab.sspcloud.fr"
 
+# Same 10 CLC+ Backbone classes as defined in 1-acquisition.qmd / 4-inference.qmd —
+# kept inline here so this page can render standalone, without sharing Python state.
 classes = [
     ("Sealed (1)",                        "#FF0100"),
     ("Woody – needle leaved trees (2)",   "#238B23"),

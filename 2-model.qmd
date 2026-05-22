@@ -69,7 +69,7 @@ Satellite imagery presents specific challenges compared to natural images:
 
 # Instantiating the Model
 
-The project wraps SegFormer in two classes defined in `intermediate_solutions/solution_step2/models/model.py`:
+The project wraps SegFormer in two classes defined in `src/models/model.py`:
 
 - **`SemanticSegmentationSegformer`**: a thin subclass of HuggingFace's `SegformerPreTrainedModel` that adds freeze/unfreeze helpers and a cleaner forward method.
 - **`SegformerB5`**: a factory that fetches the label mapping from an S3 bucket, builds a `SegformerConfig`, and downloads the pre-trained `nvidia/mit-b5` weights.
@@ -77,14 +77,15 @@ The project wraps SegFormer in two classes defined in `intermediate_solutions/so
 ```{python}
 #| eval: false
 
-import sys
-sys.path.insert(0, "intermediate_solutions/solution_step2")
-
-from models.model import SegformerB5
+from src.models.model import SegformerB5
 
 # This downloads ~330 MB of weights from HuggingFace on first run
 model = SegformerB5(
-    n_bands=14,              # 14 Sentinel-2 bands
+    # 14 matches the band table in 1-acquisition.qmd § "Sentinel-2 bands". If you swap
+    # in a different dataset (e.g. dropping B10 → 13 bands), this number, the
+    # normalisation statistics, and `num_channels` in the SegformerConfig must all
+    # change together — otherwise the first patch-embedding layer will mis-shape inputs.
+    n_bands=14,
     logits=True,             # return raw logits (not probabilities)
     freeze_encoder=False,    # keep encoder trainable
     type_labeler="CLCplus-Backbone",
@@ -228,12 +229,18 @@ Use `sum(p.numel() for p in module.parameters())` to count parameters for any `n
 ```{python}
 #| eval: false
 
-# 1. Parameters per encoder stage
+# 1. Parameters per encoder stage.
+# Deeper stages have more channels (C₁ < C₂ < C₃ < C₄), so even with fewer transformer
+# blocks they end up holding most of the encoder's capacity. This matters during
+# fine-tuning: freezing stages 3–4 alone already locks the bulk of the model's weights.
 for i, stage in enumerate(model.segformer.encoder.block):
     n = sum(p.numel() for p in stage.parameters())
     print(f"Stage {i+1}: {n:,} parameters")
 
-# 2. Decoder breakdown
+# 2. Decoder breakdown.
+# The four projection layers are tiny linear maps (one per encoder stage); the real
+# decoder cost lives in the linear_fuse + classifier. Seeing how light the head is
+# explains why training the decoder alone is fast and resistant to overfitting.
 for i, proj in enumerate(model.decode_head.linear_c):
     n = sum(p.numel() for p in proj.parameters())
     print(f"Decoder projection {i+1}: {n:,} parameters")
@@ -362,12 +369,20 @@ import torch.nn.functional as F
 
 model.eval()
 with torch.no_grad():
-    logits = model(dummy_input)           # (B, num_classes, H/4, W/4)
+    # Logits = raw, unbounded per-class scores. They have shape (B, num_classes, H/4, W/4)
+    # because the all-MLP decoder fuses everything at the finest encoder scale (H/4).
+    logits = model(dummy_input)
+    # output_hidden_states=True surfaces the four encoder feature maps. The decoder
+    # combines all four — early stages (high resolution) carry local detail, late
+    # stages (low resolution) carry semantic context. Returning them is what makes
+    # multi-scale fusion possible.
     outputs = model.segformer(
         dummy_input, output_hidden_states=True, return_dict=True
     )
 
-# 1. Manual upsampling
+# 1. Manual upsampling.
+# Bilinear (not nearest-neighbour) because logits are continuous scores: interpolating
+# between two scores is meaningful, whereas a discrete class label is not.
 logits_full = F.interpolate(
     logits,
     size=(H, W),
@@ -376,13 +391,16 @@ logits_full = F.interpolate(
 )
 print(f"Manually upsampled: {tuple(logits_full.shape)}")
 
-# 2. Predicted class map
+# 2. Predicted class map.
+# softmax converts logits → probabilities; argmax picks the most likely class at each
+# pixel. The class axis disappears: (B, num_classes, H, W) → (B, H, W), one int per pixel.
 probs = torch.softmax(logits_full, dim=1)
 pred  = torch.argmax(probs, dim=1)
 print(f"Predicted map shape: {tuple(pred.shape)}")
 print(f"Unique predicted classes: {pred.unique().tolist()}")
 
-# 3. Spatial area ratios
+# 3. Spatial area ratios — stage 1 is at H/4 × W/4 → 1/16 of the input area, and each
+# next stage divides that by 4 again (1/64, 1/256, 1/1024).
 for i, hs in enumerate(outputs.hidden_states):
     ratio = (hs.shape[-2] * hs.shape[-1]) / (H * W)
     print(f"Stage {i+1}: {ratio:.4f}")
@@ -398,7 +416,7 @@ PyTorch Lightning separates the model definition from the training logic. The `S
 ```{python}
 #| eval: false
 
-from models.module import SegmentationModule
+from src.models.module import SegmentationModule
 from torch import nn, optim
 
 module = SegmentationModule(
@@ -430,7 +448,9 @@ $$
 \mathcal{L} = -\frac{1}{HW} \sum_{h,w} \log \hat{p}_{y_{h,w},h,w}
 $$
 
-where $\hat{p}_{c,h,w}$ is the softmax probability assigned to class $c$ at pixel $(h, w)$, and $y_{h,w}$ is the true class label. The `ignore_index=255` argument tells PyTorch to skip pixels labelled 255 (used here as a "no-data" sentinel).
+where $\hat{p}_{c,h,w}$ is the softmax probability assigned to class $c$ at pixel $(h, w)$, and $y_{h,w}$ is the true class label.
+
+The `ignore_index=255` argument tells PyTorch to drop pixels with label `255` from the sum. Satellite labels routinely contain such "no-data" pixels — clouds, cloud shadows, image borders, missing observations — and `255` is the conventional sentinel used by the CLC+ preprocessing pipeline. Without `ignore_index`, the loss would treat those pixels as if they belonged to a real class 255 (which doesn't exist), pushing gradients in a meaningless direction and contaminating the trained weights.
 
 ## Metrics: Intersection over Union (IoU)
 
@@ -445,10 +465,7 @@ where $\hat{M}_c$ is the set of pixels predicted as class $c$ and $M_c$ is the s
 ```{python}
 #| eval: false
 
-import sys
-sys.path.insert(0, "intermediate_solutions/solution_step2")
-
-from training.metrics import IOU, positive_rate
+from src.training.metrics import IOU, positive_rate
 
 # Simulate model output and labels
 B, num_classes, H, W = 2, 11, 512, 512

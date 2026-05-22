@@ -1,3 +1,15 @@
+"""
+Segmentation metrics.
+
+Plain pixel accuracy is misleading on land-cover data because classes are
+heavily imbalanced — a model that predicts the majority class everywhere can
+still hit 80% accuracy. IoU (Intersection over Union, per-class and averaged)
+penalises that failure mode, so it's what we track in training and validation.
+`positive_rate` measures the share of pixels predicted as the minority class
+of interest (here "building"), useful as an early-warning signal of collapse
+to the majority class.
+"""
+
 import torch
 
 

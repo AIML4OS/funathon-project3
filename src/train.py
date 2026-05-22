@@ -1,6 +1,18 @@
-# ==========================================================
-# main.py
-# ==========================================================
+"""
+End-to-end training entry point.
+
+Steps:
+  1. Seed RNGs (numpy / torch / cuda) so a training run is reproducible.
+  2. Discover training/validation tiles and compute per-band normalisation
+     statistics on the training split only — the same stats are reused for
+     validation and at inference time (stored alongside the model in MLflow).
+  3. Build Albumentations transforms (resize → flip → normalize → ToTensorV2).
+  4. Hand the dataloaders to `pl.Trainer.fit`. Lightning drives the optimiser,
+     scheduler, early-stopping and checkpointing.
+
+Run from the project root with `python -m src.train` (or
+`uv run python -m src.train`) so the `src.*` package imports resolve.
+"""
 
 import os
 import random
@@ -12,11 +24,11 @@ from torch.utils.data import DataLoader, random_split
 from torch import Generator
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
-from data.loading import load_data
-from data.normalization import compute_global_normalization
-from data.transforms import build_transform
-from training.lightning import get_lightning_module
-from dataset import SegmentationDataset
+from src.data.loading import load_data
+from src.data.normalization import compute_global_normalization
+from src.data.transforms import build_transform
+from src.training.lightning import get_lightning_module
+from src.data.dataset import SegmentationDataset
 
 
 # ==========================================================

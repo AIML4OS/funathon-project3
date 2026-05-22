@@ -1,8 +1,15 @@
+"""
+Factory that wires together the SegFormer backbone, the cross-entropy loss
+(with `ignore_index=255` for no-data pixels) and the AdamW + OneCycleLR
+schedule used in `src/train.py`. Kept as a one-call entry point so the
+training script and Lightning module construction stay decoupled.
+"""
+
 from torch.nn import CrossEntropyLoss
 import torch
 
-from model import SegformerB5
-from module import SegmentationModule
+from src.models.model import SegformerB5
+from src.models.module import SegmentationModule
 
 
 def get_lightning_module(

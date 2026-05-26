@@ -9,13 +9,13 @@ format:
 ::: {.callout-note}
 ## Where this chapter fits
 
-Training a segmentation model needs a dataset of `(image, label)` pairs — satellite tiles on one side, land-cover maps on the other. **This chapter builds that dataset.** By the end, you'll know how to pull a Sentinel-2 tile for any European city, fetch its matching CLC+ label, and confirm the two are perfectly aligned pixel-for-pixel.
+Training a segmentation model needs a dataset of `(image, label)` pairs — satellite tiles on one side, land-cover maps on the other. **This chapter builds that dataset.** By the end, you'll know how to pull a Sentinel-2 tile for any European city, fetch its matching CLC + label (Corinne Land Cover), and confirm the two are perfectly aligned pixel-for-pixel.
 
 ```{mermaid}
 %%| eval: true
 flowchart LR
     C1["Chapter 1Build the(image, label) dataset"]:::current
-    C2["Chapter 2 (optional)Train a modelon the dataset"]
+    C2["Chapter 2 (optional)Train a model on the dataset"]
     C3["Chapter 3Use a trained modelto predict new masks"]
     C4["Chapter 4Compute regionalland-cover statistics"]
     C1 --> C2 --> C3 --> C4
@@ -56,14 +56,10 @@ These properties make Sentinel-2 a reference dataset for land-cover mapping, agr
 ![The Twin-Satellite Sentinel-2 Orbital Configuration (Credits: Astrium GmbH)](https://sentiwiki.copernicus.eu/__attachments/1687033/image-20230605-102800.png?inst-v=7382be46-c982-4c77-bf23-f3ed1f2e446f)
 
 ::: {.callout-tip}
-**Learn more:** [Sentinel-2 Mission information](https://sentiwiki.copernicus.eu/web/s2-mission) · [Sentinel Hub custom scripts gallery](https://custom-scripts.sentinel-hub.com/)
+**Learn more:** [Sentinel-2 Mission information](https://sentiwiki.copernicus.eu/web/s2-mission) (see in particular the [Sentinel-2 Spectral Response Functions (S2-SRF) document](https://sentiwiki.copernicus.eu/__attachments/1692737/COPE-GSEG-EOPG-TN-15-0007%20-%20Sentinel-2%20Spectral%20Response%20Functions%202024%20-%204.0.xlsx?inst-v=29a9468e-c82d-4e65-9e31-d654700543f9) for the spectral bands) · [Sentinel Hub custom scripts gallery](https://custom-scripts.sentinel-hub.com/)
 :::
 
 ### Spectral bands
-
-::: {.callout-tip}
-**Official reference:** [Sentinel-2 Mission information](https://sentiwiki.copernicus.eu/web/s2-mission), specifically [Sentinel-2 Spectral Response Functions (S2-SRF) document](https://sentiwiki.copernicus.eu/__attachments/1692737/COPE-GSEG-EOPG-TN-15-0007%20-%20Sentinel-2%20Spectral%20Response%20Functions%202024%20-%204.0.xlsx?inst-v=29a9468e-c82d-4e65-9e31-d654700543f9)
-:::
 
 A **spectral band** is a narrow window of wavelengths that the sensor records separately. Sentinel-2's MultiSpectral Instrument (MSI) captures **13 bands** spanning visible, near-infrared (NIR) and short-wave infrared (SWIR) light — from 443 nm to 2190 nm. Each band is tuned to a specific physical property of the surface or atmosphere, and the table below groups them by **native spatial resolution**, which reflects a hardware trade-off made by ESA:
 
@@ -72,7 +68,7 @@ A **spectral band** is a narrow window of wavelengths that the sensor records se
 - **60 m — atmospheric correction.** `B1` (coastal aerosol), `B9` (water vapour) and `B10` (cirrus). These bands exist primarily to *clean up* the other bands, not to describe the ground, so a coarser pixel is sufficient.
 
 ::: {.callout-note}
-**L1C vs L2A — two processing levels.** Copernicus distributes Sentinel-2 data at two processing levels. **Level-1C** contains top-of-atmosphere reflectance for all 13 bands. **Level-2A** applies atmospheric correction and delivers surface reflectance, which is what we want for land-cover mapping. L2A also adds a **Scene Classification Layer (SCL)** at 20 m that labels each pixel as vegetation, bare soil, water, cloud, shadow, etc. The training dataset in this tutorial is built from L2A products — for convenience the pre-processed GeoTIFFs keep all 13 spectral bands plus the SCL (14 channels total). Note that `B10` (cirrus) is not directly useful for land-cover mapping once atmospheric correction has been applied — it is kept in the file for completeness but we will not use it.
+**L1C vs L2A — two processing levels.** Copernicus distributes Sentinel-2 data at two processing levels. **Level-1C** contains top-of-atmosphere reflectance for all 13 bands. **Level-2A** applies atmospheric correction and delivers surface reflectance, which is what we want for land-cover mapping. L2A also adds a **Scene Classification Layer (SCL)** at 20 m that labels each pixel as vegetation, bare soil, water, cloud, shadow, etc. The training dataset in this tutorial is built from L2A products — for convenience the pre-processed GeoTIFFs keep all 13 spectral bands plus the SCL (14 channels total). A **GeoTIFF** is a standard TIFF image file with extra embedded metadata describing *where* the image sits on Earth — coordinate reference system (CRS), pixel size, and an affine transform that maps each `(row, column)` to a geographic `(x, y)` coordinate. In other words: a regular image plus the spatial information needed to overlay it correctly on a map. The format also supports multiple bands in a single file, which is why we can pack the 14 channels (13 spectral bands + SCL) into one `.tif`. Note that `B10` (cirrus) is not directly useful for land-cover mapping once atmospheric correction has been applied — it is kept in the file for completeness but we will not use it.
 :::
 
 | Band | Central <br> wavelength (nm) | Resolution (m) | Description | Use / Application |
@@ -97,6 +93,8 @@ A **spectral band** is a narrow window of wavelengths that the sensor records se
 
 ::: {.callout-note}
 **Think of a raster as a spreadsheet with coordinates.** A regular spreadsheet has rows and columns filled with numbers. A raster is the same idea, except each cell is a *pixel* located at a specific place on Earth, and you can stack multiple layers (bands) on top of each other — one layer per spectral band.
+
+![Single-band vs. multi-band raster. *Source: [Earth Lab — Earth Data Science](https://earthdatascience.org/courses/earth-analytics/multispectral-remote-sensing-data/naip-imagery-raster-stacks-in-r/) (CC BY-SA 4.0) / NEON.*](assets/RGB-bands-raster-stack.jpg){width=70% fig-align="center"}
 :::
 
 Key concepts:
@@ -1541,6 +1539,8 @@ m
 # CLC+ Backbone Labels — Land-Cover Ground Truth
 
 In supervised machine learning, you need **pairs** of inputs and labels to train a model. The inputs are the Sentinel-2 satellite images; the labels are provided by [CLC+ Backbone](https://land.copernicus.eu/en/products/clc-backbone), a high-resolution land-cover product from the [Copernicus Land Monitoring Service](https://land.copernicus.eu/en).
+
+**What does CLC stand for?** CLC is short for **CORINE Land Cover** (*Coordination of Information on the Environment — Land Cover*), the European reference inventory of land cover and land use. First produced in 1990 and updated roughly every six years, it has long been the standard product for tracking land-cover change across Europe. **CLC+ Backbone** is the next-generation evolution of this programme: instead of the original 44 hierarchical classes mapped at 100 m resolution from manually delineated polygons, it delivers a **pixel-level raster at 10 m resolution** with a simplified set of 10 land-cover classes, derived automatically from Sentinel-2 imagery — which makes it directly suitable as ground truth for a deep-learning segmentation model.
 
 CLC+ Backbone provides **pixel-level** land-cover classification across Europe at **10 m resolution**, making it an ideal ground-truth dataset for training and evaluating segmentation models. The labels are temporally aligned with the satellite imagery (same year), ensuring that the land-cover classification corresponds to what the satellite actually observed.
 

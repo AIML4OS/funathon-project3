@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://aiml4os.github.io/funathon-project3/index.html</loc>
-    <lastmod>2026-05-26T16:34:48.946Z</lastmod>
-  </url>
-  <url>
-    <loc>https://aiml4os.github.io/funathon-project3/4-inference.html</loc>
-    <lastmod>2026-05-26T16:34:48.931Z</lastmod>
-  </url>
-  <url>
-    <loc>https://aiml4os.github.io/funathon-project3/2-model.html</loc>
-    <lastmod>2026-05-26T16:34:48.931Z</lastmod>
-  </url>
-  <url>
     <loc>https://aiml4os.github.io/funathon-project3/map-nuts.html</loc>
-    <lastmod>2026-05-26T16:34:48.946Z</lastmod>
-  </url>
-  <url>
-    <loc>https://aiml4os.github.io/funathon-project3/1-acquisition.html</loc>
-    <lastmod>2026-05-26T16:34:48.931Z</lastmod>
-  </url>
-  <url>
-    <loc>https://aiml4os.github.io/funathon-project3/3-training.html</loc>
-    <lastmod>2026-05-26T16:34:48.931Z</lastmod>
+    <lastmod>2026-05-26T16:49:16.515Z</lastmod>
   </url>
   <url>
     <loc>https://aiml4os.github.io/funathon-project3/5-statistics.html</loc>
-    <lastmod>2026-05-26T16:34:48.931Z</lastmod>
+    <lastmod>2026-05-26T16:49:16.503Z</lastmod>
+  </url>
+  <url>
+    <loc>https://aiml4os.github.io/funathon-project3/3-training.html</loc>
+    <lastmod>2026-05-26T16:49:16.503Z</lastmod>
+  </url>
+  <url>
+    <loc>https://aiml4os.github.io/funathon-project3/1-acquisition.html</loc>
+    <lastmod>2026-05-26T16:49:16.503Z</lastmod>
+  </url>
+  <url>
+    <loc>https://aiml4os.github.io/funathon-project3/2-model.html</loc>
+    <lastmod>2026-05-26T16:49:16.503Z</lastmod>
+  </url>
+  <url>
+    <loc>https://aiml4os.github.io/funathon-project3/4-inference.html</loc>
+    <lastmod>2026-05-26T16:49:16.503Z</lastmod>
+  </url>
+  <url>
+    <loc>https://aiml4os.github.io/funathon-project3/index.html</loc>
+    <lastmod>2026-05-26T16:49:16.515Z</lastmod>
   </url>
 </urlset>

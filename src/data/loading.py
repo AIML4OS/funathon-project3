@@ -13,7 +13,6 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 import pandas as pd
-import subprocess
 
 from src.data.download import download_data
 from src.data.filter import filter_indices_from_labels
@@ -87,36 +86,3 @@ def load_data(
         labels_all.extend([labels[i] for i in indices])
 
     return patches_all, labels_all
-
-
-def format_datasets(args_dict: dict) -> Tuple[List[str], List[str], dict]:
-    """
-    Validate dataset paths on S3 and extract NUTS + years.
-    """
-
-    nuts, years = zip(*[item.split("_") for item in args_dict["datasets"]])
-    nuts = [n.upper() for n in nuts]
-
-    for nut, year in zip(nuts, years):
-        alias_cmd = [
-            "mc", "alias", "set", "public",
-            "https://minio.lab.sspcloud.fr",
-            "", ""
-        ]
-
-        with open("/dev/null", "w") as devnull:
-            # set public alias
-            subprocess.run(alias_cmd, check=True, stdout=devnull, stderr=devnull)
-            patch_cmd = [
-                "mc",
-                "stat",
-                f"public/projet-funathon/2026/project3/data/images/{nuts}/{years}/",
-            ]
-            subprocess.run(patch_cmd, check=True, stdout=devnull, stderr=devnull)  
-
-            if not patch_cmd:
-                raise ValueError("S3 path does not exist.")
-
-    args_dict.pop("datasets")
-
-    return list(nuts), list(years), args_dict

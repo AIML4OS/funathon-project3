@@ -100,7 +100,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 model_name = "segmentation-sentinel2-model"
-model_version = "2"
+model_version = "1"
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 
 mlflow.set_tracking_uri(mlflow_tracking_uri)
@@ -274,6 +274,7 @@ import numpy as np
 from pathlib import Path
 
 fs = s3fs.S3FileSystem(anon=True, endpoint_url="https://minio.lab.sspcloud.fr")
+
 s3_run_path = "projet-funathon/mlflow-artifacts/1/a2cc538d334b474389efcc54115ef13d/artifacts/"
 s3_model_path = s3_run_path + "model"
 local_model_dir = Path(tempfile.mkdtemp()) / "model"
@@ -282,6 +283,7 @@ model = mlflow.pyfunc.load_model(str(local_model_dir))
 
 response = requests.get("https://minio.lab.sspcloud.fr/" + s3_run_path + "params.json")
 run_params = response.json()
+
 n_bands = int(run_params["n_bands"])
 tiles_size = int(run_params["tiles_size"])
 augment_size = int(run_params["augment_size"])
@@ -297,7 +299,7 @@ from MinIO over HTTPS, running the model, and post-processing the output.
 
 ## Predict on a single Sentinel-2 image
 
-The `predict()` utility (in `src/utils.py`) handles the full pipeline — loading
+The `predict()` function (in `src/inference/prediction.py`) handles the full pipeline — loading
 the image, preprocessing, tiling if needed, and assembling the result. It
 returns a tuple `(satellite_img dict, predictions array)` where `predictions`
 is a 2D integer array of shape `(H, W)` with class IDs from 1 to 10.
@@ -386,11 +388,7 @@ it to produce a labelled mask.
 
 ```{python}
 #| eval: false
-from src.utils import (
-    get_satellite_image,
-    predict,
-    create_geojson_from_mask,
-)
+from src.inference.prediction import predict
 
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 
@@ -428,11 +426,7 @@ print(f"Classes found : {set(predictions.flatten().tolist())}")
 ## Solution
 ```{python}
 #| eval: false
-from src.utils import (
-    get_satellite_image,
-    predict,
-    create_geojson_from_mask,
-)
+from src.inference.prediction import predict
 
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 image_path = (
@@ -458,11 +452,7 @@ print(f"Classes found : {set(predictions.flatten().tolist())}")
 ```{python}
 #| eval: true
 #| echo: false
-from src.utils import (
-    get_satellite_image,
-    predict,
-    create_geojson_from_mask,
-)
+from src.inference.prediction import predict
 
 image_target = "LU000/2024/4022000_2979190_0_354.tif"
 image_path = (
@@ -672,7 +662,7 @@ the three outputs side by side (RGB / mask / polygons), and save the result.
 
 ```{python}
 #| eval: false
-from src.utils import create_geojson_from_mask
+from src.inference.prediction import create_geojson_from_mask
 
 gdf_pred = create_geojson_from_mask(__, __)  # TODO: satellite_img, predictions
 
@@ -722,6 +712,8 @@ plt.show()
 
 ```{python}
 #| eval: false
+from src.inference.prediction import create_geojson_from_mask
+
 gdf_pred = create_geojson_from_mask(satellite_img, predictions)
 
 print(f"{len(gdf_pred)} polygons extracted")
@@ -758,6 +750,8 @@ fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5)
 ```{python}
 #| eval: true
 #| echo: false
+from src.inference.prediction import create_geojson_from_mask
+
 gdf_pred = create_geojson_from_mask(satellite_img, predictions)
 
 fig, axes = plt.subplots(1, 3, figsize=(20, 6))
@@ -1370,6 +1364,7 @@ print(gdf_pred.head())
 ```{python}
 #| eval: false
 import geopandas as gpd
+from src.inference.prediction import get_satellite_image
 
 N_BANDS = 14
 minio_url = "https://minio.lab.sspcloud.fr/"
@@ -1419,6 +1414,7 @@ plt.show()
 ```{python}
 #| eval: false
 import geopandas as gpd
+from src.inference.prediction import get_satellite_image
 
 response_pred = requests.get(
     f"{api_url}/predict_image",
@@ -1459,6 +1455,7 @@ fig.legend(handles=legend_elements, loc="center left", bbox_to_anchor=(1.0, 0.5)
 #| eval: true
 #| echo: false
 import geopandas as gpd
+from src.inference.prediction import get_satellite_image
 
 response_pred = requests.get(
     f"{api_url}/predict_image",

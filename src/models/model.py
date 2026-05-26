@@ -5,7 +5,7 @@ SegFormer model wrappers.
   `SegformerPreTrainedModel` that exposes a cleaner `forward()` and
   freeze/unfreeze helpers for transfer learning.
 - `SegformerB5` is a factory: it fetches the CLC+ label mapping from S3,
-  patches the `nvidia/mit-b5` config for 14-band input and 10 land-cover
+  patches the `nvidia/mit-b5` config for 14-channel input (12 L2A spectral bands + NDVI + NDWI) and 10 land-cover
   classes, then loads the pretrained ImageNet weights.
 """
 
@@ -68,7 +68,7 @@ class SemanticSegmentationSegformer(SegformerPreTrainedModel):
         # When labels are supplied (training), upsample logits back to the label
         # resolution so cross-entropy can be computed pixel-for-pixel. At
         # inference (labels=None) we return the raw H/4 logits — the caller
-        # decides whether to upsample (see utils.make_prediction).
+        # decides whether to upsample (see src.inference.prediction make_prediction).
         if labels is not None:
             return nn.functional.interpolate(
                 logits, size=labels.shape[-2:], mode="bilinear", align_corners=False
@@ -87,16 +87,15 @@ class SegformerB5(SemanticSegmentationSegformer):
         n_bands="14",
         logits: bool = True,
         freeze_encoder: bool = False,
-        type_labeler: str = "CLCplus-Backbone",
     ):
         id2label = requests.get(
-            f"https://minio.lab.sspcloud.fr/projet-hackathon-ntts-2025/data-label/{type_labeler}/{type_labeler.lower()}-id2label.json"
+            "https://minio.lab.sspcloud.fr/projet-funathon/2026/project3/data/clcplus-backbone-id2label.json"
         ).json()
         id2label = {int(k): v for k, v in id2label.items()}
         label2id = {v: k for k, v in id2label.items()}
 
         config = SegformerConfig.from_pretrained("nvidia/mit-b5")
-        config.num_channels = int(n_bands)  # Sentinel-2 has 14 bands, not 3 (RGB)
+        config.num_channels = int(n_bands)  # Pre-baked GeoTIFFs: 14 channels (12 L2A spectral + NDVI + NDWI), vs 3 for RGB
         config.num_labels = len(id2label)
         config.id2label = id2label
         config.label2id = label2id

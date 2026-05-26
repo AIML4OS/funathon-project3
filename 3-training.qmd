@@ -165,7 +165,7 @@ tiny_module = SegmentationModule(
     loss=nn.CrossEntropyLoss(ignore_index=255),
     optimizer=optim.AdamW,
     # weight_decay=1e-2 is the AdamW L2-regularisation strength used throughout
-    # the project. On 14-band inputs this helps the encoder generalise instead of
+    # the project. On 14-channel inputs this helps the encoder generalise instead of
     # memorising channel-specific quirks of the training tiles.
     optimizer_params={"lr": 1e-3, "weight_decay": 1e-2},
     scheduler=optim.lr_scheduler.ReduceLROnPlateau,

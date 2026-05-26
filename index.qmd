@@ -46,7 +46,7 @@ format:
 
 ## Introduction {.unnumbered}
 
-Satellite imagery is one of the richest data sources available for understanding how land is used and how it changes over time. With this project, you will work with **Sentinel-2** multispectral images from the European Copernicus programme and use a **deep learning model (SegFormer)** to perform **semantic segmentation** : classifying every pixel in an image into a land-cover category. SegFormer is a vision-transformer architecture that handles arbitrary input resolution and many input channels — well suited to Sentinel-2's 14 spectral bands. CNN baselines such as U-Net would also work but are less effective at capturing the long-range context that helps land-cover classification.
+Satellite imagery is one of the richest data sources available for understanding how land is used and how it changes over time. With this project, you will work with **Sentinel-2** multispectral images from the European Copernicus programme and use a **deep learning model (SegFormer)** to perform **semantic segmentation** : classifying every pixel in an image into a land-cover category. SegFormer is a vision-transformer architecture that handles arbitrary input resolution and many input channels — well suited to Sentinel-2's 12 surface-reflectance bands plus two derived vegetation/water indices (14 input channels in our pre-processed tiles). CNN baselines such as U-Net would also work but are less effective at capturing the long-range context that helps land-cover classification.
 
 ## Machine learning in 90 seconds
 

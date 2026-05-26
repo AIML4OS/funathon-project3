@@ -68,7 +68,13 @@ A **spectral band** is a narrow window of wavelengths that the sensor records se
 - **60 m — atmospheric correction.** `B1` (coastal aerosol), `B9` (water vapour) and `B10` (cirrus). These bands exist primarily to *clean up* the other bands, not to describe the ground, so a coarser pixel is sufficient.
 
 ::: {.callout-note}
-**L1C vs L2A — two processing levels.** Copernicus distributes Sentinel-2 data at two processing levels. **Level-1C** contains top-of-atmosphere reflectance for all 13 bands. **Level-2A** applies atmospheric correction and delivers surface reflectance, which is what we want for land-cover mapping. L2A also adds a **Scene Classification Layer (SCL)** at 20 m that labels each pixel as vegetation, bare soil, water, cloud, shadow, etc. The training dataset in this tutorial is built from L2A products — for convenience the pre-processed GeoTIFFs keep all 13 spectral bands plus the SCL (14 channels total). A **GeoTIFF** is a standard TIFF image file with extra embedded metadata describing *where* the image sits on Earth — coordinate reference system (CRS), pixel size, and an affine transform that maps each `(row, column)` to a geographic `(x, y)` coordinate. In other words: a regular image plus the spatial information needed to overlay it correctly on a map. The format also supports multiple bands in a single file, which is why we can pack the 14 channels (13 spectral bands + SCL) into one `.tif`. Note that `B10` (cirrus) is not directly useful for land-cover mapping once atmospheric correction has been applied — it is kept in the file for completeness but we will not use it.
+
+**L1C vs L2A — two processing levels.** Copernicus distributes Sentinel-2 data at two processing levels. **Level-1C** contains top-of-atmosphere reflectance for all 13 bands. **Level-2A** applies atmospheric correction and delivers surface reflectance, which is what we want for land-cover mapping. L2A drops `B10` (the cirrus band — only useful for cloud detection, not for the surface) and delivers **12 spectral bands**. The training dataset in this tutorial is built from L2A products: the pre-processed GeoTIFFs stack these 12 spectral bands and append **two derived vegetation/water indices, NDVI and NDWI**, for a total of **14 channels**.
+
+NDVI (Normalised Difference Vegetation Index) and NDWI (Normalised Difference Water Index) are computed once at preprocessing time so the model can use them as input features without having to re-derive them from the spectral bands at every batch.
+
+*Regenerating from scratch:* `src/download_region.py` follows the same convention and produces 14-channel float64 GeoTIFFs identical in layout to those on `projet-funathon`.
+
 :::
 
 | Band | Central <br> wavelength (nm) | Resolution (m) | Description | Use / Application |
@@ -115,13 +121,18 @@ Key concepts:
 You will practise these combinations in the exercises below.
 
 ::: {.callout-warning}
-**Watch out: `B8` vs `B8A`.** Sentinel-2's band names don't all match their position in the file. In the pre-processed GeoTIFFs here, bands are stored in this order:
+**Watch out: rasterio band index ≠ Sentinel-2 band number.** In the pre-processed GeoTIFFs the channel layout is:
 
 | Rasterio index | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Sentinel-2 name | B1 | B2 | B3 | B4 | B5 | B6 | B7 | B8 | **B8A** | B9 | B10 | B11 | B12 | SCL |
+| Content | B1 | B2 | B3 | B4 | B5 | B6 | B7 | B8 | **B8A** | B9 | B11 | B12 | **NDVI** | **NDWI** |
 
-So `src.read(9)` gives you **B8A** (narrow NIR), not B9. It's only a coincidence that `src.read(2)` through `src.read(8)` line up with B2–B8. If you adapt this code for other bands — especially SWIR (B11, B12) — check this table to avoid off-by-one bugs.
+Two things to remember:
+
+- **`B8A` sits at index 9, before B9.** So `src.read(9)` returns narrow NIR (B8A), not B9. It is only a coincidence that `src.read(2)` through `src.read(8)` line up with B2–B8.
+- **There is no B10 in the file.** L2A processing removes it (cirrus band, no surface information), so index 11 jumps straight to B11. Indices 13 and 14 are NDVI and NDWI, computed once during preprocessing.
+
+Check this table before adapting code for SWIR (B11, B12) or the derived indices to avoid off-by-one bugs.
 :::
 
 ::: {.callout-tip}
@@ -161,7 +172,7 @@ print(f"Shape:  {tile_count} bands x {tile_height} x {tile_width} px")
 ```
 
 ::: {.callout-note}
- The pre-processed GeoTIFF files used here contain **14 bands**: the 13 spectral bands from Sentinel2 plus a **Scene Classification Layer (SCL)** stored as band 14. The SCL is a derived quality mask that classifies each pixel as cloud, shadow, vegetation, water, etc. — it is not a spectral band and we will not use it.
+ The pre-processed GeoTIFF files used here contain **14 channels**: the 12 L2A spectral bands (B01–B12 with B10 dropped, plus B8A) in bands 1–12, then **NDVI** as band 13 and **NDWI** as band 14. NDVI and NDWI are derived vegetation/water indices — they're not spectral bands but cheap, useful features the model receives directly.
 :::
 
 Now let's display the tile as an **RGB composite** (true-colour: Red, Green, Blue).
@@ -2957,8 +2968,7 @@ Starting from scratch, the script must:
    be window-read via GDAL's `/vsis3/` virtual filesystem: only the bytes covering each patch are
    transferred, with automatic resampling across the 10 m / 20 m / 60 m band resolutions.
 4. **Download labels** — for each patch, query the CLC+ ImageServer as shown in the exercises above.
-5. **Upload to personal S3** — store images as 14-band GeoTIFFs and labels as `.npy` files,
-   then write a `filename2bbox.parquet` index matching the format used in this tutorial.
+5. **Upload to personal S3** — store images as **14-channel float64 GeoTIFFs** (12 L2A surface-reflectance bands without B10, plus NDVI and NDWI as derived layers) and labels as `.npy` files, then write a `filename2bbox.parquet` index matching the format used in this tutorial.
 
 ::: {.callout-note}
 ### Something to think about — before looking at the solution

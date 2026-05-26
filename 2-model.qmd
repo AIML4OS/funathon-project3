@@ -9,7 +9,7 @@ format:
 
 # The SegFormer Architecture
 
-In the previous section we downloaded and prepared Sentinel-2 multispectral images together with their CLC+ Backbone land-cover labels. We now have patches of shape `(14, H, W)` — 14 spectral bands, height, width — each paired with a pixel-wise class mask. The goal of this section is to understand the **model** that will turn those patches into segmentation maps.
+In the previous section we downloaded and prepared Sentinel-2 multispectral images together with their CLC+ Backbone land-cover labels. We now have patches of shape `(14, H, W)` — **14 input channels** (12 L2A surface-reflectance bands plus NDVI and NDWI as derived layers), height, width — each paired with a pixel-wise class mask. The goal of this section is to understand the **model** that will turn those patches into segmentation maps.
 
 We use **SegFormer**, a Vision Transformer architecture designed specifically for semantic segmentation. SegFormer was introduced by Xie et al. (2021) in [*"SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers"*](https://arxiv.org/abs/2105.15203). Its two key design choices make it both powerful and practical:
 
@@ -62,7 +62,7 @@ Satellite imagery presents specific challenges compared to natural images:
 
 | Challenge | How SegFormer helps |
 |---|---|
-| **14 spectral bands** (not 3) | Encoder's first patch embedding is replaced — `num_channels` is a config parameter |
+| **14 input channels** (vs 3 for RGB) | Encoder's first patch embedding is replaced — `num_channels` is a config parameter |
 | **Large images** (512 × 512 patches) | No positional encodings → resolution-agnostic; SR attention → memory-efficient |
 | **Small objects** (buildings, roads) | Stage-1 features at H/4 preserve fine spatial details |
 | **Large context** (land-cover categories span hundreds of pixels) | Deep stages capture global context at H/32 |
@@ -81,10 +81,13 @@ from src.models.model import SegformerB5
 
 # This downloads ~330 MB of weights from HuggingFace on first run
 model = SegformerB5(
-    # 14 matches the band table in 1-acquisition.qmd § "Sentinel-2 bands". If you swap
-    # in a different dataset (e.g. dropping B10 → 13 bands), this number, the
-    # normalisation statistics, and `num_channels` in the SegformerConfig must all
-    # change together — otherwise the first patch-embedding layer will mis-shape inputs.
+    # 14 matches the layout of the pre-baked GeoTIFFs: the 12 L2A spectral bands
+    # (B10 is dropped by atmospheric correction) plus NDVI and NDWI as derived
+    # channels. `src/download_region.py` produces the same layout. If you swap in
+    # a different dataset (different band count or different derived layers), this
+    # number, the normalisation statistics, and `num_channels` in the SegformerConfig
+    # must all change together — otherwise the first patch-embedding layer
+    # mis-shapes inputs.
     n_bands=14,
     logits=True,             # return raw logits (not probabilities)
     freeze_encoder=False,    # keep encoder trainable
@@ -173,7 +176,7 @@ Notice how lopsided the split is: **the encoder carries ~95 % of the parameters*
 
 ## Freezing the encoder
 
-When fine-tuning on a new domain (e.g. switching from RGB natural images to 14-band satellite imagery), a common strategy is to **freeze the encoder** at first and only train the decoder. This is much faster and prevents overfitting when labelled data is scarce.
+When fine-tuning on a new domain (e.g. switching from RGB natural images to 14-channel satellite imagery), a common strategy is to **freeze the encoder** at first and only train the decoder. This is much faster and prevents overfitting when labelled data is scarce.
 
 ```{python}
 #| eval: false
@@ -258,7 +261,7 @@ Before training, it is useful to trace a **dummy forward pass** to verify that a
 
 ## Input shape
 
-Our dataset produces patches of shape `(14, H, W)` — 14 spectral bands. The DataLoader stacks them into batches `(B, 14, H, W)`. Let us create a random dummy batch:
+Our dataset produces patches of shape `(14, H, W)` — 14 input channels (12 L2A surface-reflectance bands plus NDVI and NDWI). The DataLoader stacks them into batches `(B, 14, H, W)`. Let us create a random dummy batch:
 
 ```{python}
 #| eval: false

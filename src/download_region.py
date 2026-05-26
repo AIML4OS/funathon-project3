@@ -21,12 +21,16 @@ Workflow
 1. Load the NUTS3 region boundary from the Eurostat GISCO API.
 2. Tile the region with a regular 2 500 m × 2 500 m grid (250 px at 10 m).
 3. Query the CDSE OData catalogue to find cloud-free Sentinel-2 L2A products.
-4. For each product: download all 13 JP2 band files from CDSE EO S3 into
-   memory via s3fs, open them as rasterio datasets, then window-read each
-   patch (resampling all bands to 10 m on the fly).
-   (B10/cirrus is excluded — it is not delivered in L2A products.)
+4. For each product: download the 12 L2A spectral bands (B01–B12, minus B10
+   which L2A drops, plus B8A) from CDSE EO S3 into memory via s3fs, open
+   them as rasterio datasets, then window-read each patch (resampling all
+   bands to 10 m on the fly). Convert raw DN to surface reflectance (applying
+   the BOA offset for baseline N0400+ products) and append two derived
+   layers: NDVI and NDWI.
 5. Download the matching CLC+ label from the Copernicus ImageServer API.
-6. Upload images (13-band GeoTIFF) and labels (.npy) to personal S3.
+6. Upload images (14-channel float64 GeoTIFF — 12 spectral + NDVI + NDWI,
+   matching the layout used on `projet-funathon`) and labels (.npy) to
+   personal S3.
 7. Write a filename2bbox.parquet index to personal S3.
 
 Usage
@@ -92,7 +96,11 @@ EO_S3_ENDPOINT = "https://eodata.dataspace.copernicus.eu"
 PATCH_SIZE_M = 2500   # patch side length in metres
 PATCH_SIZE_PX = 250   # patch side length in pixels (10 m resolution)
 
-# Maps band name → (resolution folder, JP2 file suffix)
+# Maps band name → (resolution folder, JP2 file suffix). The order here defines
+# the channel order in the output GeoTIFF: bands 1–12 are the 12 L2A spectral
+# bands (B10 is excluded by L2A processing), then bands 13 and 14 are NDVI and
+# NDWI computed below. This matches the layout already published on
+# projet-funathon/2026/project3/data/images/.
 BAND_MAP: dict[str, tuple[str, str]] = {
     "B01": ("R60m", "B01_60m"),
     "B02": ("R10m", "B02_10m"),
@@ -106,8 +114,27 @@ BAND_MAP: dict[str, tuple[str, str]] = {
     "B09": ("R60m", "B09_60m"),
     "B11": ("R20m", "B11_20m"),
     "B12": ("R20m", "B12_20m"),
-    "SCL": ("R20m", "SCL_20m"),
 }
+
+# L2A surface reflectance conversion. DN are uint16 with a fixed scale factor;
+# processing baseline N0400+ (March 2022 onwards) added an offset of -1000 DN
+# (= -0.1 in reflectance units) that must be applied to recover physically
+# meaningful values. Older products use offset 0.
+L2A_QUANTIFICATION = 10000.0
+
+
+def baseline_applies_boa_offset(product_name: str) -> bool:
+    """
+    Detect whether a Sentinel-2 product was produced with baseline >= N0400 and
+    therefore requires the -1000 DN BOA_ADD_OFFSET. The baseline token is the
+    4th underscore-separated field of the product name, e.g.
+    `S2A_MSIL2A_20210615T102021_N0500_R108_T31UGS_20210615T123456.SAFE`.
+    """
+    try:
+        baseline_num = int(product_name.split("_")[3].lstrip("N"))
+    except (IndexError, ValueError):
+        return False  # safe default: no offset
+    return baseline_num >= 400
 
 # ---------------------------------------------------------------------------
 # NUTS3 region helpers
@@ -341,11 +368,22 @@ def close_band_readers(
 
 
 def read_patch(
-    readers: dict[str, rasterio.DatasetReader], bbox_3035: list
+    readers: dict[str, rasterio.DatasetReader],
+    bbox_3035: list,
+    product_name: str,
 ) -> np.ndarray:
     """
-    Window-read a (13, H, W) uint16 patch from already-open band readers.
-    All bands are resampled to 10 m by specifying out_shape.
+    Window-read a (14, H, W) float64 patch from already-open band readers.
+
+    Output channels:
+        0..11  — the 12 L2A surface-reflectance bands in BAND_MAP order
+                 (B01, B02, B03, B04, B05, B06, B07, B08, B8A, B09, B11, B12),
+                 converted from uint16 DN to reflectance with the BOA offset
+                 applied for baseline N0400+ products.
+        12     — NDVI = (B08 - B04) / (B08 + B04)
+        13     — NDWI = (B03 - B08) / (B03 + B08)
+
+    This matches the 14-channel layout published on the projet-funathon bucket.
     """
     xmin, ymin, xmax, ymax = bbox_3035
     h = int((ymax - ymin) / 10)
@@ -375,16 +413,33 @@ def read_patch(
         )
         bands_list.append(data)
 
-    return np.stack(bands_list, axis=0).astype(np.uint16)
+    # Convert raw DN to surface reflectance. From baseline N0400 onward an
+    # offset of -1000 DN (= -0.1 reflectance) must be applied; older products
+    # use offset 0.
+    offset_dn = -1000 if baseline_applies_boa_offset(product_name) else 0
+    bands = (np.stack(bands_list, axis=0).astype(np.float64) + offset_dn) / L2A_QUANTIFICATION
+
+    # NDVI / NDWI as derived layers. A tiny epsilon avoids division by zero on
+    # no-data pixels (where every band is 0 after offset clamping).
+    eps = 1e-6
+    b3, b4, b8 = bands[2], bands[3], bands[7]
+    ndvi = (b8 - b4) / (b8 + b4 + eps)
+    ndwi = (b3 - b8) / (b3 + b8 + eps)
+
+    return np.concatenate([bands, ndvi[None], ndwi[None]], axis=0)
 
 
 def patch_array_to_tiff_bytes(array: np.ndarray, bbox_3035: list) -> bytes:
-    """Encode a (C, H, W) uint16 array as a georeferenced GeoTIFF in EPSG:3035."""
+    """Encode a (C, H, W) float64 array as a georeferenced GeoTIFF in EPSG:3035.
+
+    `float64` matches the dtype of the published `projet-funathon` tiles. The
+    deflate codec compresses the file well despite the wider dtype.
+    """
     c, h, w = array.shape
     xmin, ymin, xmax, ymax = bbox_3035
     profile = {
         "driver": "GTiff",
-        "dtype": "uint16",
+        "dtype": "float64",
         "width": w,
         "height": h,
         "count": c,
@@ -649,7 +704,7 @@ def main() -> None:
                 )
 
                 try:
-                    array = read_patch(readers, bbox)
+                    array = read_patch(readers, bbox, product_name)
                     tiff_bytes = patch_array_to_tiff_bytes(array, bbox)
                     with personal_fs.open(img_path, "wb") as f:
                         f.write(tiff_bytes)

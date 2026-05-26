@@ -170,7 +170,7 @@ cython_debug/
 #.idea/
 
 # Local data downloaded by tutorials
-data/
+/data/
 
 # Quarto stuff
 /.quarto/
